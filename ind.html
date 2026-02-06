@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Legacy | Teacher Tribute Collection</title>
+    
+    <!-- Google Fonts for English and Urdu -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- HTML2PDF Library for Download Feature -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-dark: #0f172a;
+            --bg-gradient: radial-gradient(circle at top right, #1e293b, #0f172a);
+            --gold: #d4af37;
+            --gold-light: #f3e5ab;
+            --card-bg: #fdfbf7; /* Cream Parchment */
+            --text-dark: #2c3e50;
+            --text-light: #64748b;
+            --font-urdu: 'Noto Nastaliq Urdu', serif;
+            --font-title: 'Cinzel', serif;
+            --font-body: 'Inter', sans-serif;
+            --font-poetic: 'Amiri', serif;
+        }
+
+        /* --- GLOBAL STYLES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-dark);
+            background-image: var(--bg-gradient);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            text-align: center;
+            padding: 4rem 1.5rem 2rem;
+            animation: fadeIn 1.5s ease;
+            width: 100%;
+        }
+
+        h1 {
+            font-family: var(--font-title);
+            font-size: 2.5rem;
+            color: var(--gold);
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        p.subtitle {
+            font-size: 1rem;
+            color: #94a3b8;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* --- SEARCH SECTION --- */
+        .search-section {
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem 1rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .input-wrapper {
+            width: 100%;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 1.1rem;
+            font-family: var(--font-body);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+        }
+        
+        input::placeholder { color: rgba(255,255,255,0.4); }
+
+        .btn-search {
+            background: var(--gold);
+            color: #1e293b;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-search:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+        }
+
+        #error-msg {
+            color: #f87171;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* --- FULL SCREEN MODAL (CARD) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .tribute-scroll-container {
+            width: 100%;
+            max-width: 700px;
+            height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .tribute-scroll-container::-webkit-scrollbar { width: 6px; }
+        .tribute-scroll-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        .paper-card {
+            background: var(--card-bg);
+            color: var(--text-dark);
+            padding: 4rem 3rem;
+            border-radius: 4px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+            text-align: center;
+            border-top: 8px solid var(--gold);
+            border-bottom: 8px solid var(--gold);
+            /* Ensure background prints/saves correctly */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .paper-card::before, .paper-card::after {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: var(--gold);
+            opacity: 0.5;
+        }
+        .paper-card::before { left: 2rem; }
+        .paper-card::after { right: 2rem; }
+
+        /* --- CARD TYPOGRAPHY --- */
+        .t-name {
+            font-family: var(--font-title);
+            font-size: 3rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .t-title {
+            font-family: var(--font-poetic);
+            font-style: italic;
+            font-size: 1.2rem;
+            color: #b45309;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #ddd;
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+
+        .urdu-section {
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .urdu-text {
+            font-family: var(--font-urdu);
+            font-size: 1.6rem;
+            line-height: 2.2;
+            direction: rtl;
+            color: #000;
+            text-align: center;
+        }
+
+        .section-label {
+            font-family: var(--font-title);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .qualities-list {
+            font-family: var(--font-poetic);
+            font-size: 1.2rem;
+            color: #334155;
+            line-height: 1.8;
+            font-style: italic;
+            list-style: none;
+        }
+
+        .appreciation-text {
+            margin-top: 2rem;
+            font-size: 1.1rem;
+            color: #475569;
+            line-height: 1.8;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 2.5rem;
+            cursor: pointer;
+            z-index: 1001;
+            transition: color 0.3s;
+        }
+        .close-btn:hover { color: var(--gold); }
+
+        .action-bar {
+            margin-top: 3rem;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 1px solid var(--gold);
+            background: var(--gold);
+            color: #1e293b;
+            cursor: pointer;
+            font-weight: 700;
+            border-radius: 4px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover { 
+            background: white; 
+            border-color: white;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- PRINT --- */
+        @media print {
+            body { background: white; display: block; }
+            .search-section, header, .close-btn, .action-bar { display: none !important; }
+            .modal-overlay { 
+                position: static; 
+                background: white; 
+                opacity: 1; 
+                display: block; 
+                padding: 0; 
+            }
+            .tribute-scroll-container { 
+                height: auto; 
+                max-width: 100%; 
+                overflow: visible; 
+            }
+            .paper-card { 
+                box-shadow: none; 
+                padding: 0; 
+                border: 1px solid #ddd;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .t-name { font-size: 2rem; }
+            .urdu-text { font-size: 1.3rem; }
+            .paper-card { padding: 2rem 1rem; }
+            .paper-card::before, .paper-card::after { display: none; }
+            input { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>The Legacy</h1>
+        <p class="subtitle">Enter your name to reveal your tribute</p>
+    </header>
+
+    <!-- Search Section -->
+    <main class="search-section">
+        <div class="input-wrapper">
+            <input type="text" id="teacherInput" placeholder="Type your full name (e.g. Miss Sarwat)">
+        </div>
+        
+        <button class="btn-search" onclick="findTribute()">View Tribute</button>
+        <div id="error-msg">Teacher not found. Please check spelling.</div>
+    </main>
+
+    <!-- Full Screen Modal -->
+    <div class="modal-overlay" id="modal">
+        <button class="close-btn" onclick="closeCard()">&times;</button>
+        <div class="tribute-scroll-container">
+            <div class="paper-card" id="card-content">
+                <!-- Content injected via JS -->
+            </div>
+            
+            <div class="action-bar">
+                <button class="btn" onclick="downloadPDF()">⬇️ Download PDF</button>
+                <button class="btn" onclick="closeCard()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA: THE COMPLETE TRIBUTE DATABASE ---
+        const teacherData = {
+            "shahnila": {
+                name: "Miss Shahnila",
+                title: "صولتِ صوت و شفقتِ دل – *Majesty of Voice & Kindness of Heart*",
+                sher: `ہر سُر میں ہے تاثیر، رواں ہے فاصِلوں پر تیری\nجوشِ رُوح رُباب، ہمت کو ہے آفتاب تیری\n\nگو خواص ہے ترا اندازِ دَشت\nکرے اظہار گوش و جبر، تب بھی باتوں سے پھول جھرتے ہیں`,
+                qualities: ["Strong, commanding voice yet deeply loving", "Inspires courage and warmth simultaneously", "Balance of authority and empathy"],
+                appreciation: "Your energy forged our resilience. We will miss the loud voice that commanded respect and the tireless heart that always pushed us to do better."
+            },
+            "sidra": {
+                name: "Miss Sidra",
+                title: "The Gem of a Teacher",
+                sher: `ہے منتشرِ تُراب، ذرّۂ گلاب، صِنعتِ اُستاد\nہر حرف با نور، ہر اصول خود ایک اِرشاد\n\nمسکان میں ہے کمال، گویا ظہورِ آفتاب\nسیرت یوں بے مثال، گویا بنی ضربُ المثال`,
+                qualities: ["Unique, radiant personality", "Exemplary character and integrity", "Knowledgeable and inspiring"],
+                appreciation: "You taught us that balance is the key to wisdom. Thank you for being the calm, guiding light in the chaos of our school days."
+            },
+            "sarwat": {
+                name: "Miss Sarwat",
+                title: "ہمرازِ احساس – *Confidante of Emotions*",
+                sher: `کلام میں شگفتگی، دل میں وُسعت بے مثال\nہو اظہارِ درد، اظہارِ غم، ہر وصل میں ساتھ\n\nہے نقشِ باکمال، ہے سخنِ آسمان بھی تفصیل تیری\nہے بیاں میں بصیرت، ہر لفظ میں وقار تیرا`,
+                qualities: ["Deeply empathetic and understanding", "Inspires emotional intelligence", "Wisdom combined with clarity and elegance"],
+                appreciation: "Thank you for being the safe harbor in our storms. For listening when we needed to be heard and for solving our problems with a patience that we will never forget."
+            },
+            "fozia": {
+                name: "Miss Fouzia",
+                title: "مخفیِ قلبِ جوہر – *Hidden Gem of the Heart*",
+                sher: `یہ نگاہ کا کمال ہے کہ وصف بے مثال ہے\nنظر میں حیاتِ اُستاد، دل میں ہوک سی اُتار ہے\n\nفقط روش، طرزِ حال سخت گو\nمنفرد ہے مزاج، پنہاں قلب میں لطیف گُداز`,
+                qualities: ["Outer strictness, inner softness", "Unique temperament", "Deeply caring and subtly influential"],
+                appreciation: "We learned that true strength protects what is soft. Thank you for showing us that beneath the strict discipline lies a heart that cares deeply for our success."
+            },
+            "asma naseem": {
+                name: "Miss Asma Naseem",
+                title: "Heart of School",
+                sher: `گل ساز ہو تم، علم ساز ہو تم، بہارِ دل کی مہک ہو تم\nکیا کہوں صفت میں کہ بے مثلِ گلاب ہو تم\n\nہر سبق ہے جلوہ تری شمع کا\nتو جو ہے تو ہے آسمان بھی روشن، ہر نجمِ تاباں بھی روشن`,
+                qualities: ["Central guiding presence of the school", "Inspires love for learning", "Warmth and illumination in teaching"],
+                appreciation: "Your grace is the lesson we will carry forever. Thank you for nurturing not just our minds, but our spirits, with such quiet dignity."
+            },
+            "iqra": {
+                name: "Miss Iqra",
+                title: "اجرک کی خوشبو – *Fragrance of Ajrak*",
+                sher: `سندھی دل ہو تم ہی، اجرک ساز بھی تم ہی\nراست گو ہو تم ہی، ہُدیٰ نواز بھی تم\n\nسندھ جی رانی آہیں، حُسن جی مثال ہو تم\nبے مثال ہو تم ہی، شکلِ لُباب بھی تم`,
+                qualities: ["Proudly Sindhi, cultural identity reflected in personality", "Honest, straightforward, and nurturing", "Playful yet inspiring"],
+                appreciation: "You connected us to our roots while pointing us to our future. Thank you for keeping our culture alive in your words and teaching us to look ahead with pride."
+            },
+            "aliya": {
+                name: "Miss Aliya",
+                title: "Our Second Parent",
+                sher: `ہر دل پر ہے کنار بھی تیرا، کیا کہوں کہ نرم خو انداز ہے تیرا\nاثر یوں لازوال کہ حدِ نگاہ تک دراز ہے تیرا\n\nہے خیال اس قدر کہ ہر دل میں مقام ہے تیرا\nکیا پکاروں تجھ کو، کہ اصنافِ لقب ماں ہے تیرا`,
+                qualities: ["Nurturing, protective, and caring", "Warmth and guidance akin to parental figure", "Leaves lasting impression on students"],
+                appreciation: "You made school feel like home. Thank you for the warmth, the shared memories, and the affectionate guidance that made us feel so safe."
+            },
+            "nighat": {
+                name: "Miss Nighat",
+                title: "چراغِ صداقت – *Lamp of Truth*",
+                sher: `جن کے کردار سے آتی ہو صداقت کی مہک\nاُن کی تدریس سے تو پتھر بھی پگھل جاتے ہیں\n\nسنا ہے اُن کی ہستی سے روشن زمانے ہوتے ہیں\nاندھیروں میں چراغ جلانے کے بھی بہانے ہوتے ہیں`,
+                qualities: ["Moral integrity, honesty, and truthfulness", "Guides students ethically and intellectually", "Brings light to dark situations, inspiring hope"],
+                appreciation: "Your presence commanded respect, and your lessons have shaped who we are today. Thank you for being the unshakeable pillar we could always lean on."
+            },
+            "anila": {
+                name: "Miss Anila",
+                title: "شوخ فہم – *Playful Wit / Clever Humor*",
+                sher: `شُجُع تم کو کہہ دوں، مگر انداز ذرا فہم ہے\nمیں ترے قہقہے پر ہنس تو دوں، مگر مذاق ذرا بے دَم ہے\n\nعکس ہو قمر کا، سرمایۂ نور ہو تم\nسنا ہے اردو کے اُستاد ہو تم`,
+                qualities: ["Bold, witty, and playful", "Inspires laughter while maintaining dignity", "Fun and approachable, yet respected"],
+                appreciation: "You made us brave enough to laugh and learn. Thank you for the high energy and the courage to be yourself, which inspired us to be confident in who we are."
+            }
+        };
+
+        // --- DOM ELEMENTS ---
+        const modal = document.getElementById('modal');
+        const cardContent = document.getElementById('card-content');
+        const inputField = document.getElementById('teacherInput');
+        const errorMsg = document.getElementById('error-msg');
+
+        // --- SEARCH LOGIC ---
+        function findTribute() {
+            const rawInput = inputField.value.trim();
+            if (!rawInput) return;
+
+            // Normalize: lowercase, remove "miss", trim spaces
+            const key = rawInput.toLowerCase().replace("miss", "").trim();
+
+            if (teacherData[key]) {
+                openCard(key);
+                errorMsg.style.opacity = '0';
+                setTimeout(() => errorMsg.style.display = 'none', 300);
+            } else {
+                errorMsg.style.display = 'block';
+                errorMsg.style.opacity = '1';
+            }
+        }
+
+        // --- OPEN CARD LOGIC ---
+        function openCard(key) {
+            const t = teacherData[key];
+            if (!t) return;
+
+            const qualitiesHTML = t.qualities.map(q => `<li>${q}</li>`).join('');
+            
+            const html = `
+                <h1 class="t-name">${t.name}</h1>
+                <br>
+                <span class="t-title">${t.title}</span>
+
+                <div class="urdu-section">
+                    <div class="urdu-text">${t.sher}</div>
+                </div>
+
+                <div class="section-label">Qualities</div>
+                <ul class="qualities-list">
+                    ${qualitiesHTML}
+                </ul>
+
+                <div class="section-label">Our Appreciation</div>
+                <div class="appreciation-text">
+                    ${t.appreciation}
+                </div>
+            `;
+
+            cardContent.innerHTML = html;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeCard() {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto'; 
+        }
+
+        // --- PDF DOWNLOAD LOGIC ---
+        function downloadPDF() {
+            const element = document.getElementById('card-content');
+            const teacherName = element.querySelector('.t-name').innerText.replace(/\s+/g, '_');
+            
+            // Options for html2pdf
+            const opt = {
+                margin:       10,
+                filename:     `Tribute_${teacherName}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, // Scale 2 for high resolution
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Generate and save
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Handle "Alina" -> "Anila" alias just in case
+        teacherData['alina'] = teacherData['anila'];
+
+        // Allow Enter key to submit
+        inputField.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                findTribute();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeCard();
+            }
+        });
+
+    </script>
+</body>
+</html>
