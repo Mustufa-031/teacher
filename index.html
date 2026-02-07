@@ -214,14 +214,13 @@
             padding: 4rem;
             position: relative;
             box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+            /* 3D Transform for screen view */
             transform: perspective(1000px) rotateX(5deg) translateY(50px);
             opacity: 0;
             transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            border: 10px solid white;
-            outline: 1px solid var(--gold);
-            /* Important for PDF background */
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            /* Border setup */
+            border: 10px solid white; 
+            box-shadow: inset 0 0 0 1px var(--gold); /* Inner gold border */
         }
 
         .modal-overlay.active .card {
@@ -398,7 +397,9 @@
             .card-scroller { height: auto; max-width: 100%; overflow: visible; }
             .card { 
                 box-shadow: none; 
-                border: 1px solid #ddd;
+                border: 10px solid white;
+                /* Force gold border via box-shadow inset because borders are tricky in print */
+                box-shadow: inset 0 0 0 1px var(--gold); 
                 padding: 2cm;
                 transform: none !important;
                 opacity: 1 !important;
@@ -523,14 +524,14 @@
                 title: "صولتِ صوت و شفقتِ دل – *Majesty of Voice & Kindness of Heart*",
                 sher: `ہر سُر میں ہے تاثیر، رواں ہے فاصِلوں پر تیری\nجوشِ رُوح رُباب، ہمت کو ہے آفتاب تیری\n\nگو خواص ہے ترا اندازِ دَشت\nکرے اظہار گوش و جبر، تب بھی باتوں سے پھول جھرتے ہیں`,
                 qualities: ["Strong, commanding voice yet deeply loving", "Inspires courage and warmth simultaneously", "Balance of authority and empathy"],
-                appreciation: "Your energy forged our resilience. We will miss the loud voice that commanded respect and the tireless heart that always pushed us to do better."
+                appreciation: "Your energy forged our resilience. We will miss the loud voice that commanded respect and tireless heart that always pushed us to do better."
             },
             "sidra": {
                 name: "Miss Sidra",
                 title: "The Gem of a Teacher",
                 sher: `ہے منتشرِ تُراب، ذرّۂ گلاب، صِنعتِ اُستاد\nہر حرف با نور، ہر اصول خود ایک اِرشاد\n\nمسکان میں ہے کمال، گویا ظہورِ آفتاب\nسیرت یوں بے مثال، گویا بنی ضربُ المثال`,
                 qualities: ["Unique, radiant personality", "Exemplary character and integrity", "Knowledgeable and inspiring"],
-                appreciation: "You taught us that balance is the key to wisdom. Thank you for being the calm, guiding light in the chaos of our school days."
+                appreciation: "You taught us that balance is key to wisdom. Thank you for being the calm, guiding light in the chaos of our school days."
             },
             "sarwat": {
                 name: "Miss Sarwat",
@@ -604,7 +605,7 @@
             const key = raw.toLowerCase().replace("miss", "").trim();
 
             if(teacherData[key]) {
-                setTimeout(() => { // Slight delay to let animation play
+                setTimeout(() => {
                     openCard(key);
                     errorMsg.style.display = 'none';
                 }, 300);
@@ -646,25 +647,58 @@
 
         function downloadPDF() {
             playAnimation(btnDownload);
+            
+            // --- CLONE STRATEGY TO FIX BLANK PDF ---
             const element = document.getElementById('card-content');
             const name = element.querySelector('.teacher-name').innerText.replace(/\s+/g, '_');
-            
-            // PDF Configuration for "Proper Card"
+
+            // 1. Clone the element
+            const clone = element.cloneNode(true);
+
+            // 2. Create a hidden container for the clone
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100%';
+            container.style.height = 'auto'; // Force natural height
+            container.style.zIndex = '-9999';
+            container.style.padding = '40px';
+            container.style.backgroundColor = '#fffdf7'; // Force background
+            container.style.overflow = 'visible'; // No scrollbars in PDF
+
+            // 3. Apply "Print Ready" styles to clone (Remove animations, transforms)
+            clone.style.transform = 'none';
+            clone.style.opacity = '1';
+            clone.style.boxShadow = 'none';
+            clone.style.border = '10px solid white';
+            clone.style.maxWidth = '800px'; // Constrain width
+            clone.style.margin = '0 auto';
+
+            // 4. Add clone to body so it renders "naturally" for html2canvas
+            container.appendChild(clone);
+            document.body.appendChild(container);
+
+            // 5. PDF Config
             const opt = {
-                margin:       0.5, // Margin around the card on the PDF page
+                margin:       0, // No margin, container handles padding
                 filename:     `Tribute_${name}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { 
-                    scale: 3, // Very High Resolution
+                    scale: 2, // High Res
                     useCORS: true, 
-                    backgroundColor: '#fffdf7', // Force the antique white background
-                    logging: false
+                    backgroundColor: '#fffdf7', 
+                    logging: false,
+                    letterRendering: true
                 },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Generate PDF
-            html2pdf().set(opt).from(element).save();
+            // 6. Generate PDF
+            html2pdf().set(opt).from(clone).save().then(() => {
+                // 7. Clean up
+                document.body.removeChild(container);
+            });
         }
 
         // Aliases
