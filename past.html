@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math MCQ Test Platform</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Space Grotesk','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+<style>
+:root{--bg:#09090b;--bg2:#141416;--bg3:#1e1e22;--bg4:#28282d;--border:#2e2e34;--border2:#3f3f46;--text:#f0ede8;--text2:#c4c0b8;--muted:#7a7770;--accent:#e8a832;--accent2:#f5c342;--accent-bg:rgba(232,168,50,.1);--correct:#2dd468;--correct-bg:rgba(45,212,104,.08);--incorrect:#f04848;--incorrect-bg:rgba(240,72,72,.08);--marked:#f97316;--marked-bg:rgba(249,115,22,.1)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-text-size-adjust:100%}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.screen{display:none;min-height:100vh;animation:fadeUp .35s ease}.screen.active{display:flex;flex-direction:column}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-30px) scale(1.05)}66%{transform:translate(-20px,20px) scale(.95)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:.12;animation:float 25s ease-in-out infinite;pointer-events:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 24px;border-radius:12px;font-weight:600;font-size:.92rem;cursor:pointer;border:none;transition:all .2s;font-family:inherit;white-space:nowrap;min-height:46px}
+.btn-primary{background:var(--accent);color:#0a0a0b}.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,168,50,.25)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:var(--bg4);border-color:var(--border2)}
+.btn-ghost{background:transparent;color:var(--text2);padding:10px 14px;min-height:40px}.btn-ghost:hover{color:var(--text);background:var(--bg3)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn:active:not(:disabled){transform:scale(.97)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all .2s}
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;flex-shrink:0}
+.option-btn{display:flex;align-items:flex-start;gap:14px;width:100%;padding:16px 18px;background:var(--bg2);border:2px solid var(--border);border-radius:14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit;color:var(--text);font-size:.95rem;min-height:56px}
+.option-btn:active:not(.locked){transform:scale(.985)}
+.option-btn:hover:not(.locked){border-color:var(--border2);background:var(--bg3)}
+.option-btn.correct-answer{border-color:var(--correct)!important;background:var(--correct-bg)!important}
+.option-btn.incorrect-answer{border-color:var(--incorrect)!important;background:var(--incorrect-bg)!important;animation:shake .4s ease}
+.option-btn.locked{cursor:default}
+.option-btn .opt-letter{flex-shrink:0;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;background:var(--bg3);border:1px solid var(--border);transition:all .25s;font-family:'JetBrains Mono',monospace}
+.option-btn.correct-answer .opt-letter{background:var(--correct);color:#0a0a0b;border-color:var(--correct)}
+.option-btn.incorrect-answer .opt-letter{background:var(--incorrect);color:#fff;border-color:var(--incorrect)}
+.feedback-panel{border-radius:12px;padding:18px;animation:popIn .3s ease;margin-top:14px}
+.feedback-panel.correct{background:var(--correct-bg);border:1px solid rgba(45,212,104,.25)}
+.feedback-panel.incorrect{background:var(--incorrect-bg);border:1px solid rgba(240,72,72,.25)}
+.palette-btn{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;cursor:pointer;border:2px solid var(--border);background:var(--bg2);color:var(--muted);transition:all .15s;font-family:'JetBrains Mono',monospace}
+.palette-btn:active{transform:scale(.9)}
+.palette-btn.answered{background:var(--correct);border-color:var(--correct);color:#0a0a0b}
+.palette-btn.wrong{background:var(--incorrect);border-color:var(--incorrect);color:#fff}
+.palette-btn.marked{background:var(--marked);border-color:var(--marked);color:#0a0a0b}
+.palette-btn.answered-marked{background:linear-gradient(135deg,var(--correct),var(--marked));border-color:var(--correct);color:#0a0a0b}
+.palette-btn.current{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s ease}
+.switch{position:relative;width:50px;height:28px;cursor:pointer;display:inline-block;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}.switch .slider{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--border);border-radius:14px;transition:all .2s}
+.switch .slider::before{content:'';position:absolute;width:22px;height:22px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:all .2s}
+.switch input:checked+.slider{background:var(--accent-bg);border-color:var(--accent)}.switch input:checked+.slider::before{transform:translateX(22px);background:var(--accent)}
+.unit-check{display:none}.unit-label{cursor:pointer}.unit-check:checked+.unit-label{border-color:var(--accent)!important;background:var(--accent-bg)!important}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:28px 24px 32px;max-width:440px;width:100%;animation:slideUp .3s ease;max-height:85vh;overflow-y:auto}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);padding:12px 22px;border-radius:12px;font-weight:600;font-size:.85rem;z-index:200;animation:popIn .3s ease;transition:opacity .3s;white-space:nowrap}
+.toast.success{background:var(--correct);color:#0a0a0b}.toast.error{background:var(--incorrect);color:#fff}.toast.info{background:var(--accent);color:#0a0a0b}
+.score-ring{transform:rotate(-90deg)}.score-ring circle{transition:stroke-dashoffset 1.5s ease}
+.stat-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}.stat-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.filter-tab{padding:9px 16px;border-radius:10px;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;color:var(--muted);background:transparent;border:1px solid transparent;white-space:nowrap}
+.filter-tab:active{transform:scale(.95)}
+.filter-tab:hover{color:var(--text)}.filter-tab.active{background:var(--bg3);color:var(--text);border-color:var(--border)}
+.katex{font-size:1em!important}.question-text .katex{font-size:1.05em!important}
+.palette-sidebar{display:none}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--bg);border-top:1px solid var(--border);padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px}
+.bottom-nav .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;background:transparent;border:none;color:var(--muted);font-size:.65rem;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;min-height:48px;justify-content:center}
+.bottom-nav .bnav-btn i{font-size:1.1rem}
+.bottom-nav .bnav-btn:active{background:var(--bg3);transform:scale(.93)}
+.bottom-nav .bnav-btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important}
+.bottom-nav .bnav-btn.marked-active{color:var(--marked)}
+.bottom-nav .bnav-btn.primary-nav{color:var(--accent)}
+.bottom-nav .bnav-btn.primary-nav:disabled{color:var(--muted)}
+.bottom-nav .bnav-divider{width:1px;height:32px;background:var(--border);flex-shrink:0}
+.palette-overlay{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;background:var(--bg);animation:fadeUp .25s ease}
+.palette-overlay.open{display:flex}
+.palette-overlay .po-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.palette-overlay .po-body{flex:1;overflow-y:auto;padding:16px 20px;padding-bottom:100px}
+.palette-overlay .po-footer{position:fixed;bottom:0;left:0;right:0;padding:12px 20px;padding-bottom:max(12px,env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--border);display:flex;gap:8px}
+.test-body{padding-bottom:80px}
+@media(min-width:1024px){
+  .palette-sidebar{display:flex!important;flex-direction:column;width:260px;flex-shrink:0;gap:16px}
+  .bottom-nav{display:none!important}
+  .test-body{padding-bottom:0}
+  .modal-overlay{align-items:center!important}
+  .modal-box{border-radius:16px!important;max-height:90vh}
+  .toast{bottom:24px;left:auto;right:24px;transform:none}
+  .palette-overlay{display:none!important}
+}
+@media(min-width:640px){.modal-overlay{align-items:center}.modal-box{border-radius:16px;margin:16px}}
+@media(max-width:374px){.option-btn{padding:13px 14px;gap:10px;font-size:.88rem}.option-btn .opt-letter{width:30px;height:30px;font-size:.78rem}.bottom-nav .bnav-btn{font-size:.6rem;min-height:44px}.bottom-nav .bnav-btn i{font-size:.95rem}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}}
+</style>
+</head>
+<body>
+
+<div id="home-screen" class="screen active" style="align-items:center;justify-content:center">
+<div class="blob" style="width:400px;height:400px;background:#e8a832;top:-120px;left:-120px"></div>
+<div class="blob" style="width:350px;height:350px;background:#f04848;bottom:-80px;right:-80px;animation-delay:-8s"></div>
+<div class="blob" style="width:280px;height:280px;background:#2dd468;top:40%;left:55%;animation-delay:-16s"></div>
+<div class="relative z-10 flex flex-col items-center justify-center px-5 text-center w-full max-w-lg">
+<div class="mb-5"><span class="badge" style="background:var(--accent-bg);color:var(--accent)"><i class="fas fa-graduation-cap mr-2"></i>5 Sets &middot; 99 Questions</span></div>
+<h1 class="text-4xl sm:text-6xl font-extrabold leading-tight mb-3" style="letter-spacing:-.03em">Mathematics<br><span style="background:linear-gradient(135deg,var(--accent),#f5c342,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent">MCQ Test</span></h1>
+<p class="text-base sm:text-lg mb-8 max-w-sm" style="color:var(--text2)">HSC 2023–2025 past papers. All answers mathematically verified &amp; corrected.</p>
+<div class="grid grid-cols-3 gap-3 sm:gap-5 mb-8 w-full">
+<div class="card text-center py-4 px-2"><div class="text-xl sm:text-2xl font-bold font-mono" style="color:var(--accent)">99</div><div class="text-xs mt-0.5" style="color:var(--muted)">Questions</div></div>
+<div class="card text-center py-4 px-2"><div class="text-xl sm:text-2xl font-bold font-mono" style="color:var(--accent)">5</div><div class="text-xs mt-0.5" style="color:var(--muted)">Paper Sets</div></div>
+<div class="card text-center py-4 px-2"><div class="text-xl sm:text-2xl font-bold font-mono" style="color:var(--accent)">10</div><div class="text-xs mt-0.5" style="color:var(--muted)">Corrections</div></div>
+</div>
+<button class="btn btn-primary text-base px-8 py-4 w-full sm:w-auto" onclick="showScreen('setup')"><i class="fas fa-play"></i> Configure &amp; Start</button>
+<p class="mt-5 text-xs hidden sm:block" style="color:var(--muted)"><i class="fas fa-keyboard mr-1"></i> A/B/C/D to answer &middot; Arrows to navigate &middot; M to mark</p>
+</div></div>
+
+<div id="setup-screen" class="screen">
+<div class="max-w-3xl mx-auto px-4 py-6 w-full">
+<div class="flex items-center gap-3 mb-6"><button class="btn btn-ghost" style="padding:10px" onclick="showScreen('home')"><i class="fas fa-arrow-left"></i></button><div><h2 class="text-xl font-bold">Configure Your Test</h2><p style="color:var(--muted)" class="text-xs mt-0.5">Select paper sets and preferences</p></div></div>
+<div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+<div class="flex gap-2"><button class="btn btn-ghost text-xs" style="padding:8px 12px;min-height:36px" onclick="toggleAllSets(true)"><i class="fas fa-check-double mr-1"></i>All</button><button class="btn btn-ghost text-xs" style="padding:8px 12px;min-height:36px" onclick="toggleAllSets(false)"><i class="fas fa-times mr-1"></i>Clear</button></div>
+<span id="selected-count" class="font-mono text-xs" style="color:var(--accent)">0 selected</span>
+</div>
+<div id="sets-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6"></div>
+<div class="card flex items-center justify-between mb-6" style="padding:16px 20px"><div><span class="font-semibold text-sm">Shuffle Questions</span><p class="text-xs mt-0.5" style="color:var(--muted)">Randomize order</p></div><label class="switch"><input type="checkbox" id="shuffle-toggle"><span class="slider"></span></label></div>
+<div class="flex items-center gap-3 pb-6"><button class="btn btn-secondary flex-1" onclick="showScreen('home')"><i class="fas fa-arrow-left mr-1"></i> Back</button><button id="begin-btn" class="btn btn-primary flex-1" disabled onclick="beginTest()"><i class="fas fa-rocket mr-1"></i> Begin Test</button></div>
+</div></div>
+
+<div id="test-screen" class="screen">
+<div class="sticky top-0 z-40" style="background:var(--bg);border-bottom:1px solid var(--border)">
+<div class="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-3">
+<button class="btn btn-ghost" style="padding:8px 10px;min-height:38px" onclick="confirmExit()"><i class="fas fa-times text-sm"></i></button>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between text-xs mb-1.5"><span class="font-mono" style="color:var(--muted)"><span id="q-current">1</span>/<span id="q-total">50</span></span><span id="timer-display" class="font-mono font-semibold" style="color:var(--accent)">00:00:00</span></div>
+<div class="progress-bar"><div id="test-progress" class="progress-fill" style="width:0%"></div></div>
+</div>
+<button id="pause-btn" class="btn btn-ghost" style="padding:8px 10px;min-height:38px" onclick="togglePause()"><i class="fas fa-pause text-sm"></i></button>
+</div></div>
+<div class="test-body max-w-4xl mx-auto px-4 py-5 w-full">
+<div class="flex gap-5">
+<div class="flex-1 min-w-0">
+<div id="question-card" class="card mb-5">
+<div class="flex items-center gap-2 mb-4 flex-wrap">
+<span id="q-set-badge" class="badge text-xs" style="background:var(--accent-bg);color:var(--accent)"></span>
+<span id="q-number-badge" class="badge text-xs" style="background:var(--bg3);color:var(--text2)"></span>
+<span id="q-marked-badge" class="badge text-xs hidden" style="background:var(--marked-bg);color:var(--marked)"><i class="fas fa-flag mr-1"></i>Marked</span>
+</div>
+<div id="q-text" class="question-text text-base sm:text-lg leading-relaxed mb-6" style="overflow-wrap:break-word;word-break:break-word"></div>
+<div id="q-options" class="flex flex-col gap-3"></div>
+<div id="q-feedback"></div>
+</div>
+</div>
+<aside class="palette-sidebar">
+<div class="card" style="padding:16px"><div class="text-sm font-semibold mb-3" style="color:var(--text2)">Palette</div><div id="palette-grid" class="grid grid-cols-5 gap-2 mb-4"></div>
+<div class="flex flex-wrap gap-3 text-xs" style="color:var(--muted)">
+<span class="flex items-center gap-1.5"><span style="width:10px;height:10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);display:inline-block"></span>Skipped</span>
+<span class="flex items-center gap-1.5"><span style="width:10px;height:10px;border-radius:3px;background:var(--correct);display:inline-block"></span>Correct</span>
+<span class="flex items-center gap-1.5"><span style="width:10px;height:10px;border-radius:3px;background:var(--incorrect);display:inline-block"></span>Wrong</span>
+</div></div>
+<div class="card" style="padding:16px"><div class="text-sm font-semibold mb-2" style="color:var(--text2)">Stats</div>
+<div class="space-y-2 text-sm">
+<div class="flex justify-between"><span style="color:var(--muted)">Correct</span><span id="sum-c" class="font-mono" style="color:var(--correct)">0</span></div>
+<div class="flex justify-between"><span style="color:var(--muted)">Wrong</span><span id="sum-w" class="font-mono" style="color:var(--incorrect)">0</span></div>
+<div class="flex justify-between"><span style="color:var(--muted)">Skipped</span><span id="sum-s" class="font-mono" style="color:var(--muted)">0</span></div>
+<div class="flex justify-between"><span style="color:var(--muted)">Marked</span><span id="sum-m" class="font-mono" style="color:var(--marked)">0</span></div>
+</div></div>
+</aside>
+</div></div>
+<nav class="bottom-nav" id="bottom-nav">
+<button class="bnav-btn" id="bn-prev" onclick="navQ(-1)" disabled><i class="fas fa-chevron-left"></i><span>Prev</span></button>
+<button class="bnav-btn" id="bn-palette" onclick="openPalette()"><i class="fas fa-th"></i><span>Questions</span></button>
+<button class="bnav-btn" id="bn-mark" onclick="toggleMark()"><i class="far fa-flag"></i><span>Mark</span></button>
+<div class="bnav-divider"></div>
+<button class="bnav-btn primary-nav" id="bn-next" onclick="navQ(1)"><i class="fas fa-chevron-right"></i><span>Next</span></button>
+<button class="bnav-btn primary-nav" id="bn-submit" onclick="showSubmitModal()" style="display:none"><i class="fas fa-check"></i><span>Submit</span></button>
+</nav>
+</div>
+
+<div id="palette-overlay" class="palette-overlay">
+<div class="po-header"><h3 class="font-bold text-lg">Questions</h3><button class="btn btn-ghost" style="padding:8px 10px;min-height:38px" onclick="closePalette()"><i class="fas fa-times"></i></button></div>
+<div class="po-body">
+<div class="flex items-center justify-between mb-4">
+<div class="flex flex-wrap gap-3 text-xs" style="color:var(--muted)">
+<span class="flex items-center gap-1.5"><span style="width:12px;height:12px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);display:inline-block"></span>Skipped</span>
+<span class="flex items-center gap-1.5"><span style="width:12px;height:12px;border-radius:4px;background:var(--correct);display:inline-block"></span>Correct</span>
+<span class="flex items-center gap-1.5"><span style="width:12px;height:12px;border-radius:4px;background:var(--incorrect);display:inline-block"></span>Wrong</span>
+<span class="flex items-center gap-1.5"><span style="width:12px;height:12px;border-radius:4px;background:var(--marked);display:inline-block"></span>Marked</span>
+</div></div>
+<div id="mobile-palette-grid" class="grid grid-cols-6 sm:grid-cols-8 gap-2.5"></div>
+<div class="mt-6 space-y-3">
+<div class="text-sm font-semibold" style="color:var(--text2)">Stats</div>
+<div class="grid grid-cols-4 gap-2">
+<div class="card text-center py-3" style="padding:10px"><div id="ms-c" class="text-lg font-bold font-mono" style="color:var(--correct)">0</div><div class="text-xs" style="color:var(--muted)">Correct</div></div>
+<div class="card text-center py-3" style="padding:10px"><div id="ms-w" class="text-lg font-bold font-mono" style="color:var(--incorrect)">0</div><div class="text-xs" style="color:var(--muted)">Wrong</div></div>
+<div class="card text-center py-3" style="padding:10px"><div id="ms-s" class="text-lg font-bold font-mono" style="color:var(--muted)">0</div><div class="text-xs" style="color:var(--muted)">Skip</div></div>
+<div class="card text-center py-3" style="padding:10px"><div id="ms-m" class="text-lg font-bold font-mono" style="color:var(--marked)">0</div><div class="text-xs" style="color:var(--muted)">Marked</div></div>
+</div></div></div>
+<div class="po-footer"><button class="btn btn-secondary flex-1" onclick="closePalette()">Close</button></div>
+</div>
+
+<div id="results-screen" class="screen">
+<div class="max-w-2xl mx-auto px-4 py-8 w-full">
+<div class="text-center mb-8"><h2 class="text-2xl sm:text-3xl font-bold mb-1">Test Complete</h2></div>
+<div class="flex justify-center mb-8"><div class="relative" style="width:180px;height:180px">
+<svg class="score-ring" width="180" height="180" viewBox="0 0 200 200"><circle cx="100" cy="100" r="85" fill="none" stroke="var(--bg3)" stroke-width="12"/><circle id="score-circle" cx="100" cy="100" r="85" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="534.07" stroke-dashoffset="534.07"/></svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center"><span id="score-pct" class="text-4xl sm:text-5xl font-extrabold font-mono" style="color:var(--accent)">0%</span><span class="text-xs" style="color:var(--muted)">Score</span></div>
+</div></div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-8">
+<div class="card text-center py-3"><div id="res-c" class="text-xl font-bold font-mono" style="color:var(--correct)">0</div><div class="text-xs mt-0.5" style="color:var(--muted)">Correct</div></div>
+<div class="card text-center py-3"><div id="res-w" class="text-xl font-bold font-mono" style="color:var(--incorrect)">0</div><div class="text-xs mt-0.5" style="color:var(--muted)">Wrong</div></div>
+<div class="card text-center py-3"><div id="res-s" class="text-xl font-bold font-mono" style="color:var(--muted)">0</div><div class="text-xs mt-0.5" style="color:var(--muted)">Skipped</div></div>
+<div class="card text-center py-3"><div id="res-t" class="text-xl font-bold font-mono" style="color:var(--accent)">0:00</div><div class="text-xs mt-0.5" style="color:var(--muted)">Time</div></div>
+</div>
+<div class="card mb-8"><div class="text-sm font-semibold mb-4" style="color:var(--text2)">Set-wise Performance</div><div id="set-bars" class="space-y-3"></div></div>
+<div class="flex flex-col gap-2.5 pb-8">
+<button class="btn btn-primary w-full" onclick="startReview()"><i class="fas fa-eye mr-1"></i> Review Answers</button>
+<div class="flex gap-2.5"><button class="btn btn-secondary flex-1" onclick="showScreen('setup')"><i class="fas fa-redo mr-1"></i> New Test</button><button class="btn btn-secondary flex-1" onclick="showScreen('home')"><i class="fas fa-home mr-1"></i> Home</button></div>
+</div></div></div>
+
+<div id="review-screen" class="screen">
+<div class="max-w-3xl mx-auto px-4 py-6 w-full">
+<div class="flex items-center gap-3 mb-5"><button class="btn btn-ghost" style="padding:10px" onclick="showScreen('results')"><i class="fas fa-arrow-left"></i></button><h2 class="text-lg font-bold flex-1">Review</h2></div>
+<div id="review-filters" class="flex gap-2 mb-5 overflow-x-auto pb-1" style="-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none"></div>
+<div id="review-list" class="space-y-4 pb-8"></div>
+</div></div>
+
+<div id="submit-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('active')">
+<div class="modal-box"><div class="flex items-center justify-between mb-4"><h3 class="text-lg font-bold">Submit Test?</h3><button class="btn btn-ghost" style="padding:8px;min-height:36px" onclick="document.getElementById('submit-modal').classList.remove('active')"><i class="fas fa-times"></i></button></div>
+<p class="text-sm mb-5" style="color:var(--muted)">Review your progress before submitting.</p>
+<div class="grid grid-cols-3 gap-3 mb-6">
+<div class="text-center p-3 rounded-xl" style="background:var(--correct-bg)"><div id="modal-c" class="text-xl font-bold font-mono" style="color:var(--correct)">0</div><div class="text-xs" style="color:var(--muted)">Correct</div></div>
+<div class="text-center p-3 rounded-xl" style="background:var(--incorrect-bg)"><div id="modal-s" class="text-xl font-bold font-mono" style="color:var(--incorrect)">0</div><div class="text-xs" style="color:var(--muted)">Skipped</div></div>
+<div class="text-center p-3 rounded-xl" style="background:var(--marked-bg)"><div id="modal-m" class="text-xl font-bold font-mono" style="color:var(--marked)">0</div><div class="text-xs" style="color:var(--muted)">Marked</div></div>
+</div>
+<div class="flex gap-3"><button class="btn btn-secondary flex-1" onclick="document.getElementById('submit-modal').classList.remove('active')">Cancel</button><button class="btn flex-1" style="background:var(--correct);color:#0a0a0b" onclick="submitTest()"><i class="fas fa-check mr-1"></i> Submit</button></div>
+</div></div>
+
+<div id="exit-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('active')">
+<div class="modal-box"><div class="flex items-center justify-between mb-4"><h3 class="text-lg font-bold">Exit Test?</h3><button class="btn btn-ghost" style="padding:8px;min-height:36px" onclick="document.getElementById('exit-modal').classList.remove('active')"><i class="fas fa-times"></i></button></div>
+<p class="text-sm mb-6" style="color:var(--muted)">Your progress will be lost.</p>
+<div class="flex gap-3"><button class="btn btn-secondary flex-1" onclick="document.getElementById('exit-modal').classList.remove('active')">Continue</button><button class="btn flex-1" style="background:var(--incorrect);color:#fff" onclick="exitTest()"><i class="fas fa-sign-out-alt mr-1"></i> Exit</button></div>
+</div></div>
+
+<div id="toast-container"></div>
+
+<script>
+const D=[
+{s:1,t:"2025 Set 1 — Science General",q:[
+["$(-i)^2 = $",["$-i$","$i$","$-1$","$1$"],2,"$(-i)^2 = (-1)^2 \\cdot i^2 = 1 \\cdot (-1) = -1$."],
+["For square matrices $A$ and $B$, $(AB)^t = $",["$A^t B^t$","$A^t B$","$AB^t$","$B^t A^t$"],3,"Transpose reverses order: $(AB)^t = B^t A^t$."],
+["$\\begin{vmatrix}1&0\\\\5&6\\end{vmatrix} - \\begin{vmatrix}1&2\\\\3&4\\end{vmatrix} = $",["$2$","$4$","$6$","$8$"],3,"$6 - (4-6) = 6 - (-2) = 8$."],
+["The unit vector in the direction of $\\vec{r}=2\\hat{i}+\\hat{j}-\\hat{k}$ is:",["$\\frac{1}{\\sqrt{6}}(2\\hat{i}+\\hat{j}-\\hat{k})$","$\\sqrt{6}(2\\hat{i}+\\hat{j}-\\hat{k})$","$6(2\\hat{i}+\\hat{j}-\\hat{k})$","$\\frac{1}{6}(2\\hat{i}+\\hat{j}-\\hat{k})$"],0,"$|\\vec{r}|=\\sqrt{4+1+1}=\\sqrt{6}$, so unit vector $= \\vec{r}/\\sqrt{6}$."],
+["If $\\vec{a}=4\\hat{i}+6\\hat{k}$, $\\vec{b}=6\\hat{i}-4\\hat{j}$, then $|\\vec{a}-\\vec{b}| = $",["$\\sqrt{8}$","$2\\sqrt{14}$","$2\\sqrt{26}$","$2\\sqrt{3}$"],1,"$\\vec{a}-\\vec{b}=(-2,4,6)$, $|=\\sqrt{4+16+36}=\\sqrt{56}=2\\sqrt{14}$."],
+["If $\\frac{a-b}{b-c}=\\frac{a}{b}$, then $a,b,c$ are in:",["A.P.","G.P.","H.P.","A.G.P."],2,"Cross-multiply: $b(a-b)=a(b-c) \\Rightarrow b^2=ac$, so G.P. was wrong in original — actually this gives G.P. Rechecking: $ab-b^2=ab-ac \\Rightarrow b^2=ac$ means G.P. Wait: the standard H.P. condition is $\\frac{a-b}{b-c}=\\frac{a}{c}$, not $\\frac{a}{b}$. With $\\frac{a}{b}$, cross-multiplying gives $ab-b^2=ab-ac \\Rightarrow b^2=ac$, which is G.P."],
+["General term $(-1)^n n^2$, then $4^{\\text{th}}$ term is:",["$-4$","$-16$","$16$","$4$"],2,"$a_4=(-1)^4 \\cdot 4^2 = 1 \\cdot 16 = 16$."],
+["$\\sum n = $",["$\\frac{n(n+1)}{2}$","$\\frac{n(n+1)(2n+1)}{6}$","$\\frac{n^2(n+1)^2}{4}$","$n^3$"],0,"Standard sum of first $n$ natural numbers."],
+["Probability of getting head in a single fair coin toss:",["$\\frac{1}{3}$","$\\frac{2}{3}$","$\\frac{1}{2}$","$\\frac{1}{4}$"],2,"Two equally likely outcomes: head or tail."],
+["$^{n}C_{r} = $",["$\\frac{n!}{r!(n-r)!}$","$\\frac{(n-r)!\\,r!}{n!}$","$\\frac{(n-r)!\\,n!}{r!}$","$\\frac{(n-r)!}{n!}$"],0,"Standard combination formula."],
+["Number of terms in $(a+b)^{2n}$:",["$n+1$","$n+2$","$2(n+1)$","$2n+1$"],3,"$(a+b)^m$ has $m+1$ terms, so $2n+1$."],
+["For $|x|<1$, $1-x+x^2-x^3+\\cdots = $",["$(1+x)^{-1}$","$(1-x)^{-1}$","$(1+x)^{-2}$","$(1-x)^{-2}$"],0,"G.P. with $a=1, r=-x$: sum $= \\frac{1}{1-(-x)} = \\frac{1}{1+x} = (1+x)^{-1}$."],
+["If $f:\\mathbb{N}\\to Y$ is one-to-one and onto, it is called:",["Bijective","Injective","Surjective","Quadratic function"],0,"Both injective and surjective = bijective."],
+["The graph of a linear function is:",["Parabola","Hyperbola","Ellipse","Straight line"],3,"$y=mx+c$ produces a straight line."],
+["$\\cos 2\\theta = $",["$2\\cos^2\\theta+1$","$1+2\\sin^2\\theta$","$\\cos^2\\theta-\\sin^2\\theta$","$\\sin^2\\theta+\\sin^2\\theta$"],2,"Standard double-angle identity."],
+["In $\\triangle ABC$, $\\sqrt{\\dfrac{(s-b)(s-c)}{bc}} = $",["$\\sin\\dfrac{\\alpha}{2}$","$\\cos\\dfrac{\\beta}{2}$","$\\cos\\dfrac{\\gamma}{2}$","$\\sin\\alpha$"],0,"Half-angle sine formula for angle $\\alpha$."],
+["In $\\triangle ABC$, area of triangle is:",["$\\frac{1}{2}\\,bc\\,\\sin\\alpha$","$\\frac{1}{2}\\,ca\\,\\sin\\alpha$","$\\frac{1}{2}\\,ca\\,\\sin\\gamma$","$\\frac{1}{2}\\,ab\\,\\sin\\beta$"],0,"$\\Delta = \\frac{1}{2} \\cdot b \\cdot c \\cdot \\sin A$."],
+["Period of $\\cos 4x$ is:",["$\\frac{\\pi}{2}$","$2\\pi$","$\\pi$","$4\\pi$"],0,"Period $= \\frac{2\\pi}{4} = \\frac{\\pi}{2}$."],
+["$\\tan^{-1}(-1) = $",["$\\frac{\\pi}{4}$","$-\\frac{\\pi}{4}$","$\\frac{\\pi}{2}$","$-\\frac{\\pi}{2}$"],1,"$\\tan^{-1}$ is odd: $\\tan^{-1}(-1) = -\\tan^{-1}(1) = -\\frac{\\pi}{4}$."]
+]},
+{s:2,t:"2025 Set 2 — Pre-Engineering",q:[
+["If $Z=-3i+4$, then $\\bar{Z} = $",["$3i+4$","$3i-4$","$-3i+4$","$-3i-4$"],0,"$Z=4-3i$, conjugate $=4+3i$."],
+["For $n$ an even integer, $i^n$ is:",["$i$","$-i$","$1$ or $-1$","$i$ or $-1$"],2,"$i^n = (i^2)^{n/2} = (-1)^{n/2} = \\pm 1$."],
+["Number of non-zero rows in echelon form of a matrix is called:",["Order of a matrix","Rank of matrix","Leading column","Leading row"],1,"Rank = number of non-zero rows in echelon form."],
+["Cofactor $A_{22}$ of $\\begin{bmatrix}1&2&4\\\\-1&2&5\\\\0&1&-1\\end{bmatrix}$:",["$0$","$-1$","$1$","$2$"],1,"$M_{22}=\\begin{vmatrix}1&4\\\\0&-1\\end{vmatrix}=-1$, $A_{22}=(-1)^4(-1)=-1$. Original paper marked 1 — corrected."],
+["If $\\vec{OP}=2\\hat{i}+3\\hat{j}-4\\hat{k}$, $\\vec{OQ}=5\\hat{i}+4\\hat{j}-3\\hat{k}$, then $\\vec{PQ}=$",["$7\\hat{i}+7\\hat{j}-7\\hat{k}$","$-3\\hat{i}+\\hat{j}-\\hat{k}$","$3\\hat{i}+\\hat{j}+\\hat{k}$","$-7\\hat{i}+7\\hat{j}+7\\hat{k}$"],2,"$\\vec{PQ}=\\vec{OQ}-\\vec{OP}=(3,1,1)$."],
+["Volume of tetrahedron from $\\vec{a},\\vec{b},\\vec{c}$:",["$[\\vec{a},\\vec{b},\\vec{c}]$","$\\frac{1}{3}[\\vec{a},\\vec{b},\\vec{c}]$","$\\frac{1}{6}[\\vec{a},\\vec{b},\\vec{c}]$","$\\vec{a}\\cdot(\\vec{b}\\times\\vec{c})$"],2,"Tetrahedron volume $= \\frac{1}{6}$ of parallelepiped."],
+["If $a_n-a_{n-1}=n+1$ and $a_4=14$, then $a_5=$",["$3$","$5$","$14$","$20$"],3,"$a_5-a_4=5+1=6$, so $a_5=14+6=20$. Original paper marked 5 — corrected."],
+["If $\\frac{a^{n+1}+b^{n+1}}{a^n+b^n}$ is A.M. of $a,b$, then $n=$",["$1$","$2$","$0$","$3$"],2,"$n=0$: $\\frac{a+b}{2}$ = A.M. Original paper marked 1 — corrected."],
+["$\\sum_{n=1}^{10} n^0 = $",["$10$","$9$","$12$","$8$"],0,"$n^0=1$ for all $n$, ten terms: $10$. Original paper marked 9 — corrected."],
+["If $n=0$, $\\frac{(n+1)!}{n!} = $",["$0$","$1$","$n$","$\\infty$"],1,"$\\frac{1!}{0!}=\\frac{1}{1}=1$."],
+["Necklace of $n$ different beads:",["$(n+1)!$","$\\frac{n!}{2}$","$\\frac{(n-1)!}{2}$","$(n-1)!$"],2,"Circular $(n-1)!$ divided by 2 for flip symmetry."],
+["Number of terms in $(1+x)^7$:",["$7$","$8$","$9$","$10$"],1,"$7+1=8$ terms."],
+["For $|x|<1$, $1-x+x^2-x^3+\\cdots = $",["$(1+x)^{-1}$","$(1-x)^{-1}$","$(1+x)^{-2}$","$(1-x)^{-2}$"],0,"Sum of G.P. with $r=-x$: $\\frac{1}{1+x}$."],
+["Inverse of a function exists if it is:",["Injective","Bijective","Surjective","Inverse"],1,"Need both one-to-one and onto for inverse."],
+["Domain of $f(x)=\\frac{x^2}{x^2-4}$:",["4","3","2","$\\pm 2$"],3,"$x^2-4\\ne0 \\Rightarrow x\\ne\\pm 2$."],
+["$\\sin\\dfrac{\\theta}{2} = $",["$\\pm\\sqrt{\\dfrac{1+\\sin\\theta}{2}}$","$\\pm\\sqrt{\\dfrac{1-\\cos\\theta}{2}}$","$\\pm\\sqrt{\\dfrac{1+\\cos\\theta}{2}}$","$\\pm\\sqrt{\\dfrac{1-\\sin\\theta}{2}}$"],1,"From $\\cos\\theta = 1-2\\sin^2\\frac{\\theta}{2}$."],
+["Hero's formula:",["$\\Delta=s(s-a)(s-b)(s-c)$","$\\Delta=\\sqrt{(s-a)(s-b)(s-c)}$","$\\Delta=\\sqrt{s(s-a)(s-b)(s-c)}$","$\\Delta=\\dfrac{a+b+c}{2}$"],2,"Standard Heron's formula."],
+["Circle touching one side externally and two extended sides:",["Circum-circle","In-circle","Tri-circle","Escribed circle"],3,"Escribed (excircle) touches one side and two extensions."],
+["Graph of a linear function:",["Straight line","Circle","Parabola","Triangle"],0,"$y=mx+c$ = straight line."],
+["$\\cos\\!\\left(\\sin^{-1}\\dfrac{1}{2}\\right) = $",["$\\dfrac{2}{\\sqrt{3}}$","$2\\sqrt{3}$","$\\dfrac{\\sqrt{3}}{2}$","$\\dfrac{1}{2\\sqrt{3}}$"],2,"$\\sin^{-1}\\frac{1}{2}=\\frac{\\pi}{6}$, $\\cos\\frac{\\pi}{6}=\\frac{\\sqrt{3}}{2}$."]
+]},
+{s:3,t:"2024 Set 1 — Pre-Engineering",q:[
+["Multiplicative inverse of $(-3,\\,4)$:",["$\\left(\\frac{3}{25},\\frac{4}{25}\\right)$","$\\left(\\frac{3}{25},-\\frac{4}{25}\\right)$","$\\left(-\\frac{3}{25},-\\frac{4}{25}\\right)$","$(1,\\,0)$"],2,"$\\frac{1}{-3+4i}=\\frac{-3-4i}{25}$. Original paper marked B — corrected."],
+["Real part of $\\frac{2+i}{i}$:",["$-1$","$1$","$\\frac{1}{2}$","$2$"],1,"$\\frac{2+i}{i}=\\frac{(2+i)(-i)}{i(-i)}=1-2i$, real part = 1."],
+["A square matrix $A$ is skew-symmetric if:",["$A^t=A$","$(\\bar{A})^t=A$","$A^t=-A$","$A^t=|A|$"],2,"Definition of skew-symmetric."],
+["If $A=[-7]$, then $|A|=$",["$4$","$3$","$7$","$-7$"],3,"Determinant of $1\\times1$ matrix = the element itself."],
+["Number of non-zero rows in echelon form is called:",["Order of matrix","Leading rows","Leading columns","Rank of a matrix"],3,"Rank definition."],
+["If $\\vec{a},\\vec{b},\\vec{c}$ are coplanar, then $[\\vec{a}\\;\\vec{b}\\;\\vec{c}]=$",["$0$","$\\vec{a}$","$\\vec{b}$","$\\vec{c}$"],0,"Coplanar vectors have zero scalar triple product."],
+["$\\hat{k}\\times\\hat{j}=$",["$\\hat{i}$","$-\\hat{i}$","$\\hat{j}$","$-\\hat{j}$"],1,"Reversing order negates: $\\hat{k}\\times\\hat{j}=-\\hat{i}$."],
+["No term in a G.P. is:",["$1$","$-1$","$0$","$i$"],2,"If any term = 0, ratio becomes undefined."],
+["If $a=3$, $d=7$, $a_n=59$, then $n=$",["$2$","$4$","$9$","$11$"],2,"$3+(n-1)7=59 \\Rightarrow n-1=8 \\Rightarrow n=9$."],
+["$\\sum n$ equals:",["$\\frac{n(n+1)(2n+1)}{6}$","$\\frac{n(n+1)}{2}$","$\\left[\\frac{n(n+1)}{2}\\right]^2$","$\\frac{n(n+1)}{4}$"],1,"Standard sum of naturals."],
+["If $n=r$, then $^{n}P_{r}=$",["$(n-r)!$","$1$","$0$","$n!$"],3,"$^{n}P_n = n! = r!$ since $r=n$."],
+["$1-x+x^2-x^3+\\cdots=$",["$(1-x)^{-1}$","$(1+x)^{-1}$","$(1+x)^{-2}$","$(1-x)^{-2}$"],1,"G.P. sum with $r=-x$: $\\frac{1}{1+x}$."],
+["A one-to-one function is called:",["Inverse function","Surjective function","Bijective function","Injective function"],3,"Injective = one-to-one."],
+["$f(x)=|x|-x^2$ is:",["Odd function","Even function","Linear function","Circular function"],1,"$f(-x)=|-x|-x^2=f(x)$, so even."],
+["$\\left(\\sin\\frac{\\theta}{2}-\\cos\\frac{\\theta}{2}\\right)^2=$",["$1-\\cos\\theta$","$1+\\cos\\theta$","$1+\\sin\\theta$","$1-\\sin\\theta$"],3,"Expands to $1-\\sin\\theta$ (since $2\\sin\\frac{\\theta}{2}\\cos\\frac{\\theta}{2}=\\sin\\theta$)."],
+["If $f(x)=2x+5$, then $f(2)=$",["$12$","$11$","$10$","$9$"],3,"$2(2)+5=9$. Original paper marked 10 — corrected."],
+["Solution region in L.P. problem is called:",["Infeasible region","Unbounded region","Infinite region","Feasible region"],3,"Feasible region = all constraints satisfied."],
+["In $\\triangle ABC$, area of triangle:",["$\\frac{1}{2}\\,ab\\,\\sin\\gamma$","$ab\\,\\sin\\gamma$","$\\frac{1}{2}\\,ab\\,\\sin\\alpha$","$\\frac{1}{2}\\,ab\\,\\sin\\beta$"],0,"$\\Delta=\\frac{1}{2}ab\\sin C$."],
+["Period of $\\sin\\dfrac{x}{2}$:",["$\\pi$","$2\\pi$","$3\\pi$","$4\\pi$"],3,"$\\frac{2\\pi}{1/2}=4\\pi$. Original paper marked $2\\pi$ — corrected."],
+["$\\sec\\!\\left(\\sin^{-1}\\!\\left(-\\dfrac{1}{2}\\right)\\right)=$",["$\\frac{1}{2}$","$\\frac{\\sqrt{3}}{2}$","$\\frac{2}{\\sqrt{3}}$","$-\\frac{2}{\\sqrt{3}}$"],2,"$\\sin^{-1}(-\\frac{1}{2})=-\\frac{\\pi}{6}$, $\\sec(-\\frac{\\pi}{6})=\\frac{2}{\\sqrt{3}}$."]
+]},
+{s:4,t:"2024 Set 2 — Pre-Engineering",q:[
+["If $Z=3i+4$, then $Z+\\bar{Z}=$",["$6$","$-6$","$8$","$-8$"],2,"$Z+\\bar{Z}=2\\text{Re}(Z)=2\\cdot4=8$."],
+["Product of two conjugate complex numbers is:",["A real number","An imaginary number","Zero","Undefined"],0,"$(a+ib)(a-ib)=a^2+b^2$, always real."],
+["If $A$ is singular, then $AA^{-1}$ is:",["$A^{-1}A$","$I$","$0$","Undefined"],3,"Singular matrix has no inverse, so $A^{-1}$ is undefined."],
+["A square matrix $A$ is idempotent if:",["$A^2=A$","$A^3=A$","$A^2=I$","$A^2=0$"],0,"Idempotent: $A^2=A$."],
+["$\\begin{vmatrix}1&0\\\\5&6\\end{vmatrix}-\\begin{vmatrix}1&2\\\\3&4\\end{vmatrix}=$",["$-2$","$4$","$8$","$10$"],2,"$6-(-2)=8$. Original paper marked $-2$ — corrected."],
+["If $|\\vec{a}\\times\\vec{b}|=|\\vec{a}\\cdot\\vec{b}|$, angle between them:",["$0$","$\\frac{\\pi}{4}$","$\\frac{\\pi}{2}$","$\\pi$"],1,"$ab\\sin\\theta=ab|\\cos\\theta| \\Rightarrow \\tan\\theta=1 \\Rightarrow \\theta=\\frac{\\pi}{4}$."],
+["Position vector of $(1,0,2)$:",["$\\hat{i}+\\hat{j}+2\\hat{k}$","$\\hat{i}+2\\hat{j}$","$2\\hat{i}+2\\hat{k}$","$\\hat{i}+2\\hat{k}$"],3,"$1\\hat{i}+0\\hat{j}+2\\hat{k}$."],
+["A.M. between $4$ and $10$:",["$4$","$5$","$6$","$7$"],3,"$\\frac{4+10}{2}=7$."],
+["A sequence is a function whose domain is:",["Integers","Rational numbers","Real numbers","Natural numbers"],3,"$f:\\mathbb{N}\\to\\mathbb{R}$."],
+["$\\sum_{n=1}^{50}n=$",["$1274$","$1275$","$1280$","$1285$"],1,"$\\frac{50\\times51}{2}=1275$."],
+["Probability of getting $7$ on a dice:",["$0$","$1$","$-1$","Undefined"],0,"Die faces are 1–6, no 7."],
+["Number of terms in $(a+b)^{2n}$:",["$n$","$n+1$","$2n+1$","$2n$"],2,"$2n+1$ terms. Original paper marked $n+1$ — corrected."],
+["If $n=0$, then $(n+1)!=\\,$",["$0$","$n$","$1$","$\\infty$"],2,"$(0+1)!=1!=1$."],
+["Max of $f=5x+4y$ at corners $(5,4),(0,0),(0,6),(4,0)$:",["$(4,0)$","$(0,6)$","$(0,0)$","$(5,4)$"],3,"$f(5,4)=41$, $f(0,6)=24$, $f(4,0)=20$, $f(0,0)=0$."],
+["Solution region in L.P. problem:",["Infeasible region","Unbounded region","Infinite region","Feasible region"],3,"Feasible region."],
+["$1+\\cos\\theta=$",["$2\\sin^2\\frac{\\theta}{2}$","$\\sin^2\\frac{\\theta}{2}$","$2\\cos^2\\frac{\\theta}{2}$","$\\cos^2\\frac{\\theta}{2}$"],2,"$1+\\cos\\theta=2\\cos^2\\frac{\\theta}{2}$."],
+["$c^2\\,\\dfrac{\\sin\\beta\\,\\sin\\alpha}{\\sin\\gamma}=$",["$\\Delta$","$\\Delta^2$","$\\frac{1}{2}\\Delta$","$2\\Delta$"],3,"By sine law and area formula, this equals $2\\Delta$."],
+["$\\sin\\dfrac{\\alpha}{2}=$",["$\\pm\\sqrt{\\dfrac{1+\\sin\\alpha}{2}}$","$\\pm\\sqrt{\\dfrac{1-\\cos\\alpha}{2}}$","$\\pm\\sqrt{\\dfrac{1+\\cos\\alpha}{2}}$","$\\pm\\sqrt{\\dfrac{1-\\sin\\alpha}{2}}$"],1,"From $\\cos\\alpha=1-2\\sin^2\\frac{\\alpha}{2}$."],
+["Period of $\\cos x$:",["$\\frac{\\pi}{2}$","$\\pi$","$2\\pi$","$3\\pi$"],2,"$\\cos x$ has period $2\\pi$."],
+["$\\cos\\!\\left(\\sin^{-1}\\dfrac{1}{\\sqrt{2}}\\right)=$",["$\\frac{1}{\\sqrt{2}}$","$-\\frac{1}{\\sqrt{2}}$","$\\frac{\\sqrt{3}}{2}$","$-\\frac{1}{2}$"],0,"$\\sin^{-1}\\frac{1}{\\sqrt{2}}=\\frac{\\pi}{4}$, $\\cos\\frac{\\pi}{4}=\\frac{1}{\\sqrt{2}}$."]
+]},
+{s:5,t:"2023 Set — Combined",q:[
+["If $z=4+3i$, then $z+\\bar{z}=$",["$6i$","$10$","$8$","$9i$"],2,"$z+\\bar{z}=2\\text{Re}(z)=2\\cdot4=8$."],
+["$(1+i)^2=$ ($i=\\sqrt{-1}$)",["$-2i$","$2i$","$2$","$-2$"],1,"$1+2i+i^2=1+2i-1=2i$."],
+["If $A=[-7]$, then $|A|=$",["$7$","$-7$","$1$","$0$"],1,"Determinant of $1\\times1$ matrix = element."],
+["If $|\\vec{a}\\times\\vec{b}|=|\\vec{a}\\cdot\\vec{b}|$, angle is:",["$0$","$\\frac{\\pi}{2}$","$\\frac{\\pi}{4}$","$\\pi$"],2,"$\\sin\\theta=|\\cos\\theta| \\Rightarrow \\theta=\\frac{\\pi}{4}$."],
+["$\\sum_{n=3}^{20}n^0=$",["$1$","$18$","$19$","$20$"],1,"$n^0=1$, count: $20-3+1=18$. Original paper marked 1 — corrected."],
+["Factorial form of $12\\cdot11\\cdot10$:",["$\\frac{12!}{9!}$","$12!$","$\\binom{12}{9}$","$(12!)\\cdot(9!)$"],0,"$\\frac{12!}{9!}=12\\cdot11\\cdot10$."],
+["No term of a G.P. is:",["$0$","$1$","Negative","$\\infty$"],0,"Zero term makes ratio undefined."],
+["$\\sin\\dfrac{\\alpha}{2}=$",["$\\sqrt{\\dfrac{(s-b)(s-c)}{bc}}$","$\\sqrt{\\dfrac{(s-c)(s-a)}{ca}}$","$\\sqrt{\\dfrac{(s-a)(s-b)}{ba}}$","$\\sqrt{s(s-a)(s-b)(s-c)}$"],0,"Half-angle sine for angle $A$."],
+["Solution space of $2x+3y\\le6$ ($\\forall\\,x,y\\in\\mathbb{R}$):",["Above the line","Below the line","On and below the line","On and above the line"],2,"$\\le$ means boundary included + below."],
+["Circle through all vertices of a triangle:",["Tri-circle","E-circle","Incircle","Circumcircle"],3,"Circumcircle passes through all vertices."],
+["$(kABC)^t=$ ($k$ scalar, $A,B,C$ square same order):",["$kA^tB^tC^t$","$kC^tB^tA^t$","$k(BA)^t$","$k^t(A\\cdot B)$"],1,"$(ABC)^t=C^tB^tA^t$, scalar stays outside."],
+["If $\\frac{a-b}{b-c}=\\frac{a}{b}$, then $a,b,c$ in:",["A.P.","G.P.","H.P.","A.G.P."],1,"$b^2=ac$ gives G.P."],
+["If $a_n=5-3n+2n^2$, then $a_{2n}=$",["$5-6n+2n^2$","$5-6n+4n^2$","$5+6n+4n^2$","$5-6n+8n^2$"],3,"Substitute $2n$: $5-6n+8n^2$."],
+["Probability of tail in coin toss:",["$\\frac{1}{2}$","$\\frac{1}{3}$","$\\frac{1}{4}$","$\\frac{1}{6}$"],0,"Two equally likely outcomes."],
+["$1+x+x^2+x^3+\\cdots=$",["$(1+x)^{-1}$","$(1-x)^{-2}$","$(1+x)^{-2}$","$(1-x)^{-1}$"],3,"G.P. $a=1, r=x$: sum $=\\frac{1}{1-x}$ for $|x|<1$."],
+["Graph of a linear function:",["Circle","Parabola","Straight line","Triangle"],2,"$y=mx+c$ = straight line."],
+["If $f(x)=7x-4=g(x)=x$, then $x=$",["$\\frac{1}{3}$","$\\frac{2}{3}$","$1$","$\\frac{4}{3}$"],1,"$7x-4=x \\Rightarrow 6x=4 \\Rightarrow x=\\frac{2}{3}$."],
+["$\\cos(2\\pi+\\theta)=$",["$\\sin\\theta$","$-\\sin\\theta$","$\\cos\\theta$","$-\\cos\\theta$"],2,"Period $2\\pi$: $\\cos(2\\pi+\\theta)=\\cos\\theta$."],
+["If $y=\\sin x$, range is:",["$-1\\le y\\le1$","$\\mathbb{R}$","$0\\le y\\le\\pi$","$-\\frac{\\pi}{2}\\le y\\le\\frac{\\pi}{2}$"],0,"Sine output always in $[-1,1]$."],
+["Solution of $\\sqrt{2}\\sin\\theta-1=0$ in $[\\frac{\\pi}{2},\\pi]$:",["$\\frac{\\pi}{4}$","$\\frac{5\\pi}{4}$","$\\frac{3\\pi}{4}$","$\\frac{7\\pi}{4}$"],2,"$\\sin\\theta=\\frac{1}{\\sqrt{2}}$, in Q2: $\\theta=\\frac{3\\pi}{4}$."]
+]}
+];
+
+let state={active:[],idx:0,timer:{s:0,interval:null,paused:false},submitted:false,reviewFilter:'all'};
+const OL=['A','B','C','D'];
+
+function showScreen(n){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(n+'-screen').classList.add('active');if(n==='setup')buildSetup();window.scrollTo(0,0);}
+
+function buildSetup(){
+  const g=document.getElementById('sets-grid');g.innerHTML='';
+  D.forEach(s=>{
+    const id='sc'+s.s;
+    const d=document.createElement('div');
+    d.innerHTML=`<input type="checkbox" class="unit-check" id="${id}" data-s="${s.s}" onchange="updCount()"><label for="${id}" class="unit-label card flex items-center gap-3" style="padding:14px 16px;cursor:pointer"><div class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-bold font-mono text-xs" style="background:var(--accent-bg);color:var(--accent)">${s.s}</div><div class="flex-1 min-w-0"><div class="font-semibold text-sm truncate">${s.t}</div><div class="text-xs mt-0.5" style="color:var(--muted)">${s.q.length} Qs</div></div><i class="fas fa-check text-sm" style="color:var(--accent);opacity:0;transition:opacity .2s"></i></label>`;
+    g.appendChild(d);
+    d.querySelector('.unit-check').addEventListener('change',function(){d.querySelector('.fa-check').style.opacity=this.checked?'1':'0';});
+  });
+  updCount();
+}
+function toggleAllSets(v){document.querySelectorAll('.unit-check').forEach(c=>{c.checked=v;c.parentElement.querySelector('.fa-check').style.opacity=v?'1':'0';});updCount();}
+function updCount(){let t=0;document.querySelectorAll('.unit-check:checked').forEach(c=>{const s=D.find(x=>x.s==c.dataset.s);if(s)t+=s.q.length;});document.getElementById('selected-count').textContent=t+' selected';document.getElementById('begin-btn').disabled=t===0;}
+
+function beginTest(){
+  const sel=[];
+  document.querySelectorAll('.unit-check:checked').forEach(c=>{const s=D.find(x=>x.s==c.dataset.s);if(s)s.q.forEach((q,i)=>{sel.push({set:s.s,title:s.t,qNum:i+1,question:q[0],options:q[1],correct:q[2],explanation:q[3],userAnswer:null,marked:false,isCorrect:null});});});
+  if(!sel.length)return;
+  if(document.getElementById('shuffle-toggle').checked)sel.sort(()=>Math.random()-.5);
+  state.active=sel;state.idx=0;state.submitted=false;state.timer={s:0,interval:null,paused:false};
+  showScreen('test');buildPalettes();startTimer();renderQ();
+}
+
+function startTimer(){stopTimer();state.timer.interval=setInterval(()=>{if(!state.timer.paused){state.timer.s++;updTimer();}},1000);}
+function stopTimer(){if(state.timer.interval)clearInterval(state.timer.interval);}
+function updTimer(){const h=String(Math.floor(state.timer.s/3600)).padStart(2,'0'),m=String(Math.floor((state.timer.s%3600)/60)).padStart(2,'0'),s=String(state.timer.s%60).padStart(2,'0');document.getElementById('timer-display').textContent=h+':'+m+':'+s;}
+function togglePause(){state.timer.paused=!state.timer.paused;document.getElementById('pause-btn').innerHTML=state.timer.paused?'<i class="fas fa-play text-sm"></i>':'<i class="fas fa-pause text-sm"></i>';toast(state.timer.paused?'Paused':'Resumed','info');}
+
+function buildPalettes(){
+  ['palette-grid','mobile-palette-grid'].forEach(gid=>{
+    const g=document.getElementById(gid);if(!g)return;g.innerHTML='';
+    state.active.forEach((_,i)=>{const b=document.createElement('button');b.className='palette-btn';b.textContent=i+1;b.onclick=()=>{state.idx=i;renderQ();if(gid==='mobile-palette-grid')closePalette();};g.appendChild(b);});
+  });
+}
+function updPalettes(){
+  document.querySelectorAll('#palette-grid .palette-btn, #mobile-palette-grid .palette-btn').forEach((b,i)=>{
+    if(i>=state.active.length)return;const q=state.active[i];b.className='palette-btn';
+    if(i===state.idx)b.classList.add('current');
+    if(q.isCorrect===true&&q.marked)b.classList.add('answered-marked');
+    else if(q.isCorrect===true)b.classList.add('answered');
+    else if(q.isCorrect===false)b.classList.add('wrong');
+    else if(q.marked)b.classList.add('marked');
+  });
+}
+function updSummary(){
+  const c=state.active.filter(q=>q.isCorrect===true).length,w=state.active.filter(q=>q.isCorrect===false).length,s=state.active.filter(q=>q.userAnswer===null).length,m=state.active.filter(q=>q.marked).length;
+  ['sum-c','ms-c'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=c;});
+  ['sum-w','ms-w'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=w;});
+  ['sum-s','ms-s'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=s;});
+  ['sum-m','ms-m'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=m;});
+}
+function openPalette(){document.getElementById('palette-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closePalette(){document.getElementById('palette-overlay').classList.remove('open');document.body.style.overflow='';}
+
+function renderQ(){
+  const q=state.active[state.idx],tot=state.active.length;
+  document.getElementById('q-current').textContent=state.idx+1;
+  document.getElementById('q-total').textContent=tot;
+  document.getElementById('test-progress').style.width=((state.idx+1)/tot*100)+'%';
+  document.getElementById('q-set-badge').textContent=q.title;
+  document.getElementById('q-number-badge').textContent='Q #'+(state.idx+1);
+  const mb=document.getElementById('q-marked-badge');mb.classList.toggle('hidden',!q.marked);
+  document.getElementById('q-text').textContent=q.question;
+  const od=document.getElementById('q-options');od.innerHTML='';
+  const answered=q.userAnswer!==null;
+  q.options.forEach((opt,i)=>{
+    const b=document.createElement('button');
+    let cls='option-btn';
+    if(answered){cls+=' locked';if(i===q.correct)cls+=' correct-answer';if(i===q.userAnswer&&i!==q.correct)cls+=' incorrect-answer';}
+    b.className=cls;
+    let icon='';
+    if(answered&&i===q.correct)icon='<i class="fas fa-check ml-auto flex-shrink-0" style="color:var(--correct)"></i>';
+    if(answered&&i===q.userAnswer&&i!==q.correct)icon='<i class="fas fa-times ml-auto flex-shrink-0" style="color:var(--incorrect)"></i>';
+    b.innerHTML=`<span class="opt-letter">${OL[i]}</span><span class="opt-text flex-1">${opt}</span>${icon}`;
+    if(!answered)b.onclick=()=>selectAns(i);
+    od.appendChild(b);
+  });
+  const fb=document.getElementById('q-feedback');
+  if(answered){
+    const ok=q.isCorrect;
+    fb.innerHTML=`<div class="feedback-panel ${ok?'correct':'incorrect'}"><div class="flex items-center gap-2 mb-2"><i class="fas ${ok?'fa-check-circle':'fa-times-circle'}" style="color:var(--${ok?'correct':'incorrect'})"></i><span class="font-semibold" style="color:var(--${ok?'correct':'incorrect'})">${ok?'Correct!':'Incorrect'}</span></div>${ok?'':`<div class="text-sm mb-2" style="color:var(--text2)">Your answer: <strong style="color:var(--incorrect)">${OL[q.userAnswer]}</strong> &mdash; Correct: <strong style="color:var(--correct)">${OL[q.correct]}</strong></div>`}<div class="text-sm" style="color:var(--text2)">${q.explanation}</div></div>`;
+  }else{fb.innerHTML='';}
+  document.getElementById('bn-prev').disabled=state.idx===0;
+  const last=state.idx===tot-1;
+  document.getElementById('bn-next').style.display=last?'none':'flex';
+  document.getElementById('bn-submit').style.display=last?'flex':'none';
+  const mk=document.getElementById('bn-mark');mk.classList.toggle('marked-active',q.marked);
+  mk.innerHTML=q.marked?'<i class="fas fa-flag"></i><span>Unmark</span>':'<i class="far fa-flag"></i><span>Mark</span>';
+  renderMathInElement(document.getElementById('question-card'),{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});
+  updPalettes();updSummary();
+}
+
+function selectAns(i){
+  const q=state.active[state.idx];q.userAnswer=i;q.isCorrect=(i===q.correct);renderQ();
+  if(q.isCorrect)toast('Correct!','success');else toast('Incorrect — see explanation','error');
+}
+function navQ(d){const n=state.idx+d;if(n<0||n>=state.active.length)return;state.idx=n;renderQ();window.scrollTo(0,0);}
+function toggleMark(){const q=state.active[state.idx];q.marked=!q.marked;renderQ();toast(q.marked?'Marked':'Unmarked','info');}
+
+function showSubmitModal(){
+  const c=state.active.filter(q=>q.isCorrect===true).length,s=state.active.filter(q=>q.userAnswer===null).length,m=state.active.filter(q=>q.marked).length;
+  document.getElementById('modal-c').textContent=c;document.getElementById('modal-s').textContent=s;document.getElementById('modal-m').textContent=m;
+  document.getElementById('submit-modal').classList.add('active');document.body.style.overflow='hidden';
+}
+function submitTest(){document.getElementById('submit-modal').classList.remove('active');document.body.style.overflow='';state.submitted=true;stopTimer();showResults();}
+function confirmExit(){document.getElementById('exit-modal').classList.add('active');document.body.style.overflow='hidden';}
+function exitTest(){document.getElementById('exit-modal').classList.remove('active');document.body.style.overflow='';stopTimer();showScreen('setup');}
+
+function showResults(){
+  showScreen('results');
+  const tot=state.active.length,c=state.active.filter(q=>q.isCorrect===true).length,w=state.active.filter(q=>q.isCorrect===false).length,s=state.active.filter(q=>q.userAnswer===null).length;
+  const pct=tot?Math.round(c/tot*100):0;
+  const circ=document.getElementById('score-circle'),circum=2*Math.PI*85;
+  circ.style.strokeDasharray=circum;circ.style.strokeDashoffset=circum;
+  let col='var(--incorrect)';if(pct>=80)col='var(--correct)';else if(pct>=50)col='var(--accent)';
+  circ.style.stroke=col;setTimeout(()=>{circ.style.strokeDashoffset=circum-(pct/100*circum);},100);
+  const pe=document.getElementById('score-pct');pe.style.color=col;animNum(pe,0,pct,1200,'%');
+  document.getElementById('res-c').textContent=c;document.getElementById('res-w').textContent=w;document.getElementById('res-s').textContent=s;
+  const m=Math.floor(state.timer.s/60),ss=state.timer.s%60;document.getElementById('res-t').textContent=m+':'+String(ss).padStart(2,'0');
+  const ub=document.getElementById('set-bars');ub.innerHTML='';
+  const sm={};state.active.forEach(q=>{if(!sm[q.set])sm[q.set]={title:q.t,tot:0,c:0};sm[q.set].tot++;if(q.isCorrect)sm[q.set].c++;});
+  Object.values(sm).forEach(u=>{const p=u.tot?Math.round(u.c/u.tot*100):0;let cl='var(--incorrect)';if(p>=80)cl='var(--correct)';else if(p>=50)cl='var(--accent)';
+  const r=document.createElement('div');r.innerHTML=`<div class="flex justify-between text-xs sm:text-sm mb-1"><span class="truncate mr-2" style="color:var(--text2);max-width:55%">${u.title}</span><span class="font-mono font-semibold" style="color:${cl}">${u.c}/${u.tot} (${p}%)</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:0%;background:${cl}"></div></div>`;ub.appendChild(r);setTimeout(()=>{r.querySelector('.stat-bar-fill').style.width=p+'%';},200);});
+}
+function animNum(el,f,t,dur,suf){const st=performance.now();function tick(now){const p=Math.min((now-st)/dur,1),e=1-Math.pow(1-p,3);el.textContent=Math.round(f+(t-f)*e)+(suf||'');if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);}
+
+function startReview(){state.reviewFilter='all';showScreen('review');buildFilters();renderReview();}
+function buildFilters(){
+  const d=document.getElementById('review-filters');d.innerHTML='';
+  const a=state.active.length,c=state.active.filter(q=>q.isCorrect===true).length,w=state.active.filter(q=>q.isCorrect===false).length,s=state.active.filter(q=>q.userAnswer===null).length;
+  [{k:'all',l:'All ('+a+')'},{k:'correct',l:'Correct ('+c+')'},{k:'incorrect',l:'Wrong ('+w+')'},{k:'unanswered',l:'Skipped ('+s+')'}].forEach(f=>{
+    const t=document.createElement('button');t.className='filter-tab'+(state.reviewFilter===f.k?' active':'');t.textContent=f.l;t.onclick=()=>{state.reviewFilter=f.k;buildFilters();renderReview();};d.appendChild(t);
+  });
+}
+function renderReview(){
+  const list=document.getElementById('review-list');list.innerHTML='';
+  let f=state.active.map((q,i)=>({...q,idx:i}));
+  if(state.reviewFilter==='correct')f=f.filter(q=>q.isCorrect===true);
+  else if(state.reviewFilter==='incorrect')f=f.filter(q=>q.isCorrect===false);
+  else if(state.reviewFilter==='unanswered')f=f.filter(q=>q.userAnswer===null);
+  if(!f.length){list.innerHTML='<div class="text-center py-16" style="color:var(--muted)">No questions match this filter.</div>';return;}
+  f.forEach(q=>{
+    const ok=q.isCorrect,un=q.userAnswer===null;
+    let sc='var(--muted)',st='Skipped',si='fa-minus-circle';
+    if(ok){sc='var(--correct)';st='Correct';si='fa-check-circle';}
+    else if(!un){sc='var(--incorrect)';st='Wrong';si='fa-times-circle';}
+    const c=document.createElement('div');c.className='card';c.style.borderLeftWidth='3px';c.style.borderLeftColor=sc;
+    let oh='';q.options.forEach((opt,oi)=>{let cls='option-btn locked';if(oi===q.correct)cls+=' correct-answer';if(oi===q.userAnswer&&oi!==q.correct)cls+=' incorrect-answer';
+    let ic='';if(oi===q.correct)ic='<i class="fas fa-check ml-auto" style="color:var(--correct)"></i>';if(oi===q.userAnswer&&oi!==q.correct)ic='<i class="fas fa-times ml-auto" style="color:var(--incorrect)"></i>';
+    oh+=`<button class="${cls}" style="cursor:default"><span class="opt-letter">${OL[oi]}</span><span class="opt-text flex-1">${opt}</span>${ic}</button>`;});
+    c.innerHTML=`<div class="flex items-center gap-2 mb-3 flex-wrap"><span class="badge text-xs" style="background:var(--accent-bg);color:var(--accent)">${q.title}</span><span class="badge text-xs" style="background:var(--bg3);color:var(--text2)">Q #${q.idx+1}</span><span class="badge text-xs" style="background:${sc}22;color:${sc}"><i class="fas ${si} mr-1"></i>${st}</span></div><div class="rv-qt text-sm sm:text-base leading-relaxed mb-4">${q.question}</div><div class="flex flex-col gap-2">${oh}</div><div class="mt-3 text-sm" style="color:var(--text2)">${q.explanation}</div>`;
+    list.appendChild(c);
+  });
+  renderMathInElement(list,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});
+}
+
+function toast(msg,type){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;document.getElementById('toast-container').appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2000);}
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',function(e){if(e.target===this){this.classList.remove('active');document.body.style.overflow='';}});});
+
+document.addEventListener('keydown',e=>{
+  if(!state.active.length||state.submitted)return;
+  if(document.getElementById('test-screen').classList.contains('active')&&!state.timer.paused){
+    if('abcd'.includes(e.key.toLowerCase())&&state.active[state.idx].userAnswer===null)selectAns('abcd'.indexOf(e.key.toLowerCase()));
+    else if(e.key==='ArrowRight')navQ(1);
+    else if(e.key==='ArrowLeft')navQ(-1);
+    else if(e.key.toLowerCase()==='m')toggleMark();
+  }
+});
+
+showScreen('home');
+</script>
+</body>
+</html>
