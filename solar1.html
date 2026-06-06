@@ -1,0 +1,2735 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astrophile</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+    --bg: #000000;
+    --panel: rgba(4, 7, 16, 0.84);
+    --border: rgba(255, 255, 255, 0.05);
+    --accent: #e8943a;
+    --text: #d8d8e0;
+    --muted: rgba(255, 255, 255, 0.3);
+    --danger: #ff3838;
+    --success: #38ff78;
+    --cosmic: #a855f7;
+    --info: #38a8ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body:active { cursor: grabbing; }
+
+canvas { display: block; position: fixed; top: 0; left: 0; z-index: 0; }
+
+#loadingScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #000;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 1.5s ease;
+}
+#loadingScreen.fadeOut { opacity: 0; pointer-events: none; }
+
+.loadingSpinner {
+    width: 60px; height: 60px;
+    border: 1.5px solid rgba(232, 148, 58, 0.08);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spinnerRotate 0.8s linear infinite;
+}
+@keyframes spinnerRotate { to { transform: rotate(360deg); } }
+
+#loadingScreen h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem; letter-spacing: 14px;
+    color: var(--accent); margin-top: 24px;
+    font-weight: 500; text-shadow: 0 0 60px rgba(232, 148, 58, 0.2);
+}
+#loadingScreen p {
+    color: var(--muted); font-size: 0.55rem;
+    margin-top: 6px; letter-spacing: 6px; text-transform: uppercase;
+}
+.loadingBar {
+    width: 160px; height: 1.5px;
+    background: rgba(255, 255, 255, 0.03);
+    margin-top: 16px; border-radius: 2px; overflow: hidden;
+}
+.loadingBarFill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), #ffcc33);
+    transition: width 0.35s ease; border-radius: 2px;
+}
+
+#mainUI {
+    position: fixed; inset: 0; z-index: 10;
+    pointer-events: none; opacity: 0;
+    transition: opacity 1s ease 0.5s;
+}
+#mainUI.visible { opacity: 1; }
+#mainUI > * { pointer-events: auto; }
+
+.topBar {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+    flex-wrap: wrap; gap: 5px;
+}
+.logoText {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem; letter-spacing: 9px;
+    color: var(--accent); font-weight: 600;
+    text-shadow: 0 0 50px rgba(232, 148, 58, 0.15);
+}
+.topRightControls { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+.modeButton {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.42rem; letter-spacing: 1.8px;
+    padding: 6px 12px; background: var(--panel);
+    border: 1px solid var(--border); color: var(--muted);
+    border-radius: 4px; cursor: pointer;
+    transition: all 0.35s ease;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    text-transform: uppercase; white-space: nowrap; outline: none;
+}
+.modeButton:hover { border-color: rgba(255, 255, 255, 0.1); color: var(--text); }
+.modeButton.radiationActive {
+    border-color: rgba(255, 65, 15, 0.5); color: #ff5020;
+    box-shadow: 0 0 18px rgba(255, 65, 15, 0.1), inset 0 0 18px rgba(255, 65, 15, 0.03);
+    background: rgba(255, 45, 10, 0.06);
+}
+.modeButton.fieldActive {
+    border-color: rgba(56, 255, 120, 0.35); color: var(--success);
+    box-shadow: 0 0 16px rgba(56, 255, 120, 0.08);
+    background: rgba(56, 255, 120, 0.04);
+}
+.modeButton.gasActive {
+    border-color: rgba(168, 85, 247, 0.4); color: #bb77ff;
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.08);
+    background: rgba(168, 85, 247, 0.04);
+}
+
+.timeControlGroup { display: flex; gap: 3px; align-items: center; }
+.timeButton {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--muted); cursor: pointer;
+    font-size: 0.5rem; transition: all 0.25s ease;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); outline: none;
+}
+.timeButton:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.08); }
+.timeButton.isActive { color: var(--accent); border-color: rgba(232, 148, 58, 0.25); }
+.speedDisplay {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.42rem; color: var(--muted);
+    letter-spacing: 1px; min-width: 30px; text-align: center;
+}
+
+.infoPanel {
+    position: absolute; left: 16px; top: 62px; width: 255px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    transform: translateX(-290px);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: calc(100vh - 130px); overflow-y: auto;
+}
+.infoPanel.visible { transform: translateX(0); }
+.infoPanel::-webkit-scrollbar { width: 2px; }
+.infoPanel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 2px; }
+
+.planetNameDisplay { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 3px; }
+.planetTypeDisplay { font-size: 0.48rem; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; margin: 2px 0 10px; }
+.statRow { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.6rem; }
+.statLabel { color: var(--muted); }
+.statValue { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.planetDescription { font-size: 0.58rem; color: rgba(255, 255, 255, 0.42); line-height: 1.65; margin-top: 8px; }
+
+.shieldStatusBox {
+    margin-top: 8px; padding: 7px 9px; border-radius: 5px;
+    font-size: 0.55rem; display: flex; align-items: center;
+    gap: 5px; line-height: 1.4;
+}
+.shieldActive { background: rgba(56, 255, 120, 0.04); border: 1px solid rgba(56, 255, 120, 0.1); color: var(--success); }
+.shieldNone { background: rgba(255, 56, 56, 0.04); border: 1px solid rgba(255, 56, 56, 0.1); color: var(--danger); }
+.shieldPartial { background: rgba(232, 148, 58, 0.04); border: 1px solid rgba(232, 148, 58, 0.1); color: var(--accent); }
+.shieldExtreme { background: rgba(255, 85, 20, 0.04); border: 1px solid rgba(255, 85, 20, 0.12); color: #ff7730; }
+.shieldModerate { background: rgba(100, 200, 255, 0.04); border: 1px solid rgba(100, 200, 255, 0.1); color: #60ccff; }
+
+.weatherPanel {
+    position: absolute; right: 16px; top: 62px; width: 255px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    transform: translateX(290px);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0; pointer-events: none;
+    max-height: calc(100vh - 130px); overflow-y: auto;
+}
+.weatherPanel.visible { transform: translateX(0); opacity: 1; pointer-events: auto; }
+.weatherPanel::-webkit-scrollbar { width: 2px; }
+.weatherPanel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 2px; }
+.weatherPanel h3 {
+    font-family: 'Orbitron', sans-serif; font-size: 0.48rem;
+    letter-spacing: 2.5px; color: var(--accent);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+}
+.liveDot { width: 5px; height: 5px; border-radius: 50%; background: #ff1818; animation: livePulse 1.3s infinite; }
+@keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+
+.weatherEvent { padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.56rem; }
+.weatherEvent:last-child { border-bottom: none; }
+.weatherEventType { font-weight: 600; font-size: 0.5rem; letter-spacing: 0.8px; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+.weatherEventDetail { color: var(--muted); margin-top: 1px; font-size: 0.52rem; }
+.weatherEventTime { color: rgba(255, 255, 255, 0.15); font-size: 0.44rem; margin-top: 1px; }
+
+.planetNavigationBar {
+    position: absolute; bottom: 42px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 2px; padding: 5px 9px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 26px;
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+}
+.planetNavDot {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid transparent; cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+}
+.planetNavDot:hover { transform: scale(1.2); border-color: rgba(255, 255, 255, 0.1); }
+.planetNavDot.active { border-color: var(--accent); box-shadow: 0 0 8px rgba(232, 148, 58, 0.18); }
+.navDotCore { width: 6px; height: 6px; border-radius: 50%; transition: transform 0.25s ease; }
+.planetNavDot:hover .navDotCore { transform: scale(1.35); }
+.navDotLabel {
+    position: absolute; bottom: -15px; font-size: 0.35rem;
+    letter-spacing: 0.8px; color: var(--muted); white-space: nowrap;
+    opacity: 0; transition: opacity 0.25s ease; font-family: 'Orbitron', sans-serif;
+}
+.planetNavDot:hover .navDotLabel, .planetNavDot.active .navDotLabel { opacity: 1; }
+
+.galaxyZoomHint {
+    position: absolute; bottom: 82px; left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', sans-serif; font-size: 0.42rem;
+    letter-spacing: 3px; color: rgba(255, 255, 255, 0.12);
+    opacity: 0; transition: opacity 1.2s ease; pointer-events: none;
+}
+.galaxyZoomHint.visible { opacity: 1; }
+
+.bottomBar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 8px 16px;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
+}
+.distanceDisplay { font-family: 'Orbitron', sans-serif; font-size: 0.44rem; letter-spacing: 1.2px; color: var(--muted); }
+.distanceDisplay span { color: var(--text); font-weight: 500; }
+.hintsText { font-size: 0.44rem; color: rgba(255, 255, 255, 0.1); text-align: right; line-height: 1.9; }
+.hintsText kbd {
+    background: rgba(255, 255, 255, 0.03); padding: 0px 3px;
+    border-radius: 2px; font-family: 'Space Grotesk', sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.04); font-size: 0.42rem;
+}
+
+.closeButton {
+    position: absolute; top: 7px; right: 7px;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); font-size: 0.5rem;
+    border-radius: 3px; transition: all 0.25s ease;
+}
+.closeButton:hover { color: var(--text); background: rgba(255, 255, 255, 0.03); }
+
+.toastNotification {
+    position: fixed; top: 60px; left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    background: var(--panel);
+    border: 1px solid rgba(232, 148, 58, 0.18);
+    border-radius: 5px; padding: 6px 14px;
+    font-size: 0.5rem; color: var(--accent);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    opacity: 0; transition: all 0.3s ease;
+    z-index: 100; pointer-events: none;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1.8px; white-space: nowrap;
+}
+.toastNotification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.cmeAlertOverlay {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(30, 3, 0, 0.9);
+    border: 1px solid rgba(255, 40, 8, 0.5);
+    border-radius: 10px; padding: 22px 36px;
+    text-align: center; opacity: 0;
+    transition: all 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 200; pointer-events: none;
+    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+}
+.cmeAlertOverlay.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.cmeAlertOverlay h2 { font-family: 'Orbitron', sans-serif; font-size: 0.58rem; letter-spacing: 4px; color: #ff2810; margin-bottom: 4px; }
+.cmeAlertOverlay p { font-size: 0.55rem; color: rgba(255, 90, 50, 0.65); line-height: 1.5; }
+
+@media (max-width: 768px) {
+    .infoPanel, .weatherPanel { width: 190px; padding: 10px; font-size: 0.85em; }
+    .logoText { font-size: 0.45rem; letter-spacing: 4px; }
+    .modeButton { font-size: 0.35rem; padding: 5px 7px; letter-spacing: 1px; }
+    .planetNavDot { width: 20px; height: 20px; }
+    .navDotCore { width: 5px; height: 5px; }
+    .bottomBar { flex-direction: column; gap: 3px; align-items: center; }
+    .hintsText { text-align: center; font-size: 0.38rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+    <div class="loadingSpinner"></div>
+    <h1>ASTROPHILE</h1>
+    <p>Initializing Solar System</p>
+    <div class="loadingBar"><div class="loadingBarFill" id="loadingBarFill"></div></div>
+</div>
+
+<div id="mainUI">
+    <div class="topBar">
+        <div class="logoText">ASTROPHILE</div>
+        <div class="topRightControls">
+            <div class="timeControlGroup">
+                <button class="timeButton" id="btnSlower" title="Slower"><i class="fas fa-backward"></i></button>
+                <button class="timeButton" id="btnPause" title="Pause / Play"><i class="fas fa-pause" id="pauseIcon"></i></button>
+                <button class="timeButton" id="btnFaster" title="Faster"><i class="fas fa-forward"></i></button>
+                <div class="speedDisplay" id="speedDisplay">1x</div>
+            </div>
+            <button class="modeButton" id="btnRadiation">SOLAR SYSTEM</button>
+            <button class="modeButton" id="btnFieldLines">FIELD LINES</button>
+            <button class="modeButton" id="btnGasSystems">GAS SYSTEMS</button>
+        </div>
+    </div>
+
+    <div class="infoPanel" id="infoPanel">
+        <div class="closeButton" id="closeInfoPanel"><i class="fas fa-xmark"></i></div>
+        <div class="planetNameDisplay" id="planetNameText">EARTH</div>
+        <div class="planetTypeDisplay" id="planetTypeText">Terrestrial Planet</div>
+        <div id="planetStatsContainer"></div>
+        <div class="planetDescription" id="planetDescriptionText"></div>
+        <div class="shieldStatusBox" id="shieldStatusBox"></div>
+    </div>
+
+    <div class="weatherPanel" id="weatherPanel">
+        <div class="closeButton" id="closeWeatherPanel"><i class="fas fa-xmark"></i></div>
+        <h3><span class="liveDot"></span>SPACE WEATHER &#8212; LIVE</h3>
+        <div id="weatherEventsContainer"><p style="color:var(--muted);font-size:0.55rem">Connecting to DONKI...</p></div>
+    </div>
+
+    <div class="planetNavigationBar" id="planetNavigationBar"></div>
+    <div class="galaxyZoomHint" id="galaxyZoomHint">SCROLL TO EXPLORE THE MILKY WAY</div>
+
+    <div class="bottomBar">
+        <div class="distanceDisplay" id="distanceDisplay">DISTANCE FROM SUN: <span>--</span> AU</div>
+        <div class="hintsText">
+            <kbd>Scroll</kbd> Zoom <kbd>Drag</kbd> Orbit <kbd>Click</kbd> Select<br>
+            <kbd>R</kbd> Radiation <kbd>F</kbd> Fields <kbd>G</kbd> Gas <kbd>Space</kbd> Pause <kbd>Esc</kbd> Deselect
+        </div>
+    </div>
+</div>
+
+<div class="toastNotification" id="toastNotification"></div>
+<div class="cmeAlertOverlay" id="cmeAlertOverlay">
+    <h2>CORONAL MASS EJECTION DETECTED</h2>
+    <p id="cmeAlertDetail"></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+/* ================================================================
+   CONFIGURATION
+================================================================ */
+const CFG = {
+    sunRadius: 8,
+    bloomStrength: 1.6, bloomRadius: 0.55, bloomThreshold: 0.6,
+    starCount: 20000,
+    galaxyParticleCount: 60000,
+    solarWindCount: 8000,
+    cosmicRayCount: 1000,
+    fieldLineCount: 16,
+    vanAllenCount: 5000,
+    auroraCount: 2000,
+    gasParticleCount: 3500,
+    flowParticleCount: 1200,
+    radioactiveForceCount: 800,
+    impactParticleCount: 500,
+    travelDuration: 2.8,
+    galaxyZoomThreshold: 750,
+    nebulaCount: 10,
+    nebulaParticlesPer: 4000,
+    interstellarDustCount: 180000,
+    asteroidBeltCount: 6000,
+    kuiperBeltCount: 4000,
+    prominenceCount: 3000,
+        nebulaRadiationPerNebula: 500,
+    nebulaRadiationMaxRange: 38000,
+    nebulaRadiationSpeed: 12,
+    nebulaImpactCount: 200,
+};
+
+/* ================================================================
+   PLANET DATABASE
+================================================================ */
+const PLANETS = [
+    { name:'Mercury', radius:0.42, distance:26, orbitalSpeed:4.15, rotationSpeed:0.003, tilt:0.03, type:'Terrestrial Planet',
+      realDistance:'57.9M km', realAU:'0.39 AU', realRadius:'2,440 km', mass:'3.30\u00d710\u00b2\u00b3 kg', gravity:'3.7 m/s\u00b2',
+      dayLength:'58.6 Earth days', yearLength:'88 Earth days', moons:0, temperature:'\u2212180 to 430\u00b0C', magneticField:'None', shieldClass:'none',
+      description:'The smallest planet and closest to the Sun. Mercury has virtually no atmosphere to shield it from solar radiation and cosmic rays. Its surface is heavily cratered, resembling our Moon. Without a global magnetic field, the full force of the solar wind blasts its surface directly, causing extreme temperature swings of over 600\u00b0C and relentless space weathering.' },
+    { name:'Venus', radius:0.92, distance:38, orbitalSpeed:1.62, rotationSpeed:0.002, tilt:2.64, type:'Terrestrial Planet',
+      realDistance:'108.2M km', realAU:'0.72 AU', realRadius:'6,052 km', mass:'4.87\u00d710\u00b2\u2074 kg', gravity:'8.87 m/s\u00b2',
+      dayLength:'243 Earth days', yearLength:'225 Earth days', moons:0, temperature:'462\u00b0C average', magneticField:'None (induced)', shieldClass:'partial',
+      description:'Venus has no intrinsic magnetic field. Its extraordinarily thick CO\u2082 atmosphere at 90x Earth\'s surface pressure acts as a physical shield, absorbing solar wind particles through direct molecular collisions. The interaction creates a bow shock upstream where the solar wind is abruptly decelerated from 400 km/s to near-zero.' },
+    { name:'Earth', radius:1.0, distance:52, orbitalSpeed:1.0, rotationSpeed:0.01, tilt:0.41, type:'Terrestrial Planet',
+      realDistance:'149.6M km', realAU:'1.00 AU', realRadius:'6,371 km', mass:'5.97\u00d710\u00b2\u2074 kg', gravity:'9.81 m/s\u00b2',
+      dayLength:'24 hours', yearLength:'365.25 days', moons:1, temperature:'\u221289 to 57\u00b0C', magneticField:'Strong dipole', shieldClass:'active',
+      description:'Earth\'s magnetic field, generated by convective motion in its liquid iron outer core, creates a protective magnetosphere extending ~65,000 km toward the Sun. This deflects 99.9% of solar wind protons and most galactic cosmic rays. Particles that penetrate become trapped in the Van Allen radiation belts, and those spiraling to the poles create auroras.' },
+    { name:'Mars', radius:0.52, distance:70, orbitalSpeed:0.53, rotationSpeed:0.009, tilt:0.44, type:'Terrestrial Planet',
+      realDistance:'227.9M km', realAU:'1.52 AU', realRadius:'3,390 km', mass:'6.42\u00d710\u00b2\u00b3 kg', gravity:'3.72 m/s\u00b2',
+      dayLength:'24.6 hours', yearLength:'687 Earth days', moons:2, temperature:'\u2212140 to 20\u00b0C', magneticField:'Remnant crustal', shieldClass:'none',
+      description:'Mars lost its global magnetic field ~3.5 billion years ago when its core cooled. Without electromagnetic shielding, solar wind stripped away the atmosphere over hundreds of millions of years. Today only localized crustal anomalies remain \u2014 surface radiation levels are lethal to humans within months.' },
+    { name:'Jupiter', radius:5.2, distance:145, orbitalSpeed:0.084, rotationSpeed:0.02, tilt:0.05, type:'Gas Giant',
+      realDistance:'778.5M km', realAU:'5.20 AU', realRadius:'69,911 km', mass:'1.90\u00d710\u00b2\u2077 kg', gravity:'24.79 m/s\u00b2',
+      dayLength:'9.9 hours', yearLength:'11.86 Earth years', moons:95, temperature:'\u2212108\u00b0C cloud top', magneticField:'Extreme dipole', shieldClass:'extreme',
+      description:'Jupiter possesses the most powerful magnetic field of any planet \u2014 20,000x stronger than Earth\'s. The magnetosphere extends 2\u20133 million km sunward and over 600 million km tailward, engulfing Saturn\'s orbit. It acts as a partial barrier intercepting particles that might reach the inner solar system.' },
+    { name:'Saturn', radius:4.3, distance:230, orbitalSpeed:0.034, rotationSpeed:0.018, tilt:0.47, type:'Gas Giant',
+      realDistance:'1.43B km', realAU:'9.58 AU', realRadius:'58,232 km', mass:'5.68\u00d710\u00b2\u2076 kg', gravity:'10.44 m/s\u00b2',
+      dayLength:'10.7 hours', yearLength:'29.46 Earth years', moons:146, temperature:'\u2212139\u00b0C cloud top', magneticField:'Strong dipole', shieldClass:'strong',
+      description:'Saturn\'s magnetic field is nearly 600x stronger than Earth\'s, creating a magnetosphere large enough to envelop its ring system and 146 moons. Uniquely, the field is aligned almost perfectly with its rotation axis. Operating within Jupiter\'s enormous magnetospheric shadow, Saturn provides a second layer of particle deflection.' },
+    { name:'Uranus', radius:2.2, distance:330, orbitalSpeed:0.012, rotationSpeed:0.012, tilt:1.71, type:'Ice Giant',
+      realDistance:'2.87B km', realAU:'19.22 AU', realRadius:'25,362 km', mass:'8.68\u00d710\u00b2\u2075 kg', gravity:'8.87 m/s\u00b2',
+      dayLength:'17.2 hours', yearLength:'84 Earth years', moons:27, temperature:'\u2212197\u00b0C', magneticField:'Tilted irregular', shieldClass:'moderate',
+      description:'Uranus rotates on its side with 98\u00b0 tilt, likely from a cataclysmic collision. Its magnetic field is tilted 59\u00b0 from the rotation axis and offset from center by a third of its radius \u2014 generated by convective motion in a thin ionic water-ammonia ocean. The wildly asymmetric magnetosphere still provides meaningful shielding at 19 AU.' },
+    { name:'Neptune', radius:2.1, distance:430, orbitalSpeed:0.006, rotationSpeed:0.011, tilt:0.49, type:'Ice Giant',
+      realDistance:'4.50B km', realAU:'30.05 AU', realRadius:'24,622 km', mass:'1.02\u00d710\u00b2\u2076 kg', gravity:'11.15 m/s\u00b2',
+      dayLength:'16.1 hours', yearLength:'164.8 Earth years', moons:16, temperature:'\u2212201\u00b0C', magneticField:'Tilted irregular', shieldClass:'moderate',
+      description:'Neptune has the most powerful sustained winds of any planet \u2014 supersonic gusts exceeding 2,100 km/h. Its highly tilted and offset magnetic field suggests generation in an ionic water mantle. At 30 AU the solar wind has thinned to a trickle, but Neptune\'s field still sweeps up what remains. Voyager 2 detected faint auroras in 1989.' }
+];
+
+const PLANET_COLORS = {
+    Mercury:'#8c7e6d', Venus:'#d4a54a', Earth:'#2a6db5', Mars:'#c45a3c',
+    Jupiter:'#c4956a', Saturn:'#d4b87a', Uranus:'#72b8c9', Neptune:'#3355aa'
+};
+
+/* ================================================================
+   GLOBAL STATE
+================================================================ */
+let scene, camera, renderer, composer, controls, clock;
+let elapsedTime = 0;
+let sunMesh, sunGlowSprite, sunCoronaMesh, sunMaterial;
+let planetMeshes = [], planetGroups = [], orbitLines = [];
+let selectedIndex = -1;
+let radiationModeOn = false, fieldLinesModeOn = false, gasSystemsModeOn = false;
+let timeScale = 1, isPaused = false;
+let raycaster = new THREE.Raycaster();
+let mouseVector = new THREE.Vector2(-9, -9);
+let milkyWayPoints = null, galaxyVisible = false;
+let solarWindSystem, cosmicRaySystem;
+let magnetosphereGroups = {}, vanAllenBeltPoints, auroraSystems = {};
+let jupiterMagnetosphere;
+let gasSystems = {}, fieldFlowSystems = {}, radioactiveForceSystems = {};
+let spaceWeatherData = { flr:[], cme:[], gst:[], sep:[], rbe:[], hss:[] };
+let cmeVisualObjects = [];
+let toastTimeout = null;
+/* New enhanced systems */
+let nebulaGroups = [];
+let interstellarDustSystem;
+let asteroidBeltSystem;
+let kuiperBeltSystem;
+let prominenceSystem;
+let nebulaRadiationSystems = [];
+let nebulaImpactSystems = {};
+let brightStarSprites = [];
+
+/* ================================================================
+   NOISE FUNCTIONS
+================================================================ */
+function noiseHash(x, y) { let n = Math.sin(x*127.1+y*311.7)*43758.5453; return n - Math.floor(n); }
+function smoothNoise2D(x, y) {
+    let ix=Math.floor(x), iy=Math.floor(y), fx=x-ix, fy=y-iy;
+    fx=fx*fx*(3-2*fx); fy=fy*fy*(3-2*fy);
+    let a=noiseHash(ix,iy), b=noiseHash(ix+1,iy), c=noiseHash(ix,iy+1), d=noiseHash(ix+1,iy+1);
+    return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy;
+}
+function fbm(x, y, oct=6) {
+    let v=0, a=0.5, f=1;
+    for(let i=0;i<oct;i++){v+=a*smoothNoise2D(x*f,y*f);a*=0.5;f*=2.15;}
+    return v;
+}
+function ridgedNoise2D(x, y, oct=5) {
+    let v=0, a=0.5, f=1;
+    for(let i=0;i<oct;i++){let n=smoothNoise2D(x*f,y*f);v+=a*(1-Math.abs(n*2-1));a*=0.5;f*=2.2;}
+    return v;
+}
+
+/* ================================================================
+   PROCEDURAL TEXTURE GENERATOR
+================================================================ */
+function generateTexture(w, h, fn) {
+    let c=document.createElement('canvas'); c.width=w; c.height=h;
+    let ctx=c.getContext('2d'); let img=ctx.createImageData(w,h);
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+        let r=fn(x/w,y/h), idx=(y*w+x)*4;
+        img.data[idx]=Math.max(0,Math.min(255,r[0]|0));
+        img.data[idx+1]=Math.max(0,Math.min(255,r[1]|0));
+        img.data[idx+2]=Math.max(0,Math.min(255,r[2]|0));
+        img.data[idx+3]=r.length>3?Math.max(0,Math.min(255,r[3]|0)):255;
+    }
+    ctx.putImageData(img,0,0); return new THREE.CanvasTexture(c);
+}
+
+/* ================================================================
+   PLANET TEXTURES
+================================================================ */
+function texEarthDay(){return generateTexture(1024,512,(u,v)=>{
+    let n=fbm(u*8+.5,v*6+.3,7),land=n>0.47;
+    if(land){let d=fbm(u*24,v*17,4),lat=Math.abs(v-.5)*2;
+        if(lat>.87)return[230,236,246];let g=70+d*90,r=50+d*70+(lat>.55?50:0);return[r,g,30+d*35];}
+    let dp=fbm(u*15,v*12,3);return[8+dp*25,30+dp*50,100+dp*70];});}
+function texEarthNight(){return generateTexture(1024,512,(u,v)=>{
+    let n=fbm(u*8+.5,v*6+.3,7);if(n<=.47)return[1,1,4];
+    let city=fbm(u*50,v*40,3),lat=Math.abs(v-.5)*2;
+    if(lat>.82||city<.40)return[1,1,3];let b=(city-.4)*10;
+    return[Math.min(255,220*b)|0,Math.min(255,185*b)|0,Math.min(255,65*b)|0];});}
+function texEarthClouds(){return generateTexture(1024,512,(u,v)=>{
+    let n=fbm(u*12+3.7,v*10+1.2,6),a=Math.max(0,(n-.35)*5);
+    return[255,255,255,Math.min(255,a*180)|0];});}
+function texJupiter(){return generateTexture(1024,512,(u,v)=>{
+    let band=Math.sin(v*Math.PI*16)*.5+.5,turb=fbm(u*8+band*2,v*25,5)*.3,n=band+turb;
+    let dx=u-.61,dy=v-.57,sd=Math.sqrt(dx*dx*4.5+dy*dy*20);
+    if(sd<.14){let s=fbm(u*35,v*35,4);return[192+s*44,70+s*40,40+s*30];}
+    let r=148+n*70+fbm(u*14,v*10,3)*30,g=118+n*54+fbm(u*12,v*14,3)*25,b=88+n*40;return[r,g,b];});}
+function texSaturn(){return generateTexture(1024,512,(u,v)=>{
+    let band=Math.sin(v*Math.PI*12)*.5+.5,turb=fbm(u*6+1,v*18,4)*.22,n=band+turb;
+    return[188+n*40,168+n*32,118+n*25];});}
+function texMars(){return generateTexture(1024,512,(u,v)=>{
+    let n=fbm(u*12,v*10,6),d=ridgedNoise2D(u*30,v*24,4),lat=Math.abs(v-.5)*2;
+    let r=158+n*60+d*25,g=80+n*40+d*22,b=40+n*25;
+    if(lat>.84){let p=(lat-.84)/.16;r+=(222-r)*p;g+=(222-g)*p;b+=(230-b)*p;}
+    return[r,g,b];});}
+function texVenus(){return generateTexture(512,256,(u,v)=>{
+    let n=fbm(u*8+2,v*7+1,5),s=fbm(u*17+n*3,v*14+n*2,4);return[198+s*40,172+s*32,108+s*25];});}
+function texUranus(){return generateTexture(512,256,(u,v)=>{
+    let n=fbm(u*7,v*10,4),b=Math.sin(v*Math.PI*8)*.07;return[98+n*36+b*25,172+n*25,188+n*22];});}
+function texNeptune(){return generateTexture(512,256,(u,v)=>{
+    let n=fbm(u*7+5,v*10+3,5),b=Math.sin(v*Math.PI*10)*.1,s=fbm(u*18,v*15,3);
+    let dx=u-.55,dy=v-.45,sd=Math.sqrt(dx*dx*10+dy*dy*20);if(sd<.07)n-=.15;
+    return[28+n*25+b*22,48+n*36+b*25,148+n*50+s*25];});}
+function texGeneric(br,bg,bb,vr,cr){return generateTexture(512,256,(u,v)=>{
+    let n=fbm(u*10,v*8,5);if(cr){let c=ridgedNoise2D(u*25,v*20,4);n=n*.6+c*.4;}
+    let v2=(n-.5)*vr;return[br+v2*255,bg+v2*255,bb+v2*255];});}
+
+/* ================================================================
+   SUN GLSL SHADERS
+================================================================ */
+const sunVS=`varying vec3 vPosition;varying vec3 vNormal;
+void main(){vPosition=position;vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+
+const sunFS=`uniform float uTime;varying vec3 vPosition;varying vec3 vNormal;
+vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}
+vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}
+vec4 permute(vec4 x){return mod289(((x*34.)+1.)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-.85373472095314*r;}
+float snoise(vec3 v){
+    const vec2 C=vec2(1./6.,1./3.);const vec4 D=vec4(0.,.5,1.,2.);
+    vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);
+    vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.-g;
+    vec3 i1=min(g,l.zxy);vec3 i2=max(g,l.zxy);
+    vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;
+    i=mod289(i);
+    vec4 p=permute(permute(permute(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));
+    float n_=.142857142857;vec3 ns=n_*D.wyz-D.xzx;
+    vec4 j=p-49.*floor(p*ns.z*ns.z);vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.*x_);
+    vec4 x2_=x_*ns.x+ns.yyyy;vec4 y2_=y_*ns.x+ns.yyyy;
+    vec4 h=1.-abs(x2_)-abs(y2_);vec4 b0=vec4(x2_.xy,y2_.xy);vec4 b1=vec4(x2_.zw,y2_.zw);
+    vec4 s0=floor(b0)*2.+1.;vec4 s1=floor(b1)*2.+1.;
+    vec4 sh=-step(h,vec4(0.));
+    vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+    vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+    vec4 nm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+    p0*=nm.x;p1*=nm.y;p2*=nm.z;p3*=nm.w;
+    vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);m=m*m;
+    return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}
+float fbm3D(vec3 p){float v=0.,a=.5;for(int i=0;i<7;i++){v+=a*snoise(p);p*=2.08;a*=.48;}return v;}
+void main(){
+    vec3 p=vPosition*1.25;float t=uTime*.07;
+    float n1=fbm3D(p+vec3(t,0.,t*.45));
+    float n2=fbm3D(p*2.2+vec3(-t*.65,t*.28,0.))*.45;
+    float n3=snoise(p*4.5+vec3(t*.18))*.12;
+    float n4=snoise(p*8.+vec3(-t*.3,t*.1,0.))*.06;
+    float noise=n1+n2+n3+n4;
+    float spotNoise=snoise(p*3.5+vec3(t*.08));
+    float spotMask=smoothstep(.56,.67,spotNoise);
+    float granulation=snoise(p*15.+vec3(t*.15))*.04;
+    noise+=granulation;
+    float viewDot=max(0.,dot(vNormal,vec3(0.,0.,1.)));
+    float limb=pow(viewDot,.38);
+    vec3 deepRed=vec3(.52,.02,0.);vec3 midOrange=vec3(1.,.30,0.);
+    vec3 surfaceYellow=vec3(1.,.66,.06);vec3 hotWhite=vec3(1.,.96,.70);
+    float val=noise*.5+.5;vec3 color;
+    if(val<.30)color=mix(deepRed,midOrange,val/.30);
+    else if(val<.56)color=mix(midOrange,surfaceYellow,(val-.30)/.26);
+    else color=mix(surfaceYellow,hotWhite,(val-.56)/.44);
+    color=mix(color,deepRed*.40,spotMask*.78);
+    color*=limb;color*=1.9;gl_FragColor=vec4(color,1.);}`;
+
+const coronaVS=`varying vec3 vNormal;varying vec3 viewDir;
+void main(){vNormal=normalize(normalMatrix*normal);vec4 wp=modelMatrix*vec4(position,1.);viewDir=normalize(cameraPosition-wp.xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+
+const coronaFS=`uniform float uTime;varying vec3 vNormal;varying vec3 viewDir;
+vec3 mod289(vec3 x){return x-floor(x*(1./289.))*289.;}
+vec4 mod289(vec4 x){return x-floor(x*(1./289.))*289.;}
+vec4 permute(vec4 x){return mod289(((x*34.)+1.)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-.85373472095314*r;}
+float snoise(vec3 v){
+    const vec2 C=vec2(1./6.,1./3.);const vec4 D=vec4(0.,.5,1.,2.);
+    vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);
+    vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.-g;vec3 i1=min(g,l.zxy);vec3 i2=max(g,l.zxy);
+    vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;i=mod289(i);
+    vec4 p=permute(permute(permute(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));
+    float n_=.142857142857;vec3 ns=n_*D.wyz-D.xzx;
+    vec4 j=p-49.*floor(p*ns.z*ns.z);vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.*x_);
+    vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;
+    vec4 h=1.-abs(x)-abs(y);vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);
+    vec4 s0=floor(b0)*2.+1.;vec4 s1=floor(b1)*2.+1.;
+    vec4 sh=-step(h,vec4(0.));
+    vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+    vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+    vec4 nm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+    p0*=nm.x;p1*=nm.y;p2*=nm.z;p3*=nm.w;
+    vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);m=m*m;
+    return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}
+void main(){
+    float fresnel=1.-max(0.,dot(vNormal,viewDir));fresnel=pow(fresnel,2.2);
+    float t=uTime*.04;
+    float n1=snoise(vNormal*3.5+vec3(t))*.5+.5;
+    float n2=snoise(vNormal*7.-vec3(t*.6))*.25;
+    float n3=snoise(vNormal*12.+vec3(t*.2))*.1;
+    float intensity=fresnel*(.52+n1*.35+n2+n3);
+    vec3 color=mix(vec3(1.,.32,0.),vec3(1.,.82,.25),n1);
+    color=mix(color,vec3(1.,.95,.8),n3*2.);
+    gl_FragColor=vec4(color*2.2,intensity*.48);}`;
+
+const atmoVS=`varying vec3 vNormal;varying vec3 viewDir;
+void main(){vNormal=normalize(normalMatrix*normal);vec4 wp=modelMatrix*vec4(position,1.);viewDir=normalize(cameraPosition-wp.xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+const atmoFS=`uniform vec3 uColor;uniform float uIntensity;varying vec3 vNormal;varying vec3 viewDir;
+void main(){float f=1.-max(0.,dot(vNormal,viewDir));f=pow(f,2.8)*uIntensity;gl_FragColor=vec4(uColor,f);}`;
+
+/* ================================================================
+   SCENE INIT
+================================================================ */
+function initScene() {
+    scene = new THREE.Scene();
+    clock = new THREE.Clock();
+    camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.04, 280000);
+    camera.position.set(30, 20, 68);
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    document.body.prepend(renderer.domElement);
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), CFG.bloomStrength, CFG.bloomRadius, CFG.bloomThreshold));
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 1.2;
+    controls.maxDistance = 70000;
+    controls.zoomSpeed = 1.4;
+    controls.rotateSpeed = 0.45;
+    scene.add(new THREE.AmbientLight(0x080818, 0.1));
+    scene.add(new THREE.PointLight(0xffeedd, 3.0, 3000, 0.35));
+    window.addEventListener('resize', () => {
+        camera.aspect = innerWidth/innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+        composer.setSize(innerWidth, innerHeight);
+    });
+    renderer.domElement.addEventListener('click', onCanvasClick);
+    renderer.domElement.addEventListener('mousemove', e => {
+        mouseVector.x = (e.clientX/innerWidth)*2-1;
+        mouseVector.y = -(e.clientY/innerHeight)*2+1;
+    });
+}
+
+/* ================================================================
+   ENHANCED STARFIELD WITH TWINKLING
+================================================================ */
+function createStarfield() {
+    let geo = new THREE.BufferGeometry();
+    let count = CFG.starCount;
+    let pos = new Float32Array(count*3);
+    let sizes = new Float32Array(count);
+    let colors = new Float32Array(count*3);
+    let twinklePhase = new Float32Array(count);
+    let twinkleSpeed = new Float32Array(count);
+
+    for(let i=0;i<count;i++){
+        let th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+        let r=6000+Math.random()*52000;
+        pos[i*3]=r*Math.sin(ph)*Math.cos(th);
+        pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+        pos[i*3+2]=r*Math.cos(ph);
+        sizes[i]=Math.random()*4+0.3;
+        twinklePhase[i]=Math.random()*Math.PI*2;
+        twinkleSpeed[i]=0.5+Math.random()*3.0;
+        let t=Math.random();
+        if(t<.05){colors[i*3]=.5;colors[i*3+1]=.6;colors[i*3+2]=1.;}
+        else if(t<.14){colors[i*3]=.7;colors[i*3+1]=.78;colors[i*3+2]=1.;}
+        else if(t<.21){colors[i*3]=1.;colors[i*3+1]=.92;colors[i*3+2]=.75;}
+        else if(t<.27){colors[i*3]=1.;colors[i*3+1]=.8;colors[i*3+2]=.5;}
+        else if(t<.31){colors[i*3]=1.;colors[i*3+1]=.55;colors[i*3+2]=.3;}
+        else{let br=.7+Math.random()*.3;colors[i*3]=br;colors[i*3+1]=br;colors[i*3+2]=br;}
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes,1));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(colors,3));
+    geo.setAttribute('aTwinklePhase', new THREE.BufferAttribute(twinklePhase,1));
+    geo.setAttribute('aTwinkleSpeed', new THREE.BufferAttribute(twinkleSpeed,1));
+
+    let mat = new THREE.ShaderMaterial({
+        vertexShader:`
+            attribute float size;
+            attribute vec3 aColor;
+            attribute float aTwinklePhase;
+            attribute float aTwinkleSpeed;
+            uniform float uTime;
+            varying vec3 vColor;
+            varying float vTwinkle;
+            void main(){
+                vColor=aColor;
+                vTwinkle=0.6+0.4*sin(uTime*aTwinkleSpeed+aTwinklePhase);
+                vec4 mv=modelViewMatrix*vec4(position,1.0);
+                gl_PointSize=size*(500.0/-mv.z)*vTwinkle;
+                gl_Position=projectionMatrix*mv;
+            }`,
+        fragmentShader:`
+            varying vec3 vColor;
+            varying float vTwinkle;
+            void main(){
+                float d=length(gl_PointCoord-.5)*2.0;
+                float alpha=1.0-smoothstep(0.0,1.0,d);
+                alpha*=alpha;
+                float core=smoothstep(0.3,0.0,d)*0.6;
+                gl_FragColor=vec4(vColor*(1.0+core)*vTwinkle, alpha);
+            }`,
+        uniforms:{ uTime:{value:0} },
+        transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+    });
+    let stars = new THREE.Points(geo, mat);
+    stars.userData.isStarfield = true;
+    scene.add(stars);
+
+    /* Bright star sprites with diffraction spikes */
+    for(let i=0;i<12;i++){
+        let th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+        let r=4000+Math.random()*30000;
+        let canvas=document.createElement('canvas');
+        canvas.width=128;canvas.height=128;
+        let ctx=canvas.getContext('2d');
+        let cx=64,cy=64;
+        /* Draw 4-point diffraction spike */
+        let grad=ctx.createRadialGradient(cx,cy,0,cx,cy,64);
+        let hue=Math.random();
+        let col=new THREE.Color().setHSL(hue,0.3,0.9);
+        grad.addColorStop(0,`rgba(255,255,255,1)`);
+        grad.addColorStop(0.05,`rgba(${col.r*255|0},${col.g*255|0},${col.b*255|0},0.8)`);
+        grad.addColorStop(0.2,`rgba(${col.r*255|0},${col.g*255|0},${col.b*255|0},0.15)`);
+        grad.addColorStop(1,`rgba(0,0,0,0)`);
+        ctx.fillStyle=grad;ctx.fillRect(0,0,128,128);
+        /* Spikes */
+        ctx.globalCompositeOperation='lighter';
+        for(let s=0;s<4;s++){
+            let angle=s*Math.PI/2+Math.PI/4;
+            ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
+            let sg=ctx.createLinearGradient(0,0,60,0);
+            sg.addColorStop(0,`rgba(${col.r*255|0},${col.g*255|0},${col.b*255|0},0.5)`);
+            sg.addColorStop(1,`rgba(0,0,0,0)`);
+            ctx.fillStyle=sg;ctx.fillRect(0,-0.5,60,1);
+            ctx.restore();
+        }
+        let tex=new THREE.CanvasTexture(canvas);
+        let spriteMat=new THREE.SpriteMaterial({map:tex,blending:THREE.AdditiveBlending,transparent:true,opacity:0.7,depthWrite:false});
+        let sprite=new THREE.Sprite(spriteMat);
+        sprite.position.set(r*Math.sin(ph)*Math.cos(th),r*Math.sin(ph)*Math.sin(th),r*Math.cos(ph));
+        sprite.scale.set(8+Math.random()*12,8+Math.random()*12,1);
+        scene.add(sprite);
+        brightStarSprites.push(sprite);
+    }
+}
+
+/* ================================================================
+   ENHANCED MILKY WAY WITH DUST LANES & BRIGHT CORE
+================================================================ */
+function createMilkyWay() {
+    let count = CFG.galaxyParticleCount;
+    let geo = new THREE.BufferGeometry();
+    let pos = new Float32Array(count*3);
+    let sizes = new Float32Array(count);
+    let colors = new Float32Array(count*3);
+    let arms=4, spread=0.5, R=18000;
+
+    for(let i=0;i<count;i++){
+        let arm=i%arms, off=(arm/arms)*Math.PI*2;
+        let d=Math.pow(Math.random(),.42)*R;
+        let spiral=d/R*3.5;
+        let angle=off+spiral+(Math.random()-.5)*spread*(1+d/R);
+        let h=(Math.random()-.5)*420*Math.exp(-d/(R*.25));
+        pos[i*3]=Math.cos(angle)*d; pos[i*3+1]=h; pos[i*3+2]=Math.sin(angle)*d;
+        sizes[i]=(Math.random()*2.5+.3)*(1-d/R*.55);
+        let t=d/R;
+        /* Dust lane: randomly darken some particles in spiral arms */
+        let dustMask = (smoothNoise2D(angle*3+d*0.001, d*0.002) > 0.55 && d > R*0.15 && d < R*0.7) ? 0.15 : 1.0;
+        if(t<.08){colors[i*3]=1.*dustMask;colors[i*3+1]=0.82*dustMask;colors[i*3+2]=0.45*dustMask;}
+        else if(t<.25){colors[i*3]=0.92*dustMask;colors[i*3+1]=0.82*dustMask;colors[i*3+2]=0.62*dustMask;}
+        else if(t<.55){colors[i*3]=0.68*dustMask;colors[i*3+1]=0.72*dustMask;colors[i*3+2]=0.84*dustMask;}
+        else{let b=(0.38+Math.random()*.25)*dustMask;colors[i*3]=b*.6;colors[i*3+1]=b*.7;colors[i*3+2]=b;}
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('size',new THREE.BufferAttribute(sizes,1));
+    geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
+
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`
+            attribute float size;attribute vec3 aColor;varying vec3 vColor;varying float vAlpha;
+            void main(){vColor=aColor;vec4 mv=modelViewMatrix*vec4(position,1.0);
+            vAlpha=smoothstep(65000.0,1800.0,length(mv.xyz));
+            gl_PointSize=size*(1500.0/max(1.0,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`
+            varying vec3 vColor;varying float vAlpha;
+            void main(){float d=length(gl_PointCoord-.5)*2.0;
+            float a=(1.-smoothstep(0.,1.,d));a=a*a*0.42*vAlpha;
+            gl_FragColor=vec4(vColor,a);}`,
+        transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+    });
+    milkyWayPoints=new THREE.Points(geo,mat);
+    milkyWayPoints.position.set(-5200,280,9800);
+    milkyWayPoints.rotation.x=0.1;milkyWayPoints.rotation.z=-0.04;
+    scene.add(milkyWayPoints);
+
+    /* Bright galactic core */
+    let coreCanvas=document.createElement('canvas');
+    coreCanvas.width=256;coreCanvas.height=256;
+    let coreCtx=coreCanvas.getContext('2d');
+    let cg=coreCtx.createRadialGradient(128,128,0,128,128,128);
+    cg.addColorStop(0,'rgba(255,225,155,0.45)');
+    cg.addColorStop(0.04,'rgba(255,200,120,0.35)');
+    cg.addColorStop(0.12,'rgba(255,175,95,0.18)');
+    cg.addColorStop(0.3,'rgba(210,155,95,0.06)');
+    cg.addColorStop(0.6,'rgba(150,120,90,0.02)');
+    cg.addColorStop(1,'rgba(0,0,0,0)');
+    coreCtx.fillStyle=cg;coreCtx.fillRect(0,0,256,256);
+    let coreTex=new THREE.CanvasTexture(coreCanvas);
+    let coreMat=new THREE.SpriteMaterial({map:coreTex,blending:THREE.AdditiveBlending,transparent:true,opacity:0.8,depthWrite:false});
+    let coreSprite=new THREE.Sprite(coreMat);
+    coreSprite.scale.set(6000,6000,1);
+    coreSprite.position.copy(milkyWayPoints.position);
+    scene.add(coreSprite);
+
+    /* Diffuse galactic glow */
+    let glowCanvas=document.createElement('canvas');
+    glowCanvas.width=256;glowCanvas.height=256;
+    let glowCtx=glowCanvas.getContext('2d');
+    let gg=glowCtx.createRadialGradient(128,128,0,128,128,128);
+    gg.addColorStop(0,'rgba(255,218,145,0.22)');
+    gg.addColorStop(0.15,'rgba(255,178,95,0.08)');
+    gg.addColorStop(0.45,'rgba(198,148,95,0.02)');
+    gg.addColorStop(1,'rgba(0,0,0,0)');
+    glowCtx.fillStyle=gg;glowCtx.fillRect(0,0,256,256);
+    let glowTex=new THREE.CanvasTexture(glowCanvas);
+    let glowMat=new THREE.SpriteMaterial({map:glowTex,blending:THREE.AdditiveBlending,transparent:true,opacity:0.6,depthWrite:false});
+    let glowSprite=new THREE.Sprite(glowMat);
+    glowSprite.scale.set(12000,12000,1);
+    glowSprite.position.copy(milkyWayPoints.position);
+    scene.add(glowSprite);
+}
+
+/* ================================================================
+   ENHANCED VOLUMETRIC NEBULAE WITH RADIATION TENDRILS
+================================================================ */
+function createEnhancedNebulae() {
+    /* Define distinct nebulae with unique characteristics */
+    const nebulaDefs = [
+        { pos:[12000, 3500, -18000], scale:4500, hue:0.02, sat:0.7, color1:[0.9,0.15,0.08], color2:[1.0,0.45,0.12], tendrils:4, intensity:0.14 },
+        { pos:[-15000, -2000, 22000], scale:5500, hue:0.52, sat:0.5, color1:[0.05,0.65,0.55], color2:[0.1,0.85,0.7], tendrils:6, intensity:0.11 },
+        { pos:[28000, 5000, 8000], scale:3800, hue:0.92, sat:0.4, color1:[0.6,0.08,0.55], color2:[0.85,0.2,0.65], tendrils:3, intensity:0.10 },
+        { pos:[-8000, 8000, -25000], scale:6000, hue:0.08, sat:0.65, color1:[0.85,0.55,0.08], color2:[1.0,0.78,0.25], tendrils:5, intensity:0.13 },
+        { pos:[18000, -5000, 30000], scale:4200, hue:0.62, sat:0.45, color1:[0.15,0.3,0.7], color2:[0.25,0.55,0.9], tendrils:4, intensity:0.09 },
+        { pos:[-25000, 3000, -10000], scale:5000, hue:0.98, sat:0.5, color1:[0.7,0.08,0.35], color2:[0.95,0.25,0.45], tendrils:5, intensity:0.12 },
+        { pos:[5000, -7000, 35000], scale:3500, hue:0.35, sat:0.55, color1:[0.2,0.7,0.3], color2:[0.4,0.9,0.5], tendrils:3, intensity:0.08 },
+        { pos:[-30000, 6000, 15000], scale:4800, hue:0.15, sat:0.6, color1:[0.9,0.4,0.1], color2:[1.0,0.65,0.2], tendrils:4, intensity:0.11 },
+        { pos:[32000, -3000, -20000], scale:4000, hue:0.75, sat:0.35, color1:[0.3,0.15,0.6], color2:[0.5,0.35,0.85], tendrils:5, intensity:0.10 },
+        { pos:[-12000, -8000, -32000], scale:5200, hue:0.45, sat:0.5, color1:[0.1,0.6,0.5], color2:[0.2,0.8,0.6], tendrils:4, intensity:0.09 }
+    ];
+
+    nebulaDefs.forEach((def, ni) => {
+        let group = new THREE.Group();
+        group.position.set(def.pos[0], def.pos[1], def.pos[2]);
+
+        /* Layer 1: Diffuse glow sprite */
+        let gc = document.createElement('canvas');
+        gc.width=256;gc.height=256;
+        let gctx=gc.getContext('2d');
+        let g=gctx.createRadialGradient(128,128,0,128,128,128);
+        let c1=def.color1, c2=def.color2;
+        g.addColorStop(0,`rgba(${c2[0]*255|0},${c2[1]*255|0},${c2[2]*255|0},${def.intensity*2})`);
+        g.addColorStop(0.15,`rgba(${c1[0]*255|0},${c1[1]*255|0},${c1[2]*255|0},${def.intensity*1.2})`);
+        g.addColorStop(0.4,`rgba(${c1[0]*200|0},${c1[1]*200|0},${c1[2]*200|0},${def.intensity*0.4})`);
+        g.addColorStop(0.7,`rgba(${c1[0]*100|0},${c1[1]*100|0},${c1[2]*100|0},${def.intensity*0.08})`);
+        g.addColorStop(1,`rgba(0,0,0,0)`);
+        gctx.fillStyle=g;gctx.fillRect(0,0,256,256);
+        let gTex=new THREE.CanvasTexture(gc);
+        let gMat=new THREE.SpriteMaterial({map:gTex,blending:THREE.AdditiveBlending,transparent:true,opacity:1,depthWrite:false});
+        let gSprite=new THREE.Sprite(gMat);
+        gSprite.scale.set(def.scale*2.2, def.scale*2.2, 1);
+        group.add(gSprite);
+
+        /* Layer 2: Secondary offset glow for asymmetry */
+        let gc2=document.createElement('canvas');
+        gc2.width=128;gc2.height=128;
+        let gctx2=gc2.getContext('2d');
+        let g2=gctx2.createRadialGradient(64,64,0,64,64,64);
+        g2.addColorStop(0,`rgba(${c2[0]*255|0},${c2[1]*255|0},${c2[2]*255|0},${def.intensity*1.5})`);
+        g2.addColorStop(0.3,`rgba(${c1[0]*255|0},${c1[1]*255|0},${c1[2]*255|0},${def.intensity*0.5})`);
+        g2.addColorStop(1,`rgba(0,0,0,0)`);
+        gctx2.fillStyle=g2;gctx2.fillRect(0,0,128,128);
+        let gTex2=new THREE.CanvasTexture(gc2);
+        let gMat2=new THREE.SpriteMaterial({map:gTex2,blending:THREE.AdditiveBlending,transparent:true,opacity:0.8,depthWrite:false});
+        let gSprite2=new THREE.Sprite(gMat2);
+        gSprite2.position.set(def.scale*0.3, def.scale*0.2, def.scale*0.1);
+        gSprite2.scale.set(def.scale*1.4, def.scale*1.4, 1);
+        group.add(gSprite2);
+
+        /* Layer 3: Detail particles */
+        let pCount = CFG.nebulaParticlesPer;
+        let pGeo = new THREE.BufferGeometry();
+        let pPos = new Float32Array(pCount*3);
+        let pSizes = new Float32Array(pCount);
+        let pColors = new Float32Array(pCount*3);
+        let pPhases = new Float32Array(pCount);
+
+        for(let i=0;i<pCount;i++){
+            /* Gaussian-ish distribution */
+            let r = def.scale * (Math.random()+Math.random()+Math.random())/3 * 0.8;
+            let th = Math.random()*Math.PI*2;
+            let ph = Math.acos(2*Math.random()-1);
+            /* Flatten slightly */
+            let flatten = 0.4 + Math.random()*0.6;
+            pPos[i*3] = r*Math.sin(ph)*Math.cos(th);
+            pPos[i*3+1] = r*Math.sin(ph)*Math.sin(th)*flatten;
+            pPos[i*3+2] = r*Math.cos(ph);
+            pSizes[i] = 3 + Math.random()*12;
+            pPhases[i] = Math.random()*Math.PI*2;
+            let t=Math.random();
+            pColors[i*3] = c1[0]+(c2[0]-c1[0])*t;
+            pColors[i*3+1] = c1[1]+(c2[1]-c1[1])*t;
+            pColors[i*3+2] = c1[2]+(c2[2]-c1[2])*t;
+            /* Add some bright spots */
+            if(Math.random()<0.02){ pColors[i*3]=1; pColors[i*3+1]=1; pColors[i*3+2]=0.9; pSizes[i]*=2.5; }
+        }
+        pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+        pGeo.setAttribute('aSize',new THREE.BufferAttribute(pSizes,1));
+        pGeo.setAttribute('aColor',new THREE.BufferAttribute(pColors,3));
+        pGeo.setAttribute('aPhase',new THREE.BufferAttribute(pPhases,1));
+
+        let pMat = new THREE.ShaderMaterial({
+            vertexShader:`
+                attribute float aSize;attribute vec3 aColor;attribute float aPhase;
+                uniform float uTime;varying vec3 vColor;varying float vAlpha;
+                void main(){
+                    vColor=aColor;
+                    vAlpha=0.5+0.5*sin(uTime*0.3+aPhase);
+                    vec4 mv=modelViewMatrix*vec4(position,1.0);
+                    gl_PointSize=aSize*(800.0/max(1.0,-mv.z));
+                    gl_Position=projectionMatrix*mv;
+                }`,
+            fragmentShader:`
+                varying vec3 vColor;varying float vAlpha;
+                void main(){
+                    float d=length(gl_PointCoord-.5)*2.0;
+                    float a=1.0-smoothstep(0.0,1.0,d);
+                    a=a*a*a*0.08*vAlpha;
+                    gl_FragColor=vec4(vColor*1.5,a);
+                }`,
+            uniforms:{ uTime:{value:0} },
+            transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+        });
+        let particles=new THREE.Points(pGeo,pMat);
+        group.add(particles);
+
+        /* Layer 4: Radiation tendrils — flowing particle streams */
+        for(let t=0;t<def.tendrils;t++){
+            let tCount=600;
+            let tGeo=new THREE.BufferGeometry();
+            let tPos=new Float32Array(tCount*3);
+            let tSizes=new Float32Array(tCount);
+            let tColors=new Float32Array(tCount*3);
+            let tParams=new Float32Array(tCount); /* 0-1 along tendril */
+
+            let tendrilAngle = (t/def.tendrils)*Math.PI*2 + ni*0.7;
+            let tendrilDir = new THREE.Vector3(
+                Math.cos(tendrilAngle)*0.7,
+                (Math.random()-0.5)*0.3,
+                Math.sin(tendrilAngle)*0.7
+            ).normalize();
+            let tendrilLength = def.scale * (1.2 + Math.random()*1.5);
+            let tendrilCurve = new THREE.Vector3(
+                (Math.random()-0.5)*def.scale*0.5,
+                (Math.random()-0.5)*def.scale*0.3,
+                (Math.random()-0.5)*def.scale*0.5
+            );
+
+            for(let i=0;i<tCount;i++){
+                let p = i/tCount;
+                tParams[i] = p;
+                /* Curved tendril path */
+                let baseX = tendrilDir.x * tendrilLength * p;
+                let baseY = tendrilDir.y * tendrilLength * p;
+                let baseZ = tendrilDir.z * tendrilLength * p;
+                /* Add curve */
+                let curve = p * p; /* quadratic curve */
+                baseX += tendrilCurve.x * curve;
+                baseY += tendrilCurve.y * curve;
+                baseZ += tendrilCurve.z * curve;
+                /* Add spread */
+                let spread = def.scale * 0.08 * Math.sin(p * Math.PI);
+                baseX += (Math.random()-0.5)*spread;
+                baseY += (Math.random()-0.5)*spread;
+                baseZ += (Math.random()-0.5)*spread;
+                tPos[i*3]=baseX; tPos[i*3+1]=baseY; tPos[i*3+2]=baseZ;
+                tSizes[i] = 2 + Math.random()*5;
+                let brightness = Math.sin(p*Math.PI) * (0.7+Math.random()*0.3);
+                tColors[i*3]=c2[0]*brightness;
+                tColors[i*3+1]=c2[1]*brightness;
+                tColors[i*3+2]=c2[2]*brightness;
+            }
+            tGeo.setAttribute('position',new THREE.BufferAttribute(tPos,3));
+            tGeo.setAttribute('aSize',new THREE.BufferAttribute(tSizes,1));
+            tGeo.setAttribute('aColor',new THREE.BufferAttribute(tColors,3));
+
+            let tMat=new THREE.ShaderMaterial({
+                vertexShader:`
+                    attribute float aSize;attribute vec3 aColor;
+                    void main(){
+                        vec4 mv=modelViewMatrix*vec4(position,1.0);
+                        gl_PointSize=aSize*(600.0/max(1.0,-mv.z));
+                        gl_Position=projectionMatrix*mv;
+                    }`,
+                fragmentShader:`
+                    varying vec3 vColor;
+                    void main(){
+                        float d=length(gl_PointCoord-.5)*2.0;
+                        float a=1.0-smoothstep(0.0,1.0,d);
+                        a=a*a*a*0.15;
+                        gl_FragColor=vec4(vColor*2.0,a);
+                    }`,
+                transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+            });
+            let tendril=new THREE.Points(tGeo,tMat);
+            group.add(tendril);
+        }
+
+        scene.add(group);
+        nebulaGroups.push({ group, particles, def, angle: Math.random()*Math.PI*2 });
+    });
+}
+
+/* ================================================================
+   INTERSTELLAR DUST — Thin ecliptic disc of fine particles
+================================================================ */
+function createInterstellarDust() {
+    let count = CFG.interstellarDustCount;
+    let geo = new THREE.BufferGeometry();
+    let pos = new Float32Array(count*3);
+    let sizes = new Float32Array(count);
+
+    for(let i=0;i<count;i++){
+        let angle = Math.random()*Math.PI*2;
+        let r = 15 + Math.random()*500;
+        let y = (Math.random()-0.5)*8 * Math.exp(-r/200);
+        pos[i*3] = Math.cos(angle)*r;
+        pos[i*3+1] = y;
+        pos[i*3+2] = Math.sin(angle)*r;
+        sizes[i] = 0.3 + Math.random()*0.8;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`
+            attribute float aSize;
+            void main(){
+                vec4 mv=modelViewMatrix*vec4(position,1.0);
+                gl_PointSize=aSize*(40.0/max(1.0,-mv.z));
+                gl_Position=projectionMatrix*mv;
+            }`,
+        fragmentShader:`
+            void main(){
+                float d=length(gl_PointCoord-.5)*2.0;
+                float a=1.0-smoothstep(0.0,1.0,d);
+                a=a*a*0.035;
+                gl_FragColor=vec4(0.6,0.55,0.45,a);
+            }`,
+        transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+    });
+    interstellarDustSystem = new THREE.Points(geo,mat);
+    scene.add(interstellarDustSystem);
+}
+
+/* ================================================================
+   ASTEROID BELT
+================================================================ */
+function createAsteroidBelt() {
+    let count = CFG.asteroidBeltCount;
+    let geo = new THREE.BufferGeometry();
+    let pos = new Float32Array(count*3);
+    let sizes = new Float32Array(count);
+    let colors = new Float32Array(count*3);
+
+    for(let i=0;i<count;i++){
+        let angle = Math.random()*Math.PI*2;
+        let r = 88 + Math.random()*48; /* Between Mars(70) and Jupiter(145) */
+        let y = (Math.random()-0.5)*3;
+        pos[i*3]=Math.cos(angle)*r;
+        pos[i*3+1]=y;
+        pos[i*3+2]=Math.sin(angle)*r;
+        sizes[i]=0.3+Math.random()*1.2;
+        let br=0.3+Math.random()*0.35;
+        colors[i*3]=br*1.1;colors[i*3+1]=br*0.9;colors[i*3+2]=br*0.7;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
+
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`
+            attribute float aSize;attribute vec3 aColor;
+            void main(){
+                vec4 mv=modelViewMatrix*vec4(position,1.0);
+                gl_PointSize=aSize*(60.0/max(1.0,-mv.z));
+                gl_Position=projectionMatrix*mv;
+            }`,
+        fragmentShader:`
+            varying vec3 vColor;
+            void main(){
+                float d=length(gl_PointCoord-.5)*2.0;
+                float a=1.0-smoothstep(0.0,1.0,d);
+                a=a*a*0.5;
+                gl_FragColor=vec4(vColor,a);
+            }`,
+        transparent:true, depthWrite:false
+    });
+    asteroidBeltSystem = new THREE.Points(geo,mat);
+    scene.add(asteroidBeltSystem);
+}
+
+/* ================================================================
+   KUIPER BELT
+================================================================ */
+function createKuiperBelt() {
+    let count = CFG.kuiperBeltCount;
+    let geo = new THREE.BufferGeometry();
+    let pos = new Float32Array(count*3);
+    let sizes = new Float32Array(count);
+
+    for(let i=0;i<count;i++){
+        let angle = Math.random()*Math.PI*2;
+        let r = 460 + Math.random()*120;
+        let y = (Math.random()-0.5)*15;
+        pos[i*3]=Math.cos(angle)*r;
+        pos[i*3+1]=y;
+        pos[i*3+2]=Math.sin(angle)*r;
+        sizes[i]=0.2+Math.random()*0.6;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`
+            attribute float aSize;
+            void main(){
+                vec4 mv=modelViewMatrix*vec4(position,1.0);
+                gl_PointSize=aSize*(45.0/max(1.0,-mv.z));
+                gl_Position=projectionMatrix*mv;
+            }`,
+        fragmentShader:`
+            void main(){
+                float d=length(gl_PointCoord-.5)*2.0;
+                float a=1.0-smoothstep(0.0,1.0,d);
+                a=a*a*0.2;
+                gl_FragColor=vec4(0.5,0.55,0.65,a);
+            }`,
+        transparent:true, depthWrite:false
+    });
+    kuiperBeltSystem = new THREE.Points(geo,mat);
+    scene.add(kuiperBeltSystem);
+}
+
+/* ================================================================
+   SOLAR PROMINENCES — Animated arc particles
+================================================================ */
+function createSolarProminences() {
+    let count = CFG.prominenceCount;
+    let geo = new THREE.BufferGeometry();
+    let pos = new Float32Array(count*3);
+    let sizes = new Float32Array(count);
+    let colors = new Float32Array(count*3);
+    let arcParams = new Float32Array(count*4); /* arcIndex, t, arcHeight, arcWidth */
+
+    let numArcs = 6;
+    for(let i=0;i<count;i++){
+        let arc = i % numArcs;
+        let t = Math.random();
+        arcParams[i*4] = arc;
+        arcParams[i*4+1] = t;
+        arcParams[i*4+2] = CFG.sunRadius*(1.5+arc*0.6+Math.random()*0.5);
+        arcParams[i*4+3] = 0.3+Math.random()*0.5;
+
+        let baseAngle = (arc/numArcs)*Math.PI*2;
+        let r = CFG.sunRadius*1.02;
+        pos[i*3] = Math.cos(baseAngle)*r;
+        pos[i*3+1] = 0;
+        pos[i*3+2] = Math.sin(baseAngle)*r;
+
+        sizes[i] = 1.5+Math.random()*3;
+        let bright = Math.sin(t*Math.PI);
+        colors[i*3]=1.0*bright;
+        colors[i*3+1]=(0.3+0.4*bright);
+        colors[i*3+2]=0.05*bright;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
+
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`
+            attribute float aSize;attribute vec3 aColor;
+            void main(){
+                vec4 mv=modelViewMatrix*vec4(position,1.0);
+                gl_PointSize=aSize*(100.0/max(1.0,-mv.z));
+                gl_Position=projectionMatrix*mv;
+            }`,
+        fragmentShader:`
+            varying vec3 vColor;
+            void main(){
+                float d=length(gl_PointCoord-.5)*2.0;
+                float a=1.0-smoothstep(0.0,1.0,d);
+                a=a*a*0.6;
+                gl_FragColor=vec4(vColor*2.0,a);
+            }`,
+        transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+    });
+    prominenceSystem = new THREE.Points(geo,mat);
+    prominenceSystem.userData = { arcParams, numArcs:6 };
+    scene.add(prominenceSystem);
+}
+/* ================================================================
+   NEBULA RADIATION — Particle streams from each nebula toward the
+   solar system. Different color per nebula, interacts with shields.
+================================================================ */
+function createNebulaRadiation() {
+    nebulaGroups.forEach((ng, ni) => {
+        let def = ng.def;
+        let count = CFG.nebulaRadiationPerNebula;
+        let geo = new THREE.BufferGeometry();
+        let pos = new Float32Array(count * 3);
+        let vel = new Float32Array(count * 3);
+        let life = new Float32Array(count);
+        let sizes = new Float32Array(count);
+        let colors = new Float32Array(count * 3);
+
+        let nebulaWorldPos = new THREE.Vector3(def.pos[0], def.pos[1], def.pos[2]);
+        let towardSun = nebulaWorldPos.clone().negate().normalize();
+
+        for (let i = 0; i < count; i++) {
+            /* Start near the nebula with slight scatter */
+            let scatter = def.scale * 0.6;
+            let sx = def.pos[0] + (Math.random() - 0.5) * scatter;
+            let sy = def.pos[1] + (Math.random() - 0.5) * scatter;
+            let sz = def.pos[2] + (Math.random() - 0.5) * scatter;
+            pos[i * 3] = sx; pos[i * 3 + 1] = sy; pos[i * 3 + 2] = sz;
+
+            /* Velocity toward solar system center with spread cone */
+            let spreadAngle = 0.25 + Math.random() * 0.15;
+            let dir = towardSun.clone();
+            dir.x += (Math.random() - 0.5) * spreadAngle;
+            dir.y += (Math.random() - 0.5) * spreadAngle * 0.4;
+            dir.z += (Math.random() - 0.5) * spreadAngle;
+            dir.normalize();
+            let speed = CFG.nebulaRadiationSpeed * (0.7 + Math.random() * 0.6);
+            vel[i * 3] = dir.x * speed;
+            vel[i * 3 + 1] = dir.y * speed;
+            vel[i * 3 + 2] = dir.z * speed;
+
+            life[i] = Math.random();
+            sizes[i] = 1.0 + Math.random() * 2.8;
+
+            /* Color from nebula palette with variation */
+            let t = Math.random();
+            let cr = def.color1[0] + (def.color2[0] - def.color1[0]) * t;
+            let cg = def.color1[1] + (def.color2[1] - def.color1[1]) * t;
+            let cb = def.color1[2] + (def.color2[2] - def.color1[2]) * t;
+            /* Boost brightness for radiation look */
+            colors[i * 3] = Math.min(1, cr * 1.4);
+            colors[i * 3 + 1] = Math.min(1, cg * 1.4);
+            colors[i * 3 + 2] = Math.min(1, cb * 1.4);
+        }
+
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+        geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+
+        let mat = new THREE.ShaderMaterial({
+            vertexShader: `
+                attribute float aSize;
+                attribute vec3 aColor;
+                varying vec3 vColor;
+                varying float vDist;
+                void main() {
+                    vColor = aColor;
+                    float d = length(position);
+                    vDist = d / ${CFG.nebulaRadiationMaxRange.toFixed(1)};
+                    vec4 mv = modelViewMatrix *vec4(position, 1.0);
+                    gl_PointSize = aSize * (200.0 / max(1.0, -mv.z));
+                    gl_Position = projectionMatrix * mv;
+                }`,
+            fragmentShader: `
+                varying vec3 vColor;
+                varying float vDist;
+                void main() {
+                    float d = length(gl_PointCoord - 0.5) * 2.0;
+                    float a = 1.0 - smoothstep(0.0, 1.0, d);
+                    a = a * a * 0.35;
+                    /* Fade with distance traveled — nebula radiation weakens */
+                    float distFade = 1.0 - smoothstep(0.0, 0.85, vDist);
+                    /* Pulse subtly */
+                    gl_FragColor = vec4(vColor * 2.0, a * distFade);
+                }`,
+            transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+        });
+
+        let pts = new THREE.Points(geo, mat);
+        pts.visible = false;
+        scene.add(pts);
+
+        nebulaRadiationSystems.push({
+            points: pts,
+            positions: pos,
+            velocities: vel,
+            lifetimes: life,
+            count: count,
+            nebulaPos: new THREE.Vector3(def.pos[0], def.pos[1], def.pos[2]),
+            towardSun: towardSun.clone(),
+            color1: def.color1,
+            color2: def.color2,
+            scale: def.scale,
+            nebulaIndex: ni
+        });
+    });
+}
+
+/* ================================================================
+   NEBULA RADIATION IMPACT — Glow on planets hit by nebula radiation
+================================================================ */
+function createNebulaImpactEffects() {
+    PLANETS.forEach((data, pi) => {
+        if (data.shieldClass === 'none' || data.shieldClass === 'partial') {
+            let count = CFG.nebulaImpactCount;
+            let geo = new THREE.BufferGeometry();
+            let pos = new Float32Array(count * 3);
+            let sizes = new Float32Array(count);
+            let colors = new Float32Array(count * 3);
+            let phases = new Float32Array(count);
+
+            for (let i = 0; i < count; i++) {
+                let th = Math.random() * Math.PI * 2;
+                let ph = Math.acos(2 * Math.random() - 1);
+                let r = data.radius * (1.02 + Math.random() * 0.15);
+                pos[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+                pos[i * 3 + 1] = Math.sin(ph) * Math.sin(th) * r;
+                pos[i * 3 + 2] = Math.cos(ph) * r;
+                sizes[i] = 0.8 + Math.random() * 2.2;
+                /* Start as dim — will be colored dynamically */
+                colors[i * 3] = 0.5; colors[i * 3 + 1] = 0.2; colors[i * 3 + 2] = 0.6;
+                phases[i] = Math.random() * Math.PI * 2;
+            }
+
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+            geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+            geo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+
+            let mat = new THREE.ShaderMaterial({
+                vertexShader: `
+                    attribute float aSize;
+                    attribute vec3 aColor;
+                    attribute float aPhase;
+                    uniform float uTime;
+                    uniform float uIntensity;
+                    varying vec3 vColor;
+                    varying float vAlpha;
+                    void main() {
+                        vColor = aColor;
+                        vAlpha = uIntensity * (0.5 + 0.5 * sin(uTime * 2.5 + aPhase));
+                        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = aSize * (80.0 / max(1.0, -mv.z)) * (0.5 + uIntensity * 0.5);
+                        gl_Position = projectionMatrix * mv;
+                    }`,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    varying float vAlpha;
+                    void main() {
+                        float d = length(gl_PointCoord - 0.5) * 2.0;
+                        float a = 1.0 - smoothstep(0.0, 1.0, d);
+                        a = a * a * 0.45 * vAlpha;
+                        gl_FragColor = vec4(vColor * 2.0, a);
+                    }`,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uIntensity: { value: 0 }
+                },
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+            });
+
+            let pts = new THREE.Points(geo, mat);
+            pts.visible = false;
+            pts.name = 'nebulaImpact';
+            planetGroups[pi].add(pts);
+
+            nebulaImpactSystems[data.name] = {
+                points: pts,
+                positions: pos,
+                colors: colors,
+                count: count,
+                planetIndex: pi,
+                planetRadius: data.radius,
+                currentColor: new THREE.Color(0.5, 0.2, 0.6),
+                targetColor: new THREE.Color(0.5, 0.2, 0.6)
+            };
+        }
+    });
+}
+
+/* ================================================================
+   RESET NEBULA RADIATION PARTICLE
+================================================================ */
+function resetNebulaRadParticle(sys, i) {
+    let scatter = sys.scale * 0.6;
+    let sx = sys.nebulaPos.x + (Math.random() - 0.5) * scatter;
+    let sy = sys.nebulaPos.y + (Math.random() - 0.5) * scatter;
+    let sz = sys.nebulaPos.z + (Math.random() - 0.5) * scatter;
+    sys.positions[i * 3] = sx;
+    sys.positions[i * 3 + 1] = sy;
+    sys.positions[i * 3 + 2] = sz;
+
+    let spreadAngle = 0.25 + Math.random() * 0.15;
+    let dir = sys.towardSun.clone();
+    dir.x += (Math.random() - 0.5) * spreadAngle;
+    dir.y += (Math.random() - 0.5) * spreadAngle * 0.4;
+    dir.z += (Math.random() - 0.5) * spreadAngle;
+    dir.normalize();
+    let speed = CFG.nebulaRadiationSpeed * (0.7 + Math.random() * 0.6);
+    sys.velocities[i * 3] = dir.x * speed;
+    sys.velocities[i * 3 + 1] = dir.y * speed;
+    sys.velocities[i * 3 + 2] = dir.z * speed;
+
+    sys.lifetimes[i] = 0;
+}
+/* ================================================================
+   SUN
+================================================================ */
+function createSun() {
+    let coreGeo = new THREE.SphereGeometry(CFG.sunRadius, 72, 72);
+    sunMaterial = new THREE.ShaderMaterial({ vertexShader:sunVS, fragmentShader:sunFS, uniforms:{uTime:{value:0}} });
+    sunMesh = new THREE.Mesh(coreGeo, sunMaterial);
+    scene.add(sunMesh);
+
+    let coronaGeo = new THREE.SphereGeometry(CFG.sunRadius*1.9, 52, 52);
+    let coronaMat = new THREE.ShaderMaterial({
+        vertexShader:coronaVS, fragmentShader:coronaFS,
+        uniforms:{uTime:{value:0}},
+        transparent:true, side:THREE.FrontSide, depthWrite:false, blending:THREE.AdditiveBlending
+    });
+    sunCoronaMesh = new THREE.Mesh(coronaGeo, coronaMat);
+    scene.add(sunCoronaMesh);
+
+    let outerGeo = new THREE.SphereGeometry(CFG.sunRadius*3.2, 32, 32);
+    let outerMat = new THREE.ShaderMaterial({
+        vertexShader:coronaVS,
+        fragmentShader:`varying vec3 vNormal;varying vec3 viewDir;
+        void main(){float f=1.-max(0.,dot(vNormal,viewDir));f=pow(f,4.)*.12;gl_FragColor=vec4(1.,.55,.18,f);}`,
+        uniforms:{uTime:{value:0}},
+        transparent:true, side:THREE.FrontSide, depthWrite:false, blending:THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Mesh(outerGeo, outerMat));
+
+    let gc=document.createElement('canvas');gc.width=256;gc.height=256;
+    let gctx=gc.getContext('2d');
+    let g=gctx.createRadialGradient(128,128,0,128,128,128);
+    g.addColorStop(0,'rgba(255,212,85,1.0)');g.addColorStop(0.08,'rgba(255,148,32,0.78)');
+    g.addColorStop(0.25,'rgba(255,82,10,0.22)');g.addColorStop(0.5,'rgba(255,42,0,0.05)');
+    g.addColorStop(0.75,'rgba(198,18,0,0.01)');g.addColorStop(1,'rgba(0,0,0,0)');
+    gctx.fillStyle=g;gctx.fillRect(0,0,256,256);
+    let gTex=new THREE.CanvasTexture(gc);
+    let gMat=new THREE.SpriteMaterial({map:gTex,blending:THREE.AdditiveBlending,transparent:true,opacity:0.88,depthWrite:false});
+    sunGlowSprite=new THREE.Sprite(gMat);sunGlowSprite.scale.set(72,72,1);
+    scene.add(sunGlowSprite);
+}
+
+/* ================================================================
+   PLANETS
+================================================================ */
+function createPlanets() {
+    let texMap = {
+        Mercury:texGeneric(.52,.46,.40,.16,true), Venus:texVenus(), Earth:texEarthDay(),
+        Mars:texMars(), Jupiter:texJupiter(), Saturn:texSaturn(), Uranus:texUranus(), Neptune:texNeptune()
+    };
+    PLANETS.forEach((data, index) => {
+        let group = new THREE.Group();
+        let geo = new THREE.SphereGeometry(Math.max(0.04,data.radius), 52, 52);
+        let mat = new THREE.MeshStandardMaterial({ map:texMap[data.name], roughness:0.8, metalness:0.08 });
+        let mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.z = data.tilt;
+        mesh.userData = { planetIndex:index, ...data };
+        group.add(mesh);
+
+        if(data.name==='Earth'){
+            let cGeo=new THREE.SphereGeometry(data.radius*1.018,52,52);
+            let cMat=new THREE.MeshStandardMaterial({map:texEarthClouds(),transparent:true,depthWrite:false,side:THREE.DoubleSide});
+            let cMesh=new THREE.Mesh(cGeo,cMat);cMesh.name='clouds';group.add(cMesh);
+            let nGeo=new THREE.SphereGeometry(data.radius*1.004,52,52);
+            let nMat=new THREE.MeshBasicMaterial({map:texEarthNight(),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+            let nMesh=new THREE.Mesh(nGeo,nMat);nMesh.name='nightLights';group.add(nMesh);
+            let aGeo=new THREE.SphereGeometry(data.radius*1.13,52,52);
+            let aMat=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(.26,.56,1.)},uIntensity:{value:1.6}},transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+            group.add(new THREE.Mesh(aGeo,aMat));
+        }
+        if(data.name==='Venus'){
+            let aGeo=new THREE.SphereGeometry(data.radius*1.09,36,36);
+            let aMat=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(.86,.70,.36)},uIntensity:{value:1.1}},transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+            group.add(new THREE.Mesh(aGeo,aMat));
+        }
+        if(data.name==='Saturn') createSaturnRings(group,data.radius);
+        if(data.name==='Jupiter'){
+            let aGeo=new THREE.SphereGeometry(data.radius*1.045,36,36);
+            let aMat=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(.76,.50,.26)},uIntensity:{value:.45}},transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+            group.add(new THREE.Mesh(aGeo,aMat));
+        }
+        if(data.name==='Mars'){
+            let aGeo=new THREE.SphereGeometry(data.radius*1.03,32,32);
+            let aMat=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(.82,.42,.22)},uIntensity:{value:.18}},transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+            group.add(new THREE.Mesh(aGeo,aMat));
+        }
+        if(data.name==='Neptune'){
+            let aGeo=new THREE.SphereGeometry(data.radius*1.04,32,32);
+            let aMat=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(.18,.32,.88)},uIntensity:{value:.35}},transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+            group.add(new THREE.Mesh(aGeo,aMat));
+        }
+        if(data.name==='Uranus'){
+            let aGeo=new THREE.SphereGeometry(data.radius*1.05,32,32);
+            let aMat=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(.38,.72,.82)},uIntensity:{value:.3}},transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+            group.add(new THREE.Mesh(aGeo,aMat));
+        }
+
+        let angle = Math.random()*Math.PI*2;
+        group.position.x = Math.cos(angle)*data.distance;
+        group.position.z = Math.sin(angle)*data.distance;
+        group.userData = { angle, data };
+        scene.add(group);
+        planetMeshes.push(mesh);
+        planetGroups.push(group);
+
+        let oGeo=new THREE.BufferGeometry();
+        let oPts=[];
+        for(let j=0;j<=128;j++){let a=(j/128)*Math.PI*2;oPts.push(Math.cos(a)*data.distance,0,Math.sin(a)*data.distance);}
+        oGeo.setAttribute('position',new THREE.Float32BufferAttribute(oPts,3));
+        let oMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.04,depthWrite:false});
+        let oLine=new THREE.Line(oGeo,oMat);oLine.visible=false;scene.add(oLine);orbitLines.push(oLine);
+    });
+}
+
+function createSaturnRings(group, pr) {
+    let ir=pr*1.4, or=pr*2.8;
+    let rGeo=new THREE.RingGeometry(ir,or,140,10);
+    let rc=document.createElement('canvas');rc.width=512;rc.height=64;
+    let rctx=rc.getContext('2d');
+    for(let x=0;x<512;x++){
+        let t=x/512, n=fbm(t*36,0.5,4), gap=Math.sin(t*92)*.5+.5;
+        gap=gap>.88?.05:1.;let a=(.33+n*.47)*gap;
+        if(t>.49&&t<.58)a*=.05;if(t>.76&&t<.79)a*=.22;if(t>.87&&t<.89)a*=.12;
+        rctx.fillStyle=`rgba(${190+n*50|0},${170+n*40|0},${128+n*30|0},${a})`;
+        rctx.fillRect(x,0,1,64);
+    }
+    let rTex=new THREE.CanvasTexture(rc);
+    let rMat=new THREE.MeshBasicMaterial({map:rTex,side:THREE.DoubleSide,transparent:true,opacity:0.84,depthWrite:false});
+    let rMesh=new THREE.Mesh(rGeo,rMat);rMesh.rotation.x=-Math.PI/2+0.47;group.add(rMesh);
+    let sGeo=new THREE.RingGeometry(pr*.94,pr*1.15,64,4,Math.PI*.7,Math.PI*.6);
+    let sMat=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.1,side:THREE.DoubleSide,depthWrite:false});
+    let sMesh=new THREE.Mesh(sGeo,sMat);sMesh.rotation.x=-Math.PI/2+0.47;group.add(sMesh);
+}
+
+/* ================================================================
+   SOLAR WIND
+================================================================ */
+function createSolarWind() {
+    let count=CFG.solarWindCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), vel=new Float32Array(count*3), life=new Float32Array(count), sizes=new Float32Array(count);
+    for(let i=0;i<count;i++) resetSWParticle(pos,vel,life,sizes,i);
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;varying float vDist;
+        void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vDist=length(position)/620.;
+        gl_PointSize=aSize*(150./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying float vDist;void main(){float d=length(gl_PointCoord-.5)*2.;
+        float a=(1.-smoothstep(0.,1.,d));a*=a*max(0.,1.-vDist*.68);
+        vec3 col=mix(vec3(1.,.50,.05),vec3(1.,.20,.02),vDist);gl_FragColor=vec4(col*2.2,a*.48);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    solarWindSystem=new THREE.Points(geo,mat);
+    solarWindSystem.userData={velocities:vel,lifetimes:life};
+    solarWindSystem.visible=false;scene.add(solarWindSystem);
+}
+function resetSWParticle(p,v,l,s,i){
+    let th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=CFG.sunRadius*1.15;
+    p[i*3]=Math.sin(ph)*Math.cos(th)*r;p[i*3+1]=Math.sin(ph)*Math.sin(th)*r;p[i*3+2]=Math.cos(ph)*r;
+    let sp=.55+Math.random()*1.9,nx=p[i*3]/r,ny=p[i*3+1]/r,nz=p[i*3+2]/r;
+    v[i*3]=nx*sp+(Math.random()-.5)*.22;v[i*3+1]=ny*sp+(Math.random()-.5)*.22;v[i*3+2]=nz*sp+(Math.random()-.5)*.22;
+    l[i]=Math.random();if(s)s[i]=.9+Math.random()*3.2;
+}
+
+/* ================================================================
+   COSMIC RAYS
+================================================================ */
+function createCosmicRays() {
+    let count=CFG.cosmicRayCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), vel=new Float32Array(count*3), life=new Float32Array(count);
+    for(let i=0;i<count;i++) resetCRParticle(pos,vel,life,i);
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`varying float vDist;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vDist=length(position)/720.;
+        gl_PointSize=1.5*(100./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying float vDist;void main(){float d=length(gl_PointCoord-.5)*2.;
+        float a=(1.-smoothstep(0.,.72,d));a*=a*.58;
+        vec3 col=mix(vec3(.42,.10,1.),vec3(.10,.30,1.),vDist);gl_FragColor=vec4(col*1.6,a);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    cosmicRaySystem=new THREE.Points(geo,mat);
+    cosmicRaySystem.userData={velocities:vel,lifetimes:life};
+    cosmicRaySystem.visible=false;scene.add(cosmicRaySystem);
+}
+function resetCRParticle(p,v,l,i){
+    let r=620+Math.random()*150,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+    p[i*3]=Math.sin(ph)*Math.cos(th)*r;p[i*3+1]=Math.sin(ph)*Math.sin(th)*r*.2;p[i*3+2]=Math.cos(ph)*r;
+    let sp=2.8+Math.random()*4.5,dx=-p[i*3],dy=-p[i*3+1],dz=-p[i*3+2],len=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;
+    v[i*3]=dx/len*sp;v[i*3+1]=dy/len*sp;v[i*3+2]=dz/len*sp;l[i]=Math.random();
+}
+
+/* ================================================================
+   MAGNETOSPHERE FIELD LINES
+================================================================ */
+function createMagnetosphere(name, group, pr, strength, color) {
+    if(strength==='none') return;
+    let mg=new THREE.Group(), lines=[];
+    let lc = strength==='extreme'?28:strength==='strong'?22:strength==='moderate'?18:CFG.fieldLineCount;
+    let sc = strength==='extreme'?pr*28:strength==='strong'?pr*8:strength==='moderate'?pr*6:pr*4.5;
+    for(let i=0;i<lc;i++){
+        let phi=(i/lc)*Math.PI*2, pts=[];
+        for(let j=0;j<=72;j++){
+            let th=(j/72)*Math.PI, r=sc*Math.cos(th)*Math.cos(th);
+            r=Math.max(.008,r);
+            pts.push(new THREE.Vector3(r*Math.sin(th)*Math.cos(phi),r*Math.cos(th),r*Math.sin(th)*Math.sin(phi)));
+        }
+        let lg=new THREE.BufferGeometry().setFromPoints(pts);
+        let lm=new THREE.LineBasicMaterial({color,transparent:true,opacity:.14,depthWrite:false,blending:THREE.AdditiveBlending});
+        let l=new THREE.Line(lg,lm);mg.add(l);lines.push(l);
+    }
+    if(strength!=='none'&&strength!=='remnant'){
+        let sg=new THREE.SphereGeometry(sc*.8,36,36,0,Math.PI*2,0,Math.PI/2);
+        let sm=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(color)},uIntensity:{value:.55}},transparent:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+        let sh=new THREE.Mesh(sg,sm);sh.rotation.x=Math.PI;sh.rotation.z=Math.PI/2;mg.add(sh);
+    }
+    mg.visible=false;group.add(mg);
+    magnetosphereGroups[name]={group:mg,fieldLines:lines,scale:sc};
+}
+
+/* ================================================================
+   FIELD FLOW PARTICLES
+================================================================ */
+function createFieldFlow(name, group, pr, strength, color) {
+    if(strength==='none'||strength==='partial') return;
+    let count=CFG.flowParticleCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), sizes=new Float32Array(count);
+    let tP=new Float32Array(count), phiP=new Float32Array(count);
+    let sc = strength==='extreme'?pr*28:strength==='strong'?pr*8:strength==='moderate'?pr*6:pr*4.5;
+    for(let i=0;i<count;i++){
+        tP[i]=Math.random()*Math.PI;phiP[i]=Math.random()*Math.PI*2;
+        let r=sc*Math.cos(tP[i])*Math.cos(tP[i]);r=Math.max(.01,r);
+        pos[i*3]=r*Math.sin(tP[i])*Math.cos(phiP[i]);pos[i*3+1]=r*Math.cos(tP[i]);pos[i*3+2]=r*Math.sin(tP[i])*Math.sin(phiP[i]);
+        sizes[i]=1+Math.random()*2.2;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(70./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,.85,d));a*=a*.65;gl_FragColor=vec4(1.,1.,1.,a);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    let pts=new THREE.Points(geo,mat);pts.visible=false;group.add(pts);
+    fieldFlowSystems[name]={points:pts,positions:pos,tParams:tP,phiParams:phiP,scale:sc,count};
+}
+
+/* ================================================================
+   RADIOACTIVE FORCE LINES
+================================================================ */
+function createRadioactiveForce(name, group, pr, strength) {
+    if(strength==='none') return;
+    let count=CFG.radioactiveForceCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), sizes=new Float32Array(count);
+    let vel=new Float32Array(count*3), life=new Float32Array(count);
+    let isShielded = strength!=='none'&&strength!=='partial';
+    for(let i=0;i<count;i++){
+        let th=Math.random()*Math.PI*2, startR=pr*(isShielded?2.2:1.15);
+        let r=startR+Math.random()*pr*(isShielded?3.5:.6);
+        let h=(Math.random()-.5)*pr*(isShielded?2.2:.6);
+        pos[i*3]=Math.cos(th)*r;pos[i*3+1]=h;pos[i*3+2]=Math.sin(th)*r;
+        if(isShielded){let os=.4+Math.random()*1.2,dir=th+Math.PI/2;
+            vel[i*3]=Math.cos(dir)*os*.05;vel[i*3+1]=(Math.random()-.5)*.02;vel[i*3+2]=Math.sin(dir)*os*.05;
+        } else { vel[i*3]=(Math.random()-.5)*.15;vel[i*3+1]=(Math.random()-.5)*.15;vel[i*3+2]=(Math.random()-.5)*.15; }
+        life[i]=Math.random();sizes[i]=.7+Math.random()*1.6;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    let pc = isShielded ? new THREE.Color(.18,.88,.38) : new THREE.Color(1.,.18,.12);
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;uniform vec3 uColor;varying vec3 vColor;
+        void main(){vColor=uColor;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(55./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying vec3 vColor;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d));a*=a*.45;gl_FragColor=vec4(vColor*1.5,a);}`,
+        uniforms:{uColor:{value:pc}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    let pts=new THREE.Points(geo,mat);pts.visible=false;group.add(pts);
+    let impactPts=null;
+    if(!isShielded){
+        let ipc=CFG.impactParticleCount,ipg=new THREE.BufferGeometry(),ipp=new Float32Array(ipc*3);
+        for(let i=0;i<ipc;i++){let th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=pr*(.97+Math.random()*.1);
+            ipp[i*3]=Math.sin(ph)*Math.cos(th)*r;ipp[i*3+1]=Math.sin(ph)*Math.sin(th)*r;ipp[i*3+2]=Math.cos(ph)*r;}
+        ipg.setAttribute('position',new THREE.Float32BufferAttribute(ipp,3));
+        let ipm=new THREE.PointsMaterial({color:new THREE.Color(1,.2,.1),size:.8,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
+        impactPts=new THREE.Points(ipg,ipm);impactPts.visible=false;impactPts.name='impactParticles';group.add(impactPts);
+    }
+    radioactiveForceSystems[name]={points:pts,positions:pos,velocities:vel,lifetimes:life,count,isShielded,planetRadius:pr,impactParticles:impactPts};
+}
+
+/* ================================================================
+   VAN ALLEN BELTS
+================================================================ */
+function createVanAllenBelts(eg, er) {
+    let count=CFG.vanAllenCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), sizes=new Float32Array(count);
+    for(let i=0;i<count;i++){
+        let belt=i<count/2?0:1, minR=belt===0?er*2.3:er*4.5, maxR=belt===0?er*3.5:er*7;
+        let r=minR+Math.random()*(maxR-minR), th=Math.random()*Math.PI*2;
+        let y=(Math.random()-.5)*er*(belt===0?1.4:3.);
+        pos[i*3]=Math.cos(th)*r;pos[i*3+1]=y;pos[i*3+2]=Math.sin(th)*r;sizes[i]=.6+Math.random()*1.7;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;varying float vBelt;void main(){float rd=length(position.xz);vBelt=rd<4.?0.:1.;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(60./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying float vBelt;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d));a*=a*.22;vec3 col=vBelt<.5?vec3(.10,.82,.30):vec3(.20,.40,1.);gl_FragColor=vec4(col,a);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    vanAllenBeltPoints=new THREE.Points(geo,mat);vanAllenBeltPoints.visible=false;eg.add(vanAllenBeltPoints);
+}
+
+/* ================================================================
+   AURORAS
+================================================================ */
+function createAurora(name, group, pr, intensity) {
+    let count=CFG.auroraCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), sizes=new Float32Array(count);
+    for(let i=0;i<count;i++){
+        let pole=i<count/2?1:-1, th=Math.random()*Math.PI*2;
+        let r=pr*(1.01+Math.random()*.22);
+        let lat=(pole>0?1:-1)*(.22+Math.random()*.28);
+        pos[i*3]=Math.cos(th)*r*Math.cos(lat);pos[i*3+1]=pole*r*Math.sin(lat);pos[i*3+2]=Math.sin(th)*r*Math.cos(lat);
+        sizes[i]=1.2+Math.random()*4.2;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;varying float vPole;void main(){vPole=position.y>0.?1.:0.;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(85./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying float vPole;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d));a*=a*.52;vec3 g=vec3(.06,1.,.26),p=vec3(.48,.06,.78);gl_FragColor=vec4(mix(p,g,vPole)*1.5,a);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    let pts=new THREE.Points(geo,mat);pts.visible=false;group.add(pts);
+    auroraSystems[name]=pts;
+}
+
+/* ================================================================
+   JUPITER EXTREME MAGNETOSPHERE
+================================================================ */
+function createJupiterMagnetosphere(jg, jr) {
+    jupiterMagnetosphere=new THREE.Group();let sc=jr*28;
+    for(let i=0;i<30;i++){
+        let phi=(i/30)*Math.PI*2,pts=[];
+        for(let j=0;j<=72;j++){let th=(j/72)*Math.PI,r=sc*Math.cos(th)*Math.cos(th);r=Math.max(.01,r);pts.push(new THREE.Vector3(r*Math.sin(th)*Math.cos(phi),r*Math.cos(th),r*Math.sin(th)*Math.sin(phi)));}
+        let lg=new THREE.BufferGeometry().setFromPoints(pts);
+        let lm=new THREE.LineBasicMaterial({color:0xff4400,transparent:true,opacity:.055,depthWrite:false,blending:THREE.AdditiveBlending});
+        jupiterMagnetosphere.add(new THREE.Line(lg,lm));
+    }
+    let bc=4000,bg=new THREE.BufferGeometry(),bp=new Float32Array(bc*3);
+    for(let i=0;i<bc;i++){let r=jr*(3+Math.random()*20),th=Math.random()*Math.PI*2,y=(Math.random()-.5)*jr*6;bp[i*3]=Math.cos(th)*r;bp[i*3+1]=y;bp[i*3+2]=Math.sin(th)*r;}
+    bg.setAttribute('position',new THREE.Float32BufferAttribute(bp,3));
+    let bm=new THREE.PointsMaterial({color:0xff2200,size:1.1,transparent:true,opacity:.1,depthWrite:false,blending:THREE.AdditiveBlending});
+    jupiterMagnetosphere.add(new THREE.Points(bg,bm));
+    let sg=new THREE.SphereGeometry(sc*.75,36,36,0,Math.PI*2,0,Math.PI/2);
+    let sm=new THREE.ShaderMaterial({vertexShader:atmoVS,fragmentShader:atmoFS,uniforms:{uColor:{value:new THREE.Color(1,.35,.08)},uIntensity:{value:.45}},transparent:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+    let sh=new THREE.Mesh(sg,sm);sh.rotation.x=Math.PI;sh.rotation.z=Math.PI/2;jupiterMagnetosphere.add(sh);
+    jupiterMagnetosphere.visible=false;jg.add(jupiterMagnetosphere);
+}
+
+/* ================================================================
+   GAS SYSTEMS
+================================================================ */
+function createGasSystem(name, group, pr, c1, c2, spread) {
+    let count=CFG.gasParticleCount, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), sizes=new Float32Array(count), colors=new Float32Array(count*3);
+    for(let i=0;i<count;i++){
+        let th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=pr*(1.1+Math.random()*spread);
+        pos[i*3]=r*Math.sin(ph)*Math.cos(th);pos[i*3+1]=r*Math.sin(ph)*Math.sin(th)*.4;pos[i*3+2]=r*Math.cos(ph);
+        sizes[i]=2+Math.random()*5;let t=Math.random();
+        let cl1=new THREE.Color(c1),cl2=new THREE.Color(c2),c=cl1.clone().lerp(cl2,t);
+        colors[i*3]=c.r;colors[i*3+1]=c.g;colors[i*3+2]=c.b;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;attribute vec3 aColor;varying vec3 vColor;void main(){vColor=aColor;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(120./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying vec3 vColor;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d));a=a*a*a*.15;gl_FragColor=vec4(vColor,a);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    let pts=new THREE.Points(geo,mat);pts.visible=false;group.add(pts);
+    gasSystems[name]=pts;
+}
+
+/* ================================================================
+   BUILD ALL SYSTEMS
+================================================================ */
+function buildAllRadiationSystems() {
+    PLANETS.forEach((d,i)=>{
+        let g=planetGroups[i];
+        switch(d.shieldClass){
+            case 'active':createMagnetosphere(d.name,g,d.radius,'strong',0x4488ff);createVanAllenBelts(g,d.radius);createAurora(d.name,g,d.radius,1);createFieldFlow(d.name,g,d.radius,'strong',0x4488ff);createRadioactiveForce(d.name,g,d.radius,'active');break;
+            case 'extreme':createMagnetosphere(d.name,g,d.radius,'extreme',0xff5500);createJupiterMagnetosphere(g,d.radius);createFieldFlow(d.name,g,d.radius,'extreme',0xff5500);createRadioactiveForce(d.name,g,d.radius,'extreme');break;
+            case 'strong':createMagnetosphere(d.name,g,d.radius,'strong',0x44aaff);createFieldFlow(d.name,g,d.radius,'strong',0x44aaff);createRadioactiveForce(d.name,g,d.radius,'strong');break;
+            case 'moderate':createMagnetosphere(d.name,g,d.radius,'moderate',0x66ddff);createFieldFlow(d.name,g,d.radius,'moderate',0x66ddff);createRadioactiveForce(d.name,g,d.radius,'moderate');break;
+            case 'partial':createRadioactiveForce(d.name,g,d.radius,'partial');break;
+            case 'none':createRadioactiveForce(d.name,g,d.radius,'none');break;
+        }
+    });
+}
+function buildAllGasSystems() {
+    createGasSystem('Jupiter',planetGroups[4],5.2,'#c4956a','#8b6040',1.8);
+    createGasSystem('Saturn',planetGroups[5],4.3,'#d4b87a','#a08850',2.5);
+    createGasSystem('Uranus',planetGroups[6],2.2,'#72b8c9','#4a8898',2.0);
+    createGasSystem('Neptune',planetGroups[7],2.1,'#3355aa','#223366',2.0);
+        createNebulaRadiation();
+    createNebulaImpactEffects();
+}
+
+/* ================================================================
+   MODE TOGGLES
+================================================================ */
+function toggleRadiationMode(on) {
+    radiationModeOn=on;
+    solarWindSystem.visible=on;cosmicRaySystem.visible=on;
+    Object.values(magnetosphereGroups).forEach(m=>m.group.visible=on);
+    if(vanAllenBeltPoints)vanAllenBeltPoints.visible=on;
+    Object.values(auroraSystems).forEach(a=>a.visible=on);
+    if(jupiterMagnetosphere)jupiterMagnetosphere.visible=on;
+    Object.values(radioactiveForceSystems).forEach(rf=>{rf.points.visible=on;if(rf.impactParticles)rf.impactParticles.visible=on;});
+    cmeVisualObjects.forEach(c=>c.visible=on);
+    /* Nebula radiation */
+    nebulaRadiationSystems.forEach(nr=>nr.points.visible=on);
+    Object.values(nebulaImpactSystems).forEach(ni=>ni.points.visible=on);
+    orbitLines.forEach((l,i)=>{l.material.opacity=on?.03:(selectedIndex===i?.08:0);l.visible=on||selectedIndex===i;});
+    document.getElementById('weatherPanel').classList.toggle('visible',on);
+    let btn=document.getElementById('btnRadiation');
+    btn.textContent=on?'RADIATION PHYSICS':'SOLAR SYSTEM';
+    btn.classList.toggle('radiationActive',on);
+    if(composer&&composer.passes[1])composer.passes[1].strength=on?2.0:CFG.bloomStrength;
+    showToast(on?'RADIATION PHYSICS ENABLED':'SOLAR SYSTEM VIEW');
+}
+function toggleFieldLinesMode(on) {
+    fieldLinesModeOn=on;
+    Object.values(fieldFlowSystems).forEach(ff=>ff.points.visible=on);
+    Object.values(magnetosphereGroups).forEach(m=>{
+        if(on){m.group.visible=true;m.fieldLines.forEach(l=>l.material.opacity=.22);}
+        else{m.group.visible=radiationModeOn;m.fieldLines.forEach(l=>l.material.opacity=.14);}
+    });
+    document.getElementById('btnFieldLines').classList.toggle('fieldActive',on);
+    showToast(on?'FIELD LINES VISIBLE':'FIELD LINES HIDDEN');
+}
+function toggleGasSystemsMode(on) {
+    gasSystemsModeOn=on;
+    Object.values(gasSystems).forEach(g=>g.visible=on);
+    document.getElementById('btnGasSystems').classList.toggle('gasActive',on);
+    showToast(on?'GAS SYSTEMS VISIBLE':'GAS SYSTEMS HIDDEN');
+}
+
+/* ================================================================
+   CME VISUALIZATION
+================================================================ */
+function spawnCMEVisual(speed) {
+    let count=2800, geo=new THREE.BufferGeometry();
+    let pos=new Float32Array(count*3), vel=new Float32Array(count*3), sizes=new Float32Array(count);
+    let dir=new THREE.Vector3(Math.random()-.5,(Math.random()-.5)*.3,Math.random()-.5).normalize();
+    let spread=.48;
+    for(let i=0;i<count;i++){
+        let th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=CFG.sunRadius*1.18;
+        pos[i*3]=Math.sin(ph)*Math.cos(th)*r;pos[i*3+1]=Math.sin(ph)*Math.sin(th)*r;pos[i*3+2]=Math.cos(ph)*r;
+        let d=dir.clone().add(new THREE.Vector3((Math.random()-.5)*spread,(Math.random()-.5)*spread,(Math.random()-.5)*spread)).normalize();
+        let s=(speed||1000)*.0025+Math.random()*.7;
+        vel[i*3]=d.x*s;vel[i*3+1]=d.y*s;vel[i*3+2]=d.z*s;sizes[i]=1.8+Math.random()*3.8;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+    let mat=new THREE.ShaderMaterial({
+        vertexShader:`attribute float aSize;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(130./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d));a*=a*.42;gl_FragColor=vec4(1.,.25,0.,a);}`,
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
+    });
+    let mesh=new THREE.Points(geo,mat);
+    mesh.userData={velocities:vel,age:0,maxAge:12};
+    mesh.visible=radiationModeOn;scene.add(mesh);cmeVisualObjects.push(mesh);
+}
+function updateCMEVisuals(dt) {
+    for(let i=cmeVisualObjects.length-1;i>=0;i--){
+        let c=cmeVisualObjects[i];c.userData.age+=dt;
+        if(c.userData.age>c.userData.maxAge){scene.remove(c);c.geometry.dispose();c.material.dispose();cmeVisualObjects.splice(i,1);continue;}
+        let p=c.geometry.attributes.position.array,v=c.userData.velocities;
+        for(let j=0;j<p.length/3;j++){p[j*3]+=v[j*3]*dt;p[j*3+1]+=v[j*3+1]*dt;p[j*3+2]+=v[j*3+2]*dt;}
+        c.geometry.attributes.position.needsUpdate=true;
+        c.material.opacity=Math.max(0,1-c.userData.age/c.userData.maxAge);
+    }
+}
+
+/* ================================================================
+   DONKI API
+================================================================ */
+async function fetchSpaceWeatherData() {
+    let today=new Date(),weekAgo=new Date(today.getTime()-7*86400000);
+    let sd=weekAgo.toISOString().split('T')[0],ed=today.toISOString().split('T')[0];
+    let base='https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/';
+    try {
+        let [flr,cme,gst,sep,rbe,hss]=await Promise.all([
+            fetch(base+`FLR?startDate=${sd}&endDate=${ed}`).then(r=>r.json()).catch(()=>[]),
+            fetch(base+`CME?startDate=${sd}&endDate=${ed}`).then(r=>r.json()).catch(()=>[]),
+            fetch(base+`GST?startDate=${sd}&endDate=${ed}`).then(r=>r.json()).catch(()=>[]),
+            fetch(base+`SEP?startDate=${sd}&endDate=${ed}`).then(r=>r.json()).catch(()=>[]),
+            fetch(base+`RBE?startDate=${sd}&endDate=${ed}`).then(r=>r.json()).catch(()=>[]),
+            fetch(base+`HSS?startDate=${sd}&endDate=${ed}`).then(r=>r.json()).catch(()=>[])
+        ]);
+        spaceWeatherData={flr:Array.isArray(flr)?flr:[],cme:Array.isArray(cme)?cme:[],gst:Array.isArray(gst)?gst:[],sep:Array.isArray(sep)?sep:[],rbe:Array.isArray(rbe)?rbe:[],hss:Array.isArray(hss)?hss:[]};
+        updateWeatherPanel();processSpaceWeatherEvents();
+    } catch(e) {
+        console.warn('DONKI failed:',e);
+        document.getElementById('weatherEventsContainer').innerHTML='<p style="color:var(--muted);font-size:0.55rem">Live data unavailable. Running simulation mode.</p>';
+        setTimeout(()=>{spawnCMEVisual(1200);if(radiationModeOn)showCMEAlert('Simulated CME','Speed: 1,200 km/s \u2014 Earth-directed');},5000);
+    }
+}
+function processSpaceWeatherEvents() {
+    spaceWeatherData.cme.forEach(c=>{if(c.speed&&c.speed>500)setTimeout(()=>spawnCMEVisual(c.speed),Math.random()*9000);});
+    let mc=spaceWeatherData.cme.find(c=>c.speed&&c.speed>1000);
+    if(mc&&radiationModeOn)showCMEAlert('Real CME Detected',`Speed: ${mc.speed} km/s \u2014 ${mc.direction||'Unknown direction'}`);
+    if(spaceWeatherData.gst.length>0){let g=spaceWeatherData.gst[spaceWeatherData.gst.length-1];if(g.kpIndex&&g.kpIndex>=5)showToast(`GEOMAGNETIC STORM Kp${g.kpIndex} \u2014 AURORAS INTENSIFYING`);}
+    if(spaceWeatherData.rbe.length>0&&vanAllenBeltPoints){vanAllenBeltPoints.material.opacity=.5;setTimeout(()=>{if(vanAllenBeltPoints)vanAllenBeltPoints.material.opacity=.22;},13000);}
+    let mf=spaceWeatherData.flr.find(f=>f.classType&&f.classType.startsWith('X'));
+    if(mf)showToast(`X-CLASS SOLAR FLARE DETECTED \u2014 ${mf.classType}`);
+}
+function showCMEAlert(title,detail){let o=document.getElementById('cmeAlertOverlay');o.querySelector('h2').textContent=title;document.getElementById('cmeAlertDetail').textContent=detail;o.classList.add('show');setTimeout(()=>o.classList.remove('show'),6500);}
+function fmtTime(t){if(!t)return'--';try{return new Date(t).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return t;}}
+function updateWeatherPanel() {
+    let c=document.getElementById('weatherEventsContainer'),h='';
+    spaceWeatherData.flr.slice(-3).reverse().forEach(f=>{h+=`<div class="weatherEvent"><div class="weatherEventType" style="color:#ff8800"><i class="fas fa-sun"></i> Solar Flare</div><div class="weatherEventDetail">Class ${f.classType||'?'} \u2014 ${f.sourceLocation||'N/A'}</div><div class="weatherEventTime">${fmtTime(f.beginTime)}</div></div>`;});
+    spaceWeatherData.cme.slice(-2).reverse().forEach(c2=>{h+=`<div class="weatherEvent"><div class="weatherEventType" style="color:#ff3818"><i class="fas fa-burst"></i> CME</div><div class="weatherEventDetail">Speed: ${c2.speed||'?'} km/s \u2014 ${c2.direction||'N/A'}</div><div class="weatherEventTime">${fmtTime(c2.startTime)}</div></div>`;});
+    spaceWeatherData.gst.slice(-2).reverse().forEach(g=>{h+=`<div class="weatherEvent"><div class="weatherEventType" style="color:#38ff78"><i class="fas fa-magnet"></i> Geomagnetic Storm</div><div class="weatherEventDetail">Kp: ${g.kpIndex||'?'} \u2014 ${g.gstID||''}</div><div class="weatherEventTime">${fmtTime(g.startTime)}</div></div>`;});
+    if(spacefWeatherData.sep.length){let s=spaceWeatherData.sep[spaceWeatherData.sep.length-1];h+=`<div class="weatherEvent"><div class="weatherEventType" style="color:#a855f7"><i class="fas fa-radiation"></i> Energetic Particles</div><div class="weatherEventDetail">${s.eventNote||'Particle event detected'}</div><div class="weatherEventTime">${fmtTime(s.eventStartTime)}</div></div>`;}
+    if(spaceWeatherData.rbe.length){h+=`<div class="weatherEvent"><div class="weatherEventType" style="color:#38a8ff"><i class="fas fa-circle-radiation"></i> Radiation Belt Enhancement</div><div class="weatherEventDetail">Van Allen belts intensifying</div></div>`;}
+    if(spaceWeatherData.hss.length){let h2=spaceWeatherData.hss[spaceWeatherData.hss.length-1];h+=`<div class="weatherEvent"><div class="weatherEventType" style="color:#ffaa40"><i class="fas fa-wind"></i> High Speed Stream</div><div class="weatherEventDetail">Speed: ${h2.speed||'?'} km/s</div><div class="weatherEventTime">${fmtTime(h2.startTime)}</div></div>`;}
+    if(!h)h='<p style="color:var(--muted);font-size:0.55rem">No significant events this week</p>';
+    c.innerHTML=h;
+}
+
+/* ================================================================
+   UPDATE: PLANET ORBITS
+================================================================ */
+function updateOrbits(dt) {
+    if(isPaused) return;
+    let sdt = dt * timeScale;
+    planetGroups.forEach((group, index) => {
+        let data = PLANETS[index];
+        let angle = group.userData.angle;
+        angle += data.orbitalSpeed * 0.02 * sdt;
+        group.userData.angle = angle;
+        group.position.x = Math.cos(angle) * data.distance;
+        group.position.z = Math.sin(angle) * data.distance;
+        let mesh = group.children[0];
+        if(mesh) mesh.rotation.y += data.rotationSpeed * sdt;
+        if(data.name === 'Earth') {
+            let clouds = group.getObjectByName('clouds');
+            if(clouds) clouds.rotation.y += data.rotationSpeed * 0.35 * sdt;
+        }
+    });
+    /* Slowly rotate asteroid belt */
+    if(asteroidBeltSystem) asteroidBeltSystem.rotation.y += 0.00003 * sdt;
+    /* Slowly rotate kuiper belt */
+    if(kuiperBeltSystem) kuiperBeltSystem.rotation.y += 0.000008 * sdt;
+}
+
+/* ================================================================
+   UPDATE: RADIATION PARTICLES
+================================================================ */
+function updateRadiationParticles(dt) {
+    if(!radiationModeOn || isPaused) return;
+    let sdt = dt * timeScale;
+
+    /* Solar Wind */
+    if(solarWindSystem) {
+        let pos = solarWindSystem.geometry.attributes.position.array;
+        let vel = solarWindSystem.userData.velocities;
+        let life = solarWindSystem.userData.lifetimes;
+        for(let i=0;i<CFG.solarWindCount;i++){
+            life[i] += sdt * 0.26;
+            pos[i*3] += vel[i*3]*sdt;
+            pos[i*3+1] += vel[i*3+1]*sdt;
+            pos[i*3+2] += vel[i*3+2]*sdt;
+            let px=pos[i*3],py=pos[i*3+1],pz=pos[i*3+2];
+            for(let j=0;j<PLANETS.length;j++){
+                let pd=PLANETS[j];
+                if(pd.shieldClass==='none'||pd.shieldClass==='partial') continue;
+                let grp=planetGroups[j];
+                let dx=px-grp.position.x,dy=py-grp.position.y,dz=pz-grp.position.z;
+                let dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+                let shieldR=pd.shieldClass==='extreme'?pd.radius*28:pd.shieldClass==='strong'?pd.radius*8:pd.shieldClass==='moderate'?pd.radius*6:pd.radius*4.5;
+                if(dist<shieldR&&dist>0.1){
+                    let force=(1-dist/shieldR)*0.65*sdt;
+                    vel[i*3]+=(dx/dist)*force;vel[i*3+1]+=(dy/dist)*force;vel[i*3+2]+=(dz/dist)*force;
+                }
+            }
+            if(life[i]>1.0||Math.sqrt(px*px+py*py+pz*pz)>680) resetSWParticle(pos,vel,life,solarWindSystem.geometry.attributes.aSize.array,i);
+        }
+        solarWindSystem.geometry.attributes.position.needsUpdate = true;
+    }
+
+    /* Cosmic Rays */
+    if(cosmicRaySystem) {
+        let pos = cosmicRaySystem.geometry.attributes.position.array;
+        let vel = cosmicRaySystem.userData.velocities;
+        let life = cosmicRaySystem.userData.lifetimes;
+        for(let i=0;i<CFG.cosmicRayCount;i++){
+            life[i] += sdt * 0.18;
+            pos[i*3] += vel[i*3]*sdt;
+            pos[i*3+1] += vel[i*3+1]*sdt;
+            pos[i*3+2] += vel[i*3+2]*sdt;
+            let px=pos[i*3],py=pos[i*3+1],pz=pos[i*3+2];
+            let dist=Math.sqrt(px*px+py*py+pz*pz);
+            for(let j=0;j<PLANETS.length;j++){
+                let pd=PLANETS[j];
+                if(pd.shieldClass==='none'||pd.shieldClass==='partial') continue;
+                let grp=planetGroups[j];
+                let dx=px-grp.position.x,dy=py-grp.position.y,dz=pz-grp.position.z;
+                let d2=Math.sqrt(dx*dx+dy*dy+dz*dz);
+                let shieldR=pd.shieldClass==='extreme'?pd.radius*28:pd.shieldClass==='strong'?pd.radius*8:pd.shieldClass==='moderate'?pd.radius*6:pd.radius*4.5;
+                if(d2<shieldR&&d2>0.1){
+                    let force=(1-d2/shieldR)*0.9*sdt;
+                    vel[i*3]+=(dx/d2)*force;vel[i*3+1]+=(dy/d2)*force;vel[i*3+2]+=(dz/d2)*force;
+                }
+            }
+            if(life[i]>1.0||dist<5||dist>680) resetCRParticle(pos,vel,life,i);
+        }
+        cosmicRaySystem.geometry.attributes.position.needsUpdate = true;
+    }
+
+    /* Aurora pulsing */
+    Object.values(auroraSystems).forEach(aurora => {
+        let baseOp = 0.32 + Math.sin(Date.now()*0.003)*0.2;
+        if(spaceWeatherData.gst.length > 0) baseOp = 0.82;
+        aurora.material.opacity = baseOp;
+        aurora.rotation.y += 0.0012*sdt;
+    });
+
+    /* Impact particles on unshielded planets */
+    Object.values(radioactiveForceSystems).forEach(rf => {
+        if(rf.impactParticles && rf.impactParticles.visible) {
+            rf.impactParticles.material.opacity = 0.28 + Math.sin(Date.now()*0.005)*0.15;
+            rf.impactParticles.rotation.y += 0.002*sdt;
+        }
+    });
+
+    /* Radioactive force particles */
+    Object.values(radioactiveForceSystems).forEach(rf => {
+        let pos=rf.positions, vel=rf.velocities;
+        if(rf.isShielded){
+            for(let i=0;i<rf.count;i++){
+                let x=pos[i*3],z=pos[i*3+2],r=Math.sqrt(x*x+z*z);
+                if(r>0.1){let tx=-z/r,tz=x/r;vel[i*3]+=tx*0.0003*sdt;vel[i*3+2]+=tz*0.0003*sdt;}
+                pos[i*3]+=vel[i*3]*sdt;pos[i*3+1]+=vel[i*3+1]*sdt;pos[i*3+2]+=vel[i*3+2]*sdt;
+                vel[i*3]*=0.999;vel[i*3+1]*=0.999;vel[i*3+2]*=0.999;
+            }
+        } else {
+            for(let i=0;i<rf.count;i++){
+                pos[i*3]+=vel[i*3]*sdt;pos[i*3+1]+=vel[i*3+1]*sdt;pos[i*3+2]+=vel[i*3+2]*sdt;
+                let dist=Math.sqrt(pos[i*3]*pos[i*3]+pos[i*3+1]*pos[i*3+1]+pos[i*3+2]*pos[i*3+2]);
+                let maxR=rf.planetRadius*1.8;
+                if(dist>maxR){
+                    let scale=(rf.planetRadius*1.1)/dist;
+                    pos[i*3]*=scale;pos[i*3+1]*=scale;pos[i*3+2]*=scale;
+                    vel[i*3]=(Math.random()-.5)*.15;vel[i*3+1]=(Math.random()-.5)*.15;vel[i*3+2]=(Math.random()-.5)*.15;
+                }
+                vel[i*3]+=(Math.random()-.5)*0.005*sdt;vel[i*3+1]+=(Math.random()-.5)*0.005*sdt;vel[i*3+2]+=(Math.random()-.5)*0.005*sdt;
+            }
+        }
+        rf.points.geometry.attributes.position.needsUpdate = true;
+    });
+}
+
+/* ================================================================
+   UPDATE: FIELD FLOW PARTICLES
+================================================================ */
+function updateFieldFlowParticles(dt) {
+    if(!fieldLinesModeOn || isPaused) return;
+    let sdt = dt * timeScale;
+    Object.entries(fieldFlowSystems).forEach(([name, ff]) => {
+        for(let i=0;i<ff.count;i++){
+            let speed = 0.3 + Math.sin(i)*0.15;
+            ff.tParams[i] += speed * sdt;
+            if(ff.tParams[i] > Math.PI) ff.tParams[i] -= Math.PI;
+            if(ff.tParams[i] < 0) ff.tParams[i] += Math.PI;
+            let theta = ff.tParams[i], phi = ff.phiParams[i];
+            let r = ff.scale * Math.cos(theta) * Math.cos(theta);
+            r = Math.max(0.01, r);
+            ff.positions[i*3] = r*Math.sin(theta)*Math.cos(phi);
+            ff.positions[i*3+1] = r*Math.cos(theta);
+            ff.positions[i*3+2] = r*Math.sin(theta)*Math.sin(phi);
+        }
+        ff.points.geometry.attributes.position.needsUpdate = true;
+    });
+}
+
+/* ================================================================
+   UPDATE: EARTH NIGHT LIGHTS
+================================================================ */
+function updateEarthNightLights() {
+    let eg = planetGroups[2];
+    if(!eg) return;
+    let nm = eg.getObjectByName('nightLights');
+    if(!nm) return;
+    let sunDir = eg.position.clone().normalize().negate();
+    let camDir = camera.position.clone().sub(eg.position).normalize();
+    let dot = sunDir.dot(camDir);
+    nm.material.opacity = Math.max(0, Math.min(0.9, -dot * 1.3));
+}
+
+/* ================================================================
+   UPDATE: SOLAR PROMINENCES — Animate arcs
+================================================================ */
+function updateProminences(dt) {
+    if(!prominenceSystem || isPaused) return;
+    let sdt = dt * timeScale;
+    let pos = prominenceSystem.geometry.attributes.position.array;
+    let ap = prominenceSystem.userData.arcParams;
+    let numArcs = prominenceSystem.userData.numArcs;
+
+    for(let i=0;i<CFG.prominenceCount;i++){
+        let arc = ap[i*4];
+        let t = ap[i*4+1];
+        let arcH = ap[i*4+2];
+        let arcW = ap[i*4+3];
+
+        /* Animate t along the arc */
+        t += sdt * 0.08 * (0.5 + arc * 0.15);
+        if(t > 1.0) t -= 1.0;
+        ap[i*4+1] = t;
+
+        /* Arc base angle rotates slowly */
+        let baseAngle = (arc/numArcs)*Math.PI*2 + elapsedTime * 0.02 * (arc + 1);
+
+        /* Parabolic arc: height = 4*h*t*(1-t) */
+        let height = 4.0 * arcH * t * (1.0 - t);
+        let radialR = CFG.sunRadius * 1.02 + height;
+
+        /* Slight lateral wobble */
+        let wobble = Math.sin(t * Math.PI * 3 + elapsedTime * 2) * arcW * CFG.sunRadius * 0.05;
+
+        pos[i*3] = Math.cos(baseAngle) * radialR + Math.cos(baseAngle + Math.PI/2) * wobble;
+        pos[i*3+1] = Math.sin(t * Math.PI) * arcH * 0.3 + Math.sin(elapsedTime + arc) * CFG.sunRadius * 0.02;
+        pos[i*3+2] = Math.sin(baseAngle) * radialR + Math.sin(baseAngle + Math.PI/2) * wobble;
+
+        /* Update color brightness based on arc position */
+        let bright = Math.sin(t * Math.PI);
+        let col = prominenceSystem.geometry.attributes.aColor.array;
+        col[i*3] = 1.0 * bright;
+        col[i*3+1] = (0.3 + 0.4 * bright);
+        col[i*3+2] = 0.05 * bright;
+    }
+    prominenceSystem.geometry.attributes.position.needsUpdate = true;
+    prominenceSystem.geometry.attributes.aColor.needsUpdate = true;
+}
+
+/* ================================================================
+   UPDATE: NEBULAE — Subtle pulsing and rotation
+================================================================ */
+function updateNebulae(dt) {
+    if(isPaused) return;
+    let sdt = dt * timeScale;
+    nebulaGroups.forEach((ng, idx) => {
+        /* Slow rotation */
+        ng.group.rotation.y += 0.00002 * sdt * (idx % 2 === 0 ? 1 : -1);
+        ng.group.rotation.x += 0.000005 * sdt;
+
+        /* Update particle shader time for pulsing */
+        if(ng.particles && ng.particles.material.uniforms) {
+            ng.particles.material.uniforms.uTime.value = elapsedTime;
+        }
+    });
+}
+ 
+/* ================================================================
+   UPDATE: NEBULA RADIATION — Move particles, check shield interactions,
+   color impact effects on exposed planets
+================================================================ */
+function updateNebulaRadiation(dt) {
+    if (!radiationModeOn || isPaused) return;
+    let sdt = dt * timeScale;
+
+    /* Track closest nebula radiation color per unshielded planet */
+    let planetClosestRad = {};
+    Object.keys(nebulaImpactSystems).forEach(name => {
+        planetClosestRad[name] = { dist: Infinity, color: null };
+    });
+
+    nebulaRadiationSystems.forEach(sys => {
+        let pos = sys.positions;
+        let vel = sys.velocities;
+        let life = sys.lifetimes;
+
+        for (let i = 0; i < sys.count; i++) {
+            life[i] += sdt * 0.015;
+            pos[i * 3] += vel[i * 3] * sdt;
+            pos[i * 3 + 1] += vel[i * 3 + 1] * sdt;
+            pos[i * 3 + 2] += vel[i * 3 + 2] * sdt;
+
+            let px = pos[i * 3], py = pos[i * 3 + 1], pz = pos[i * 3 + 2];
+            let distFromSun = Math.sqrt(px * px + py * py + pz * pz);
+
+            /* Deflection by shielded planets */
+            for (let j = 0; j < PLANETS.length; j++) {
+                let pd = PLANETS[j];
+                if (pd.shieldClass === 'none' || pd.shieldClass === 'partial') continue;
+                let grp = planetGroups[j];
+                let dx = px - grp.position.x;
+                let dy = py - grp.position.y;
+                let dz = pz - grp.position.z;
+                let d2 = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                let shieldR = pd.shieldClass === 'extreme' ? pd.radius * 28 :
+                              pd.shieldClass === 'strong' ? pd.radius * 8 :
+                              pd.shieldClass === 'moderate' ? pd.radius * 6 : pd.radius * 4.5;
+                if (d2 < shieldR && d2 > 0.1) {
+                    let force = (1 - d2 / shieldR) * 0.4 * sdt;
+                    vel[i * 3] += (dx / d2) * force;
+                    vel[i * 3 + 1] += (dy / d2) * force;
+                    vel[i * 3 + 2] += (dz / d2) * force;
+                }
+            }
+
+            /* Check proximity to unshielded/partially shielded planets for impact coloring */
+            for (let j = 0; j < PLANETS.length; j++) {
+                let pd = PLANETS[j];
+                if (pd.shieldClass !== 'none' && pd.shieldClass !== 'partial') continue;
+                let grp = planetGroups[j];
+                let dx = px - grp.position.x;
+                let dy = py - grp.position.y;
+                let dz = pz - grp.position.z;
+                let d2 = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                let impactR = pd.radius * 3;
+                if (d2 < impactR) {
+                    if (d2 < planetClosestRad[pd.name].dist) {
+                        planetClosestRad[pd.name].dist = d2;
+                        /* Blend nebula colors for impact */
+                        let t = Math.random();
+                        planetClosestRad[pd.name].color = new THREE.Color(
+                            sys.color1[0] + (sys.color2[0] - sys.color1[0]) * t,
+                            sys.color1[1] + (sys.color2[1] - sys.color1[1]) * t,
+                            sys.color1[2] + (sys.color2[2] - sys.color1[2]) * t
+                        );
+                    }
+                }
+            }
+
+            /* Reset if too close to sun, too far, or too old */
+            if (distFromSun < 10 || distFromSun > CFG.nebulaRadiationMaxRange || life[i] > 1.0) {
+                resetNebulaRadParticle(sys, i);
+            }
+        }
+        sys.points.geometry.attributes.position.needsUpdate = true;
+    });
+
+    /* Update impact effects on unshielded planets */
+    Object.entries(nebulaImpactSystems).forEach(([name, impact]) => {
+        let closest = planetClosestRad[name];
+        let targetIntensity = 0;
+        if (closest.color && closest.dist < impact.planetRadius * 5) {
+            targetIntensity = Math.max(0, 1 - closest.dist / (impact.planetRadius * 5));
+            /* Smoothly lerp target color */
+            impact.targetColor.lerp(closest.color, 0.02);
+        } else {
+            targetIntensity *= 0.95; /* Fade out */
+        }
+
+        /* Smooth intensity transition */
+        let currentIntensity = impact.points.material.uniforms.uIntensity.value;
+        impact.points.material.uniforms.uIntensity.value += (targetIntensity - currentIntensity) * 0.05;
+
+        impact.points.material.uniforms.uTime.value = elapsedTime;
+
+        /* Update impact particle colors to match nebula radiation */
+        let cols = impact.colors;
+        for (let i = 0; i < impact.count; i++) {
+            cols[i * 3] += (impact.targetColor.r - cols[i * 3]) * 0.01;
+            cols[i * 3 + 1] += (impact.targetColor.g - cols[i * 3 + 1]) * 0.01;
+            cols[i * 3 + 2] += (impact.targetColor.b - cols[i * 3 + 2]) * 0.01;
+        }
+        impact.points.geometry.attributes.aColor.needsUpdate = true;
+
+        /* Slowly rotate impact shell */
+        impact.points.rotation.y += 0.001 * sdt;
+        impact.points.rotation.x += 0.0003 * sdt;
+    });
+}
+/* ================================================================
+   UPDATE: DISTANCE DISPLAY
+================================================================ */
+function updateDistanceDisplay() {
+    let dist = camera.position.length();
+    let au = (dist / PLANETS[2].distance).toFixed(2);
+    let units = (dist * 1.5).toFixed(0);
+    document.getElementById('distanceDisplay').innerHTML =
+        `DISTANCE FROM SUN: <span>${au}</span> AU <span style="color:var(--muted);font-size:0.38rem;margin-left:5px">(${units} units)</span>`;
+}
+
+/* ================================================================
+   CHECK: GALAXY ZOOM
+================================================================ */
+function checkGalaxyZoom() {
+    let dist = camera.position.length();
+    let hint = document.getElementById('galaxyZoomHint');
+    if(dist > CFG.galaxyZoomThreshold) {
+        if(!galaxyVisible) { galaxyVisible = true; hint.classList.add('visible'); showToast('ENTERING INTERSTELLAR SPACE'); }
+    } else {
+        if(galaxyVisible) { galaxyVisible = false; hint.classList.remove('visible'); }
+    }
+}
+
+/* ================================================================
+   TOAST NOTIFICATION
+================================================================ */
+function showToast(message) {
+    let toast = document.getElementById('toastNotification');
+    toast.textContent = message;
+    toast.classList.add('show');
+    if(toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+/* ================================================================
+   CAMERA TRAVEL
+================================================================ */
+function travelToPlanet(index) {
+    if(index < 0 || index >= PLANETS.length) return;
+    selectedIndex = index;
+    let data = PLANETS[index];
+    let group = planetGroups[index];
+    let targetPos = group.position.clone();
+    let offset = new THREE.Vector3(data.radius * 4.5, data.radius * 2.8, data.radius * 4.5);
+    let destination = targetPos.clone().add(offset);
+
+    orbitLines.forEach((line, i) => {
+        line.visible = radiationModeOn || i === index;
+        line.material.opacity = i === index ? 0.08 : (radiationModeOn ? 0.03 : 0);
+    });
+
+    gsap.to(camera.position, {
+        x: destination.x, y: destination.y, z: destination.z,
+        duration: CFG.travelDuration, ease: 'power2.inOut',
+        onUpdate: () => { controls.target.copy(targetPos); controls.update(); }
+    });
+
+    updateInfoPanel(index);
+    updateNavigationHighlight(index);
+    showToast(`NAVIGATING TO ${data.name.toUpperCase()}`);
+}
+
+/* ================================================================
+   INFO PANEL
+================================================================ */
+function updateInfoPanel(index) {
+    let data = PLANETS[index];
+    let panel = document.getElementById('infoPanel');
+    document.getElementById('planetNameText').textContent = data.name.toUpperCase();
+    document.getElementById('planetTypeText').textContent = data.type;
+
+    let stats = [
+        ['Distance', data.realDistance + ' (' + data.realAU + ')'],
+        ['Radius', data.realRadius],
+        ['Mass', data.mass],
+        ['Surface Gravity', data.gravity],
+        ['Day Length', data.dayLength],
+        ['Year Length', data.yearLength],
+        ['Known Moons', String(data.moons)],
+        ['Temperature', data.temperature],
+        ['Magnetic Field', data.magneticField]
+    ];
+    document.getElementById('planetStatsContainer').innerHTML = stats.map(s =>
+        `<div class="statRow"><span class="statLabel">${s[0]}</span><span class="statValue">${s[1]}</span></div>`
+    ).join('');
+
+    document.getElementById('planetDescriptionText').textContent = data.description;
+
+    let sb = document.getElementById('shieldStatusBox');
+    let si = {
+        active: ['<i class="fas fa-shield-halved"></i> Active Magnetic Shield \u2014 Deflects 99.9% of solar wind and cosmic rays. Van Allen belts trap charged particles. Auroras at magnetic poles.', 'shieldActive'],
+        extreme: ['<i class="fas fa-shield-halved"></i> Extreme Magnetosphere \u2014 20,000x Earth\'s strength. Extends past Saturn\'s orbit. Most powerful particle shield in the solar system.', 'shieldExtreme'],
+        strong: ['<i class="fas fa-shield-halved"></i> Strong Magnetic Shield \u2014 600x Earth\'s strength. Envelops ring system and moons. Double protection within Jupiter\'s shadow.', 'shieldActive'],
+        moderate: ['<i class="fas fa-shield-halved"></i> Moderate/Irregular Shield \u2014 Tilted and offset field creates asymmetric protection. Adequate at this distance despite unusual geometry.', 'shieldModerate'],
+        partial: ['<i class="fas fa-cloud"></i> Atmospheric Shield Only \u2014 No magnetic field. Dense CO\u2082 atmosphere provides physical deflection via bow shock. Surface still receives significant radiation.', 'shieldPartial'],
+        none: ['<i class="fas fa-radiation"></i> No Shield \u2014 Surface directly exposed to solar wind, cosmic rays, and CMEs. Why the planet lost its atmosphere and is now a cold, irradiated desert.', 'shieldNone']
+    };
+    let [text, className] = si[data.shieldClass] || si.none;
+    sb.className = 'shieldStatusBox ' + className;
+    sb.innerHTML = text;
+    panel.classList.add('visible');
+}
+
+/* ================================================================
+   PLANET NAVIGATION BAR
+================================================================ */
+function buildPlanetNavigation() {
+    let nav = document.getElementById('planetNavigationBar');
+    let sunDot = document.createElement('div');
+    sunDot.className = 'planetNavDot';
+    sunDot.innerHTML = '<div class="navDotCore" style="background:#ffaa33"></div><span class="navDotLabel">SUN</span>';
+    sunDot.onclick = () => deselectPlanet();
+    nav.appendChild(sunDot);
+
+    PLANETS.forEach((data, index) => {
+        let dot = document.createElement('div');
+        dot.className = 'planetNavDot';
+        dot.innerHTML = `<div class="navDotCore" style="background:${PLANET_COLORS[data.name]}"></div><span class="navDotLabel">${data.name.toUpperCase()}</span>`;
+        dot.onclick = () => travelToPlanet(index);
+        dot.dataset.index = index;
+        nav.appendChild(dot);
+    });
+}
+
+function updateNavigationHighlight(index) {
+    document.querySelectorAll('.planetNavDot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index + 1);
+    });
+}
+
+/* ================================================================
+   DESELECT
+================================================================ */
+function deselectPlanet() {
+    selectedIndex = -1;
+    document.getElementById('infoPanel').classList.remove('visible');
+    orbitLines.forEach(line => {
+        line.visible = radiationModeOn;
+        line.material.opacity = radiationModeOn ? 0.03 : 0;
+    });
+    updateNavigationHighlight(-1);
+    gsap.to(camera.position, {
+        x: 30, y: 20, z: 68,
+        duration: 2.0, ease: 'power2.inOut',
+        onUpdate: () => { controls.target.set(0, 0, 0); controls.update(); }
+    });
+}
+
+/* ================================================================
+   CLICK HANDLER
+================================================================ */
+function onCanvasClick(event) {
+    mouseVector.x = (event.clientX / innerWidth) * 2 - 1;
+    mouseVector.y = -(event.clientY / innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouseVector, camera);
+    let intersects = raycaster.intersectObjects(planetMeshes, false);
+    if(intersects.length > 0) {
+        let idx = intersects[0].object.userData.planetIndex;
+        if(idx !== undefined) travelToPlanet(idx);
+    }
+}
+
+/* ================================================================
+   EVENT LISTENERS
+================================================================ */
+function setupEventListeners() {
+    let speeds = [0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50];
+    let speedIndex = 3;
+
+    document.getElementById('btnSlower').onclick = () => {
+        if(speedIndex > 0) { speedIndex--; timeScale = speeds[speedIndex]; updateSpeedDisplay(); }
+    };
+    document.getElementById('btnFaster').onclick = () => {
+        if(speedIndex < speeds.length - 1) { speedIndex++; timeScale = speeds[speedIndex]; updateSpeedDisplay(); }
+    };
+    document.getElementById('btnPause').onclick = () => {
+        isPaused = !isPaused;
+        document.getElementById('pauseIcon').className = isPaused ? 'fas fa-play' : 'fas fa-pause';
+        document.getElementById('btnPause').classList.toggle('isActive', isPaused);
+    };
+
+    document.getElementById('btnRadiation').onclick = () => toggleRadiationMode(!radiationModeOn);
+    document.getElementById('btnFieldLines').onclick = () => toggleFieldLinesMode(!fieldLinesModeOn);
+    document.getElementById('btnGasSystems').onclick = () => toggleGasSystemsMode(!gasSystemsModeOn);
+
+    document.getElementById('closeInfoPanel').onclick = () => deselectPlanet();
+    document.getElementById('closeWeatherPanel').onclick = () => {
+        document.getElementById('weatherPanel').classList.remove('visible');
+    };
+
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'r' || e.key === 'R') toggleRadiationMode(!radiationModeOn);
+        if(e.key === 'f' || e.key === 'F') toggleFieldLinesMode(!fieldLinesModeOn);
+        if(e.key === 'g' || e.key === 'G') toggleGasSystemsMode(!gasSystemsModeOn);
+        if(e.key === ' ') { e.preventDefault(); document.getElementById('btnPause').click(); }
+        if(e.key === 'Escape') deselectPlanet();
+        if(e.key >= '1' && e.key <= '8') travelToPlanet(parseInt(e.key) - 1);
+        if(e.key === '0') deselectPlanet();
+    });
+}
+
+function updateSpeedDisplay() {
+    document.getElementById('speedDisplay').textContent = timeScale + 'x';
+}
+
+/* ================================================================
+   UPDATE: GAS SYSTEMS ROTATION
+================================================================ */
+function updateGasSystems(dt) {
+    if(!gasSystemsModeOn || isPaused) return;
+    let sdt = dt * timeScale;
+    Object.values(gasSystems).forEach(gas => {
+        gas.rotation.y += 0.0005 * sdt;
+        gas.rotation.x += 0.0002 * sdt;
+    });
+}
+
+/* ================================================================
+   MAIN ANIMATION LOOP
+================================================================ */
+function animationLoop() {
+    requestAnimationFrame(animationLoop);
+    let dt = Math.min(clock.getDelta(), 0.05);
+
+    if(!isPaused) elapsedTime += dt * timeScale;
+
+    /* Sun shader time */
+    sunMaterial.uniforms.uTime.value = elapsedTime;
+    sunCoronaMesh.material.uniforms.uTime.value = elapsedTime;
+
+    /* Sun rotation */
+    sunMesh.rotation.y = elapsedTime * 0.01;
+    sunCoronaMesh.rotation.y = -elapsedTime * 0.005;
+    sunCoronaMesh.rotation.x = Math.sin(elapsedTime * 0.02) * 0.05;
+
+    /* Sun glow pulse */
+    let glowPulse = 1 + Math.sin(elapsedTime * 0.5) * 0.08;
+    sunGlowSprite.scale.set(72 * glowPulse, 72 * glowPulse, 1);
+
+    /* Planet orbits */
+    updateOrbits(dt);
+
+    /* Radiation particles */
+    updateRadiationParticles(dt);
+
+    /* Field flow particles */
+    updateFieldFlowParticles(dt);
+
+    /* Gas systems */
+    updateGasSystems(dt);
+
+    /* CME visuals */
+    updateCMEVisuals(dt);
+
+    /* Solar prominences */
+    updateProminences(dt);
+
+    /* Nebulae animation */
+    updateNebulae(dt);
+
+    /* Earth night lights */
+    updateEarthNightLights();
+
+    /* Distance display */
+    updateDistanceDisplay();
+
+    /* Galaxy zoom check */
+    checkGalaxyZoom();
+
+    /* Update starfield twinkling time uniform */
+    scene.traverse(obj => {
+        if(obj.userData && obj.userData.isStarfield && obj.material.uniforms) {
+            obj.material.uniforms.uTime.value = elapsedTime;
+        }
+    });
+
+    /* Bright star sprite subtle pulse */
+    brightStarSprites.forEach((sprite, i) => {
+        let base = 8 + (i % 5) * 1.5;
+        let pulse = 1 + Math.sin(elapsedTime * 0.8 + i * 2.1) * 0.12;
+        sprite.scale.set(base * pulse, base * pulse, 1);
+    });
+
+    /* Interstellar dust slow rotation */
+    if(interstellarDustSystem) interstellarDustSystem.rotation.y += 0.00001 * (isPaused ? 0 : timeScale);
+
+    controls.update();
+    composer.render();
+}
+
+/* ================================================================
+   LOADING PROGRESS HELPER
+================================================================ */
+function setProgress(fill, pct) {
+    return new Promise(resolve => {
+        fill.style.width = pct;
+        setTimeout(resolve, 80);
+    });
+}
+
+/* ================================================================
+   INITIALIZATION
+================================================================ */
+async function initialize() {
+    let fill = document.getElementById('loadingBarFill');
+
+    await setProgress(fill, '6%');
+    initScene();
+    await setProgress(fill, '14%');
+
+    createStarfield();
+    await setProgress(fill, '22%');
+
+    createMilkyWay();
+    await setProgress(fill, '30%');
+
+    createEnhancedNebulae();
+    await setProgress(fill, '42%');
+
+    createInterstellarDust();
+    await setProgress(fill, '48%');
+
+    createSun();
+    createSolarProminences();
+    await setProgress(fill, '56%');
+
+    createPlanets();
+    await setProgress(fill, '64%');
+
+    createAsteroidBelt();
+    createKuiperBelt();
+    await setProgress(fill, '70%');
+
+    createSolarWind();
+    createCosmicRays();
+    await setProgress(fill, '76%');
+
+    buildAllRadiationSystems();
+    buildAllGasSystems();
+    await setProgress(fill, '84%');
+
+    buildPlanetNavigation();
+    setupEventListeners();
+    await setProgress(fill, '92%');
+
+    /* Start rendering */
+    animationLoop();
+
+    /* Fetch live space weather */
+    fetchSpaceWeatherData();
+
+    await setProgress(fill, '100%');
+
+    /* Hide loading, show UI */
+    setTimeout(() => {
+        document.getElementById('loadingScreen').classList.add('fadeOut');
+        document.getElementById('mainUI').classList.add('visible');
+        setTimeout(() => {
+            let ls = document.getElementById('loadingScreen');
+            if(ls) ls.remove();
+        }, 1500);
+    }, 500);
+
+    /* Periodic simulated CME if no real data */
+    setInterval(() => {
+        if(radiationModeOn && cmeVisualObjects.length < 3 && Math.random() > 0.55) {
+            spawnCMEVisual(600 + Math.random() * 900);
+        }
+    }, 18000);
+
+    /* Refresh space weather every 5 minutes */
+    setInterval(fetchSpaceWeatherData, 300000);
+}
+
+/* ================================================================
+   LAUNCH
+================================================================ */
+initialize();
+</script>
+</body>
+</html>
