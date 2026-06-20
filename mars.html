@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astrophile — Mars Mission Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#050204;--card:rgba(20,8,4,.65);--border:rgba(210,105,30,.25);--accent:#FF7A33;--accent2:#B85C2F;
+  --text:#F0D5C4;--muted:#8B6F5C;--ok:#2ECC71;--warn:#E67E22;--err:#E74C3C;--field:#6BB6FF;
+  --dust:#E8915A;--ice:#A8D8F0;--gold:#FFB347;--comms:#FFD700;
+  --glow: 0 0 10px rgba(255, 122, 51, 0.5);
+  --alert-glow: 0 0 20px rgba(231, 76, 60, 0.8);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;cursor:crosshair}
+canvas{display:block;position:fixed;inset:0;z-index:0}
+
+/* Loader */
+#loader{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.5s}
+#loader.hidden{opacity:0;pointer-events:none}
+#loader h2{color:var(--accent);font-size:1rem;font-weight:300;letter-spacing:8px;text-transform:uppercase;margin-bottom:20px;text-shadow:var(--glow)}
+.spin{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;box-shadow:var(--glow)}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loadMsg{color:var(--muted);font-size:.7rem;margin-top:15px;letter-spacing:2px;text-transform:uppercase}
+
+.glass{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);box-shadow:0 4px 30px rgba(0,0,0,0.5)}
+
+/* Header & Live Stats */
+#hdr{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;gap:6px;padding:8px 12px;background:linear-gradient(180deg,rgba(5,2,4,.9) 70%,transparent);overflow-x:auto;scrollbar-width:none}
+#hdr::-webkit-scrollbar{display:none}
+#hdr h1{font-size:.8rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--accent);white-space:nowrap;flex-shrink:0;text-shadow:var(--glow)}
+#hdr h1 span{color:var(--muted);font-weight:300}
+.hs{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 4px}
+.hb{background:rgba(20,8,4,.4);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:4px;font-family:inherit;font-size:.65rem;cursor:pointer;transition:all .3s;letter-spacing:1px;white-space:nowrap;flex-shrink:0;text-transform:uppercase}
+.hb:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 10px rgba(255,122,51,0.2)}
+.hb.on{background:rgba(255,122,51,.15);border-color:var(--accent);color:var(--accent);box-shadow:0 0 15px rgba(255,122,51,0.3)}
+.hb i{margin-right:5px}
+
+#live{position:fixed;top:45px;left:0;right:0;z-index:190;display:flex;align-items:center;gap:12px;padding:4px 12px;background:linear-gradient(180deg,rgba(5,2,4,.6) 0%,transparent 100%);font-size:.6rem;letter-spacing:.5px;overflow-x:auto;scrollbar-width:none}
+#live::-webkit-scrollbar{display:none}
+.li{display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.ld{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:all .3s;box-shadow:0 0 5px currentColor}
+.ll{color:var(--muted);text-transform:uppercase}
+.lv{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+#liveTag{color:var(--ok);font-weight:700;letter-spacing:2px;font-size:.55rem;animation:lp 2s infinite;flex-shrink:0;padding:2px 6px;border:1px solid var(--ok);border-radius:3px}
+@keyframes lp{0%,100%{text-shadow:0 0 3px var(--ok);box-shadow:0 0 5px var(--ok)}50%{text-shadow:0 0 10px var(--ok);box-shadow:0 0 15px var(--ok)}}
+
+/* Panels */
+#lpan{position:fixed;left:10px;top:75px;bottom:60px;width:190px;z-index:150;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#lpan::-webkit-scrollbar{width:3px}
+#lpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ps{margin-bottom:12px}
+.ps h3{font-size:.6rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.li2{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:4px;cursor:pointer;transition:all .2s;font-size:.65rem;margin-bottom:2px}
+.li2:hover{background:rgba(255,122,51,.1)}
+.li2.on{background:rgba(255,122,51,.2);color:var(--accent)}
+.cd{width:7px;height:7px;border-radius:50%;flex-shrink:0;box-shadow:0 0 4px currentColor}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+
+#dpan{position:fixed;right:10px;top:75px;width:290px;max-height:calc(100vh - 120px);z-index:150;overflow-y:auto;padding:15px;transform:translateX(320px);transition:transform .5s cubic-bezier(.22,1,.36,1);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#dpan::-webkit-scrollbar{width:3px}
+#dpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#dpan.vis{transform:translateX(0)}
+.cb{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;transition:color .2s}
+.cb:hover{color:var(--accent)}
+#dT{font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:4px;padding-right:20px;text-shadow:var(--glow)}
+#dS{font-size:.65rem;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.dr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.7rem;gap:4px}
+.dr:last-child{border:none}
+.dr .lb{color:var(--muted);flex-shrink:0}
+.dr .vl{color:var(--text);text-align:right;word-break:break-word;font-weight:500}
+.dl{display:inline-block;margin-top:12px;padding:6px 12px;background:rgba(255,179,71,.1);border:1px solid rgba(255,179,71,.3);color:var(--gold);border-radius:4px;font-size:.65rem;text-decoration:none;transition:all .2s;width:100%;text-align:center}
+.dl:hover{background:rgba(255,179,71,.2);box-shadow:0 0 10px rgba(255,179,71,0.2)}
+
+/* 3D Rover Viewer Modal */
+#rvModal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s}
+#rvModal.vis{opacity:1;pointer-events:auto}
+#rvContainer{width:95%;max-width:1200px;height:90%;background:var(--bg);border:1px solid var(--border);border-radius:12px;position:relative;overflow:hidden;box-shadow:0 0 50px rgba(255,122,51,0.2);display:flex}
+#rvCanvasWrap{flex:1;position:relative;background:linear-gradient(to bottom, #884422, #3a1a0a);overflow:hidden}
+#rvCanvas{width:100%;height:100%;display:block}
+#rvInfo{width:350px;flex-shrink:0;padding:20px;background:var(--card);border-left:1px solid var(--border);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#rvInfo::-webkit-scrollbar{width:3px}
+#rvClose{position:absolute;top:15px;right:15px;width:36px;height:36px;background:var(--card);border:1px solid var(--border);border-radius:50%;color:var(--accent);font-size:1.2rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:all .3s}
+#rvClose:hover{background:var(--err);color:#fff;border-color:var(--err);transform:rotate(90deg)}
+#rvTitle{font-size:1.5rem;font-weight:700;color:var(--accent);text-shadow:var(--glow);margin-bottom:5px}
+#rvStatus{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:15px}
+#rvDesc{font-size:.8rem;line-height:1.6;color:var(--text);margin-bottom:20px}
+.rvRow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem}
+.rvRow .lbl{color:var(--muted)}
+.rvRow .val{color:var(--text);font-weight:600}
+
+/* Rover Image / Placeholder */
+#rvImgWrap{width:100%;height:180px;border-radius:6px;margin-top:20px;border:1px solid var(--border);position:relative;background:#000;overflow:hidden}
+#rvImage{width:100%;height:100%;object-fit:cover;display:block}
+#rvImgFallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--accent);font-size:.8rem;text-decoration:none;padding:10px;box-sizing:border-box;background:rgba(5,2,4,0.9);opacity:0;transition:opacity .3s}
+#rvImgFallback.show{opacity:1}
+#rvImgFallback i{font-size:1.5rem;margin-bottom:8px;color:var(--gold)}
+#rvImgCaption{font-size:.6rem;color:var(--muted);margin-top:6px;text-align:center}
+
+/* Bottom Bar */
+#bot{position:fixed;bottom:0;left:0;right:0;z-index:150;background:linear-gradient(0deg,rgba(5,2,4,.95) 60%,transparent);padding:6px 0;display:flex;flex-direction:column;gap:4px}
+#tickerWrap{width:100%;overflow:hidden;white-space:nowrap;font-size:.65rem;color:var(--muted);padding:2px 0}
+#ticker{display:inline-block;padding-left:100%;animation:tickerMove 60s linear infinite}
+@keyframes tickerMove{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+#botStats{display:flex;align-items:center;gap:15px;padding:0 12px;overflow-x:auto;scrollbar-width:none}
+#botStats::-webkit-scrollbar{display:none}
+.bi{display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;color:var(--muted);font-size:.65rem}
+.bi .bv{color:var(--text);font-weight:500}
+.bi i{color:var(--accent)}
+
+#relPan{position:fixed;left:10px;bottom:60px;z-index:160;width:290px;padding:12px;transform:translateY(150%);transition:transform .5s cubic-bezier(.22,1,.36,1);max-height:calc(100vh - 120px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#relPan::-webkit-scrollbar{width:3px}
+#relPan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#relPan.vis{transform:translateY(0)}
+#relPan h3{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--comms);margin-bottom:10px;text-shadow:0 0 5px var(--comms)}
+.rs{margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.05)}
+.rs:last-child{border:none;margin:0}
+.rs h4{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px}
+.rr{display:flex;justify-content:space-between;font-size:.65rem;padding:2px 0;gap:4px}
+.rr .rl{color:var(--muted)}
+.rr .rv{text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.rr .rv.hl{color:var(--comms);text-shadow:0 0 3px var(--comms)}
+.rr .rv.hot{color:var(--dust)}
+.rr .rv.cool{color:var(--ice)}
+.rr .rv.warn{color:var(--warn)}
+.rr .rv.err{color:var(--err)}
+
+#launchBtn{position:fixed;right:15px;bottom:32px;z-index:300;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #FF7A33, #8B3A1C);border:1px solid rgba(255,179,71,.5);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;box-shadow:0 0 20px rgba(255,122,51,0.4)}
+#launchBtn:hover{transform:scale(1.1) rotate(10deg);box-shadow:0 0 35px rgba(255,122,51,0.7)}
+#launchBtn:active{transform:scale(.95)}
+#launchBtn .tip{position:absolute;right:62px;top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border);padding:5px 10px;border-radius:4px;font-size:.65rem;white-space:nowrap;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s}
+#launchBtn:hover .tip{opacity:1}
+
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--accent);color:var(--accent);padding:8px 20px;border-radius:4px;font-size:.75rem;opacity:0;transition:opacity .3s, transform .3s;pointer-events:none;white-space:nowrap;max-width:calc(100% - 20px);text-overflow:ellipsis;overflow:hidden;text-shadow:var(--glow)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.alert{border-color:var(--err);color:var(--err);text-shadow:var(--alert-glow)}
+
+#mobBtn{display:none;position:fixed;left:10px;bottom:75px;z-index:170;width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--accent);font-size:.9rem;cursor:pointer;align-items:center;justify-content:center}
+
+@media(max-width:900px){#lpan{display:none}#mobBtn{display:flex}#dpan{width:240px;right:5px}#relPan{width:240px}}
+@media(max-width:640px){
+#hdr{padding:5px 8px;gap:3px}#hdr h1{font-size:.7rem}#hdr h1 span{display:none}
+.hb{padding:4px 8px;font-size:.6rem}.hb span{display:none}.hb i{margin:0}
+#live{top:40px;font-size:.55rem;gap:8px}
+#dpan{width:calc(100% - 16px);left:8px;right:8px;max-height:50vh;top:auto;bottom:50px;transform:translateY(150%);border-radius:8px 8px 0 0}
+#dpan.vis{transform:translateY(0)}
+#relPan{width:calc(100% - 16px);left:8px;bottom:50px;max-height:40vh}
+#mobBtn{left:8px;bottom:65px}
+#rvContainer{flex-direction:column;height:95%;width:95%}
+#rvCanvasWrap{height:55%;width:100%;flex:none}
+#rvInfo{width:100%;height:45%;border-left:none;border-top:1px solid var(--border)}
+}
+</style>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><h2>Astrophile</h2><div id="loadMsg">Initializing Core Systems</div></div>
+
+<header id="hdr">
+<h1>Astrophile <span>// Mars Live</span></h1><div class="hs"></div>
+<button class="hb on" data-m="mars"><i class="fas fa-globe"></i><span>Mars</span></button>
+<button class="hb" data-m="crust"><i class="fas fa-magnet"></i><span>Crust</span></button>
+<button class="hb" data-m="orbit"><i class="fas fa-satellite"></i><span>Orbiters</span></button>
+<button class="hb" data-m="geo"><i class="fas fa-mountain"></i><span>Geology</span></button>
+<button class="hb" data-m="dust"><i class="fas fa-wind"></i><span>Atmo</span></button>
+<div class="hs"></div>
+<button class="hb" id="relBtn"><i class="fas fa-tower-broadcast"></i><span>Comms</span></button>
+<button class="hb" id="bordBtn"><i class="fas fa-border-all"></i><span>Terrain</span></button>
+<button class="hb" id="popBtn"><i class="fas fa-robot"></i><span>Rovers</span></button>
+</header>
+
+<div id="live">
+<span id="liveTag">LIVE</span>
+<div class="li"><div class="ld" style="background:var(--ok);color:var(--ok)"></div><span class="ll">UTC</span><span class="lv" id="vUTC">--</span></div>
+<div class="li"><div class="ld" style="background:var(--accent);color:var(--accent)"></div><span class="ll">MTC</span><span class="lv" id="vMTC">--</span></div>
+<div class="li"><div class="ld" style="background:var(--accent);color:var(--accent)"></div><span class="ll">Sol</span><span class="lv" id="vSol">--</span></div>
+<div class="li"><div class="ld" style="background:var(--gold);color:var(--gold)"></div><span class="ll">Jezero LST</span><span class="lv" id="vJezero">--</span></div>
+<div class="li"><div class="ld" style="background:var(--gold);color:var(--gold)"></div><span class="ll">Gale LST</span><span class="lv" id="vGale">--</span></div>
+<div class="li"><div class="ld" style="background:var(--comms);color:var(--comms)"></div><span class="ll">Dist</span><span class="lv" id="vDist">--</span></div>
+<div class="li"><div class="ld" style="background:var(--comms);color:var(--comms)"></div><span class="ll">Delay</span><span class="lv" id="vDelay">--</span></div>
+<div class="li"><div class="ld" id="dSW" style="background:var(--muted);color:var(--muted)"></div><span class="ll">SW</span><span class="lv" id="vSW">--</span></div>
+</div>
+
+<aside id="lpan" class="glass"></aside>
+<button id="mobBtn" class="glass"><i class="fas fa-layer-group"></i></button>
+<aside id="dpan" class="glass">
+<button class="cb" onclick="document.getElementById('dpan').classList.remove('vis')"><i class="fas fa-times"></i></button>
+<div id="dT"></div><div id="dS"></div><div id="dB"></div>
+</aside>
+
+<div id="relPan" class="glass">
+<h3><i class="fas fa-tower-broadcast"></i> Deep Space Network</h3>
+<div class="rs"><h4>Earth-Mars Telemetry</h4>
+<div class="rr"><span class="rl">Range</span><span class="rv hl" id="rDist">--</span></div>
+<div class="rr"><span class="rl">One-way light time</span><span class="rv hl" id="rOWT">--</span></div>
+<div class="rr"><span class="rl">Round-trip ping</span><span class="rv hl" id="rRTT">--</span></div>
+<div class="rr"><span class="rl">Mars orbital velocity</span><span class="rv" id="rVel">--</span></div>
+<div class="rr"><span class="rl">Sun-Mars distance</span><span class="rv" id="rSunDist">--</span></div>
+</div>
+<div class="rs"><h4>Solar Weather (Live)</h4>
+<div class="rr"><span class="rl">Wind speed</span><span class="rv hot" id="rSWf">--</span></div>
+<div class="rr"><span class="rl">Wind temperature</span><span class="rv hot" id="rSWt">--</span></div>
+<div class="rr"><span class="rl">X-ray flux</span><span class="rv" id="rXray">--</span></div>
+<div class="rr"><span class="rl">Kp Index</span><span class="rv" id="rKp">--</span></div>
+</div>
+<div class="rs"><h4>Mars Atmosphere</h4>
+<div class="rr"><span class="rl">Surface pressure</span><span class="rv hl" id="rP">--</span></div>
+<div class="rr"><span class="rl">Avg temp</span><span class="rv cool" id="rT">--</span></div>
+</div>
+</div>
+
+<div id="bot">
+<div id="tickerWrap"><div id="ticker">Initializing live data feeds...</div></div>
+<div id="botStats">
+<div class="bi"><i class="fas fa-sun"></i><span class="bv" id="bSun">--</span></div>
+<div class="bi"><i class="fas fa-wind"></i>SW: <span class="bv" id="bSW">--</span></div>
+<div class="bi"><i class="fas fa-temperature-high"></i>SW Temp: <span class="bv" id="bSWT">--</span></div>
+<div class="bi"><i class="fas fa-satellite-dish"></i>DSN: <span class="bv" id="bDSN">Online</span></div>
+</div>
+</div>
+
+<!-- 3D Rover Viewer Modal -->
+<div id="rvModal">
+<div id="rvContainer">
+<button id="rvClose"><i class="fas fa-times"></i></button>
+<div id="rvCanvasWrap">
+<canvas id="rvCanvas"></canvas>
+</div>
+<div id="rvInfo">
+<div id="rvTitle">Rover Name</div>
+<div id="rvStatus">Status</div>
+<div id="rvDesc">Description</div>
+<div id="rvStats"></div>
+<div id="rvImgWrap">
+<img id="rvImage" src="" alt="Rover Surface Photo">
+<a id="rvImgFallback" href="#" target="_blank">
+<i class="fas fa-image"></i>
+Image API Offline<br>Click to View Archives
+</a>
+</div>
+<div id="rvImgCaption"></div>
+</div>
+</div>
+</div>
+
+<button id="launchBtn"><i class="fas fa-rocket"></i><span class="tip">Launch to Mars orbit</span></button>
+<div id="toast"></div>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+/* ═══════════ MARS CONSTANTS ═══════════ */
+const ER = 5, MR_KM = 3389.5, PI = Math.PI, PI2 = PI * 2, D2R = PI / 180;
+const AU_KM = 149597870.7, C = 299792.458, SOL_GM = 1.32712440018e20;
+const R_KM = ER / MR_KM;
+function altToScene(altKm) { return ER + altKm * R_KM; }
+
+const S = {
+  marsLs: 120, earthMarsDistAU: 1.4, lightDelay: 580, dustOp: 0.5,
+  swSpd: 450, swTemp: 100000, swDen: 5, kp: 2.5, xray: 1e-8, sol: 1250,
+  layers: { dust: true, atmo: true, ice: true, aurora: false, crustal: false, phobos: true, deimos: true, maven: true, mro: true, odyssey: true, express: true, tianwen: true, trails: true, rovers: true, quakes: true, volcanoes: true, canyons: true, craters: true },
+  mode: 'mars', launching: false, relVis: false, introDone: false
+};
+
+/* ═══════════ ORBITAL MECHANICS ═══════════ */
+function marsSolDate(date) { const jd = date.getTime() / 86400000 + 2440587.5; return (jd + (37 + 32.184) / 86400 - 2405522.0028779) / 1.027491252; }
+function marsLsCalc(date) {
+  const msd = marsSolDate(date), M = (19.3870 + 0.52402075 * msd) % 360, alphaFMS = (270.3863 + 0.52403840 * msd) % 360;
+  const PBS = [0.0071, 0.0057, 0.0039, 0.0037, 0.0021, 0.0020, 0.0018], PBSargs = [0, 0, 0, 0, 0, M, M], Mr = M * D2R;
+  let EOC = (10.691 + 3.0e-7 * msd) * Math.sin(Mr);
+  EOC += 0.623 * Math.sin(2 * Mr) + 0.050 * Math.sin(3 * Mr) + 0.005 * Math.sin(4 * Mr);
+  EOC += PBS.reduce((s, p, i) => s + p * Math.sin(PBSargs[i] * D2R), 0);
+  let ls = (alphaFMS + EOC) % 360; if (ls < 0) ls += 360; return ls;
+}
+function getMarsTime(lng) {
+  const msd = marsSolDate(new Date()), mtc = (msd * 24) % 24, ltst = (mtc + (lng / 15) + 24) % 24;
+  const h = Math.floor(ltst), m = Math.floor((ltst - h) * 60), s = Math.floor(((ltst - h) * 60 - m) * 60);
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+function planetHelioPos(jd, planet) {
+  const cy = (jd - 2451545.0) / 36525; let e;
+  if (planet === 'earth') { e = { a: 1.000001018, e: 0.016708634 - 0.000042037 * cy, I: 0.00005, L: 100.466457 + 36000.7698278 * cy, longPeri: 102.93735, longNode: 0 }; }
+  else { e = { a: 1.523679342, e: 0.09340065 + 0.000090484 * cy, I: 1.849726-0.008147*cy/100, L: 355.433000+19140.2993039*cy, longPeri: 336.04084+0.44388*cy/100, longNode: 49.5581-0.2928*cy/100 }; }
+  const Lr = (e.L * D2R) % (2 * PI), w = (e.longPeri * D2R) % (2 * PI), Om = (e.longNode * D2R) % (2 * PI), I = e.I * D2R;
+  const M = (Lr - w + 2 * PI) % (2 * PI); let E = M;
+  for (let i = 0; i < 8; i++) E = M + e.e * Math.sin(E);
+  const v = 2 * Math.atan2(Math.sqrt(1 + e.e) * Math.sin(E / 2), Math.sqrt(1 - e.e) * Math.cos(E / 2));
+  const r = e.a * (1 - e.e * Math.cos(E)), xp = r * Math.cos(v + w), yp = r * Math.sin(v + w);
+  const x = xp, y = yp * Math.cos(I), z = yp * Math.sin(I);
+  return { x: x * Math.cos(Om) - y * Math.sin(Om), y: x * Math.sin(Om) + y * Math.cos(Om), z: z, r: r };
+}
+function earthMarsDistance(date) {
+  const jd = date.getTime() / 86400000 + 2451545 - 0.5; const e = planetHelioPos(jd, 'earth'), m = planetHelioPos(jd, 'mars');
+  const dx = m.x - e.x, dy = m.y - e.y, dz = m.z - e.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  return { dist: d, distKm: d * AU_KM, lightSec: d * AU_KM / C };
+}
+function sunSubSolarPoint(date) {
+  const Ls = S.marsLs * D2R, lat = Math.asin(0.425 * Math.sin(Ls)) / D2R, msd = marsSolDate(date), ltst = ((msd * 24) % 24);
+  let lng = ((ltst - 12) * 15 + 180) % 360; if (lng > 180) lng -= 360; if (lng < -180) lng += 360; return { lat, lng };
+}
+function getSunDir() { const { lat, lng } = sunSubSolarPoint(new Date()); return ll2v(lat, lng, 1).normalize(); }
+function ll2v(la, ln, r) { const p = (90 - la) * D2R, t = (ln + 180) * D2R; return new THREE.Vector3(-(r * Math.sin(p) * Math.cos(t)), r * Math.cos(p), r * Math.sin(p) * Math.sin(t)); }
+function v2ll(v) { const r = v.length(), la = 90 - Math.acos(THREE.MathUtils.clamp(v.y / r, -1, 1)) / D2R, ln = -(Math.atan2(v.z, -v.x) / D2R) - 180; return { lat: la, lng: ((ln + 540) % 360) - 180 }; }
+
+/* ═══════════ MISSION DATA ═══════════ */
+const ORBITERS = [
+  { id: 'maven', name: 'MAVEN', alt: 6200, inc: 74, period: 4.5, color: 0x66ccff, size: .12, raan0: 0, phase0: 0, type: 'Orbiter', desc: 'Studying Mars atmosphere loss.', url: 'https://mars.nasa.gov/maven/' },
+  { id: 'mro', name: 'MRO', alt: 316, inc: 74.3, period: 112, color: 0xffaa00, size: .10, raan0: 60, phase0: .5, type: 'Orbiter', desc: 'HiRISE camera mapping.', url: 'https://mars.nasa.gov/mro/' },
+  { id: 'odyssey', name: 'Odyssey', alt: 400, inc: 55, period: 120, color: 0xff66aa, size: .09, raan0: 120, phase0: 1.5, type: 'Orbiter', desc: 'Longest-surviving Mars spacecraft.', url: 'https://mars.nasa.gov/odyssey/' },
+  { id: 'express', name: 'Mars Express', alt: 400, inc: 25, period: 118, color: 0x4488ff, size: .09, raan0: 200, phase0: 2.2, type: 'Orbiter', desc: 'ESA Mars Express.', url: 'https://www.esa.int/' },
+  { id: 'tianwen', name: 'Tianwen-1', alt: 265, inc: 86.9, period: 110, color: 0xff4444, size: .09, raan0: 280, phase0: 3.0, type: 'Orbiter', desc: 'China National Space Administration.', url: 'https://en.wikipedia.org/wiki/Tianwen-1' }
+];
+
+const ROVERS = [
+  { id: 'perseverance', name: 'Perseverance', lat: 18.4447, lng: 77.4508, status: 'Active', desc: 'NASA Perseverance — Jezero Crater. Searching for biosignatures and caching samples for future return.', url: 'https://mars.nasa.gov/mars2020/', sol: 1250, mass: '1025 kg', power: 'RTG (110W)', launch: 'Jul 30, 2020', landing: 'Feb 18, 2021', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/PIA24533-Perseverance_Selfie-at_Rochette_Hole.jpg/1024px-PIA24533-Perseverance_Selfie-at_Rochette_Hole.jpg', imgCaption: 'Perseverance selfie at Rochette drill hole' },
+  { id: 'curiosity', name: 'Curiosity', lat: -4.5895, lng: 137.4417, status: 'Active', desc: 'NASA Curiosity — Gale Crater. Nuclear-powered rover climbing Mount Sharp to study ancient habitable environments.', url: 'https://mars.nasa.gov/msl/', sol: 4280, mass: '899 kg', power: 'RTG (110W)', launch: 'Nov 26, 2011', landing: 'Aug 6, 2012', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/PIA19818-Mars-CuriosityRover-Selfie-BuckskinDrillHole-20150805.jpg/1024px-PIA19818-Mars-CuriosityRover-Selfie-BuckskinDrillHole-20150805.jpg', imgCaption: 'Curiosity rover "Buckskin" drill hole selfie' },
+  { id: 'zhurong', name: 'Zhurong', lat: 25.066, lng: 109.926, status: 'Dormant', desc: 'CNSA Zhurong — Utopia Planitia. Solar-powered rover investigating subsurface ice and geology.', url: 'https://en.wikipedia.org/wiki/Zhurong_(rover)', sol: 950, mass: '240 kg', power: 'Solar (4 panels)', launch: 'Jul 23, 2020', landing: 'May 14, 2021', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Zhurong_Rover_on_Mars.png/1024px-Zhurong_Rover_on_Mars.png', imgCaption: 'Zhurong rover on Mars surface' },
+  { id: 'insight', name: 'InSight', lat: 4.5024, lng: 135.6234, status: 'Ended 2022', desc: 'NASA InSight Lander — Elysium Planitia. First mission dedicated to looking deep beneath the Martian surface.', url: 'https://mars.nasa.gov/insight/', sol: 1480, mass: '358 kg', power: 'Solar (2 panels)', launch: 'May 5, 2018', landing: 'Nov 26, 2018', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/PIA22226-Insightlander_first_image.jpg/1024px-PIA22226-Insightlander_first_image.jpg', imgCaption: 'InSight lander first image' }
+];
+
+const GEO_FEATURES = [
+  { name: 'Olympus Mons', lat: 18.65, lng: -133.8, type: 'Shield Volcano', desc: 'Largest volcano in Solar System.', elev: 21900 },
+  { name: 'Valles Marineris', lat: -14, lng: -59, type: 'Canyon System', desc: 'Solar System\'s largest canyon.', elev: -7000 },
+  { name: 'Hellas Planitia', lat: -42.4, lng: 70.5, type: 'Impact Basin', desc: 'Largest visible impact crater.', elev: -7000 },
+  { name: 'Gale Crater', lat: -5.4, lng: 137.8, type: 'Impact Crater', desc: 'Curiosity rover exploration site.', elev: -4500 },
+  { name: 'Jezero Crater', lat: 18.4, lng: 77.7, type: 'Impact Crater', desc: 'Perseverance rover site.', elev: -2600 }
+];
+
+const LAYERS = [
+  { sec: 'Mars Surface', items: [ { id: 'volcanoes', n: 'Volcanoes', c: '#ff5522', on: true }, { id: 'canyons', n: 'Canyons', c: '#ff8855', on: true }, { id: 'craters', n: 'Craters', c: '#88aaff', on: true }, { id: 'rovers', n: 'Rovers', c: '#00ff88', on: true } ]},
+  { sec: 'Atmosphere', items: [ { id: 'dust', n: 'Dust Storms', c: '#E8915A', on: true }, { id: 'atmo', n: 'Atmosphere', c: '#ff7733', on: true }, { id: 'ice', n: 'Polar Ice', c: '#A8D8F0', on: true } ]},
+  { sec: 'Moons', items: [ { id: 'phobos', n: 'Phobos', c: '#ffaa66', on: true }, { id: 'deimos', n: 'Deimos', c: '#cc9977', on: true } ]},
+  { sec: 'Orbiters', items: [ { id: 'maven', n: 'MAVEN', c: '#66ccff', on: true }, { id: 'mro', n: 'MRO', c: '#ffaa00', on: true }, { id: 'odyssey', n: 'Odyssey', c: '#ff66aa', on: true }, { id: 'express', n: 'Mars Express', c: '#4488ff', on: true }, { id: 'tianwen', n: 'Tianwen-1', c: '#ff4444', on: true }, { id: 'trails', n: 'Orbit Trails', c: '#ffffff', on: true } ]}
+];
+
+/* ═══════════ THREE.JS GLOBALS ═══════════ */
+let scene, cam, ren, ctrl, clock, composer;
+let eGrp, dustMesh, iceMeshN, atmoMesh, satMeshes = {}, trailMeshes = {}, roverMeshes = [], geoMeshes = [];
+let phobosMesh, deimosMesh, phobosGrp, deimosGrp, starMesh, phobosOrbit, deimosOrbit;
+let raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2(-9, -9);
+
+// Rover Viewer Globals
+let rvScene, rvCam, rvRend, rvCtrl, rvMesh, rvClock, rvAnimating = false;
+
+function init() {
+  clock = new THREE.Clock(); scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, .01, 2000);
+  cam.position.set(35, 15, 35);
+  
+  ren = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  ren.setSize(innerWidth, innerHeight); ren.setPixelRatio(Math.min(devicePixelRatio, 2));
+  ren.toneMapping = THREE.ACESFilmicToneMapping; ren.toneMappingExposure = 1.0;
+  document.body.prepend(ren.domElement);
+  
+  composer = new EffectComposer(ren);
+  composer.addPass(new RenderPass(scene, cam));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.4, 0.3, 0.9));
+  composer.addPass(new OutputPass());
+
+  ctrl = new OrbitControls(cam, ren.domElement);
+  ctrl.enableDamping = true; ctrl.dampingFactor = .05;
+  ctrl.minDistance = 5.5; ctrl.maxDistance = 150;
+  ctrl.autoRotate = true; ctrl.autoRotateSpeed = .2;
+  ctrl.enabled = false;
+  
+  const sunDir = getSunDir();
+  const dl = new THREE.DirectionalLight(0xFFE4B5, 3.0); 
+  dl.position.copy(sunDir.clone().multiplyScalar(100)); scene.add(dl);
+  scene.add(new THREE.AmbientLight(0x222222, .3));
+  const fill = new THREE.DirectionalLight(0x442211, .15); fill.position.set(-30, -10, -20); scene.add(fill);
+
+  lm('Generating Stars...'); mkStars();
+  lm('Generating Nebula...'); mkNebula();
+  lm('Rendering Sun...'); mkSun(sunDir);
+  lm('Scanning Mars Surface...'); mkMars();
+  lm('Calculating Atmosphere...'); mkAtmo(sunDir);
+  lm('Mapping Dust Storms...'); mkDust();
+  lm('Tracking Polar Ice...'); mkIce();
+  lm('Locating Moons...'); mkMoons();
+  lm('Linking Orbiters...'); mkOrbiters();
+  lm('Mapping Geology...'); mkGeoFeatures();
+  lm('Pinging Rovers...'); mkRovers();
+  lm('Initializing UI...'); buildLayerPanel(); setupEvents(); initRoverViewer();
+
+  window.addEventListener('resize', () => {
+    cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
+    ren.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+    if (rvRend) {
+      const wrap = document.getElementById('rvCanvasWrap');
+      rvCam.aspect = wrap.clientWidth / wrap.clientHeight;
+      rvCam.updateProjectionMatrix();
+      rvRend.setSize(wrap.clientWidth, wrap.clientHeight, false);
+    }
+  });
+
+  setTimeout(() => { fetchSpaceWeather(); fetchMarsWeather(); updateOrbitalData(); }, 1500);
+  setInterval(fetchSpaceWeather, 300000); setInterval(fetchMarsWeather, 3600000);
+  setInterval(updateOrbitalData, 60000); setInterval(updateClocks, 1000);
+  updateClocks(); updateOrbitalData();
+  document.getElementById('vSol').textContent = ROVERS[0].sol;
+
+  setTimeout(() => document.getElementById('loader').classList.add('hidden'), 2500);
+  setTimeout(() => { startIntro(); }, 3000);
+  animate();
+}
+
+function lm(m) { const e = document.getElementById('loadMsg'); if (e) e.textContent = m; }
+
+function startIntro() {
+  const startPos = cam.position.clone(), endPos = new THREE.Vector3(12, 6, 14), duration = 4000, startTime = performance.now();
+  function anim(now) {
+    const t = Math.min((now - startTime) / duration, 1), ease = 1 - Math.pow(1 - t, 3);
+    cam.position.lerpVectors(startPos, endPos, ease); cam.lookAt(0, 0, 0);
+    if (t < 1) { requestAnimationFrame(anim); } 
+    else { ctrl.enabled = true; S.introDone = true; toast('System Online. Welcome to Mars.'); }
+  }
+  requestAnimationFrame(anim);
+}
+
+function mkStars() {
+  const N = 12000, p = new Float32Array(N * 3), s = new Float32Array(N), c = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const r = 300 + Math.random() * 700, t = Math.random() * PI2, ph = Math.acos(2 * Math.random() - 1);
+    p[i * 3] = r * Math.sin(ph) * Math.cos(t); p[i * 3 + 1] = r * Math.sin(ph) * Math.sin(t); p[i * 3 + 2] = r * Math.cos(ph);
+    s[i] = .3 + Math.random() * 1.5; const temp = Math.random();
+    c[i * 3] = temp < .3 ? 1 : .8 + Math.random() * .2; c[i * 3 + 1] = .85 + Math.random() * .15; c[i * 3 + 2] = temp > .7 ? .8 + Math.random() * .2 : 1;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3)); g.setAttribute('size', new THREE.BufferAttribute(s, 1)); g.setAttribute('aCol', new THREE.BufferAttribute(c, 3));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } },
+    vertexShader: `attribute float size;attribute vec3 aCol;varying float vS;varying vec3 vC;void main(){vS=size;vC=aCol;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=size*(300./-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `varying float vS;varying vec3 vC;uniform float uT;void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;float a=smoothstep(.5,.0,d);float tw=.8+.2*sin(uT*(1.+vS)+vS*77.);gl_FragColor=vec4(vC,a*tw);}`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  starMesh = new THREE.Points(g, m); scene.add(starMesh);
+}
+
+function mkNebula() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, 1024, 512);
+  for (let i = 0; i < 5; i++) { const px = Math.random() * 1024, py = Math.random() * 512, r = 100 + Math.random() * 200; const rg = x.createRadialGradient(px, py, 0, px, py, r); rg.addColorStop(0, 'rgba(80, 30, 20, 0.15)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = rg; x.fillRect(0, 0, 1024, 512); }
+  for (let i = 0; i < 3; i++) { const px = Math.random() * 1024, py = Math.random() * 512, r = 150 + Math.random() * 200; const rg = x.createRadialGradient(px, py, 0, px, py, r); rg.addColorStop(0, 'rgba(40, 20, 60, 0.1)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = rg; x.fillRect(0, 0, 1024, 512); }
+  scene.background = new THREE.CanvasTexture(c);
+}
+
+function mkSun(sunDir) {
+  const sunPos = sunDir.clone().multiplyScalar(150);
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512; const x = c.getContext('2d');
+  const rg = x.createRadialGradient(256, 256, 0, 256, 256, 256);
+  rg.addColorStop(0, 'rgba(255,255,240,1)'); rg.addColorStop(0.1, 'rgba(255,240,200,0.9)'); rg.addColorStop(0.4, 'rgba(255,180,100,0.4)'); rg.addColorStop(1, 'rgba(255,100,50,0)');
+  x.fillStyle = rg; x.fillRect(0,0,512,512);
+  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  sunSprite.position.copy(sunPos); sunSprite.scale.set(25, 25, 1); scene.add(sunSprite);
+  scene.userData.sunMesh = sunSprite;
+}
+
+function mkMarsTex() {
+  const c = document.createElement('canvas'); c.width = 2048; c.height = 1024; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 1024); g.addColorStop(0, '#5e2e1c'); g.addColorStop(.5, '#8e4731'); g.addColorStop(1, '#5e2e1c');
+  x.fillStyle = g; x.fillRect(0, 0, 2048, 1024); return new THREE.CanvasTexture(c);
+}
+
+function mkMars() {
+  eGrp = new THREE.Group(); scene.add(eGrp);
+  const marsMesh = new THREE.Mesh(new THREE.SphereGeometry(ER, 128, 128), new THREE.MeshStandardMaterial({ map: mkMarsTex(), roughness: 1.0, metalness: 0.0 }));
+  marsMesh.renderOrder = 2; eGrp.add(marsMesh); scene.userData.earthMesh = marsMesh;
+  const loader = new THREE.TextureLoader();
+  loader.load('https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/marsmap1k.jpg', tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = ren.capabilities.getMaxAnisotropy(); marsMesh.material.map = tex; marsMesh.material.needsUpdate = true; }, undefined, () => {});
+  loader.load('https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/marsbump1k.jpg', tex => { marsMesh.material.bumpMap = tex; marsMesh.material.bumpScale = 0.2; marsMesh.material.needsUpdate = true; }, undefined, () => {});
+}
+
+function mkAtmo(sunDir) {
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uSD: { value: sunDir }, uC: { value: new THREE.Color(0xff6b3d) } },
+    vertexShader: `varying vec3 vN;varying vec3 vP;void main(){vN=normalize(normalMatrix*normal);vP=(modelViewMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader: `uniform vec3 uSD;uniform vec3 uC;varying vec3 vN;varying vec3 vP;void main(){vec3 vD=normalize(-vP);float rim=1.0-abs(dot(vD,vN));float sd=max(0.0,dot(normalize(vP),uSD));float scatter=pow(rim,4.0)*(0.3+sd*1.2);gl_FragColor=vec4(uC,scatter);}`,
+    transparent: true, side: THREE.BackSide, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  atmoMesh = new THREE.Mesh(new THREE.SphereGeometry(ER * 1.025, 64, 32), m); atmoMesh.renderOrder = 1; scene.add(atmoMesh);
+}
+
+function mkDust() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512; const x = c.getContext('2d');
+  for (let k = 0; k < 200; k++) { const px = Math.random() * 1024, py = Math.random() * 512, r = 10 + Math.random() * 60, a = .02 + Math.random() * .06; const rg = x.createRadialGradient(px, py, 0, px, py, r); rg.addColorStop(0, 'rgba(200,120,60,' + a + ')'); rg.addColorStop(1, 'rgba(200,120,60,0)'); x.fillStyle = rg; x.fillRect(px - r, py - r, r * 2, r * 2); }
+  dustMesh = new THREE.Mesh(new THREE.SphereGeometry(ER * 1.01, 96, 48), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), transparent: true, opacity: .4, depthWrite: false, roughness: 1 }));
+  dustMesh.renderOrder = 3; eGrp.add(dustMesh);
+}
+
+function mkIce() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512; const x = c.getContext('2d'); x.clearRect(0, 0, 1024, 512);
+  let rg = x.createRadialGradient(512, 20, 0, 512, 20, 120); rg.addColorStop(0, 'rgba(220,240,255,.9)'); rg.addColorStop(.5, 'rgba(200,230,255,.4)'); rg.addColorStop(1, 'rgba(200,230,255,0)'); x.fillStyle = rg; x.fillRect(0, 0, 1024, 200);
+  rg = x.createRadialGradient(512, 492, 0, 512, 492, 140); rg.addColorStop(0, 'rgba(220,240,255,.9)'); rg.addColorStop(.5, 'rgba(200,230,255,.4)'); rg.addColorStop(1, 'rgba(200,230,255,0)'); x.fillStyle = rg; x.fillRect(0, 300, 1024, 212);
+  iceMeshN = new THREE.Mesh(new THREE.SphereGeometry(ER * 1.005, 96, 48), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), transparent: true, opacity: .8, depthWrite: false }));
+  iceMeshN.renderOrder = 4; eGrp.add(iceMeshN);
+}
+
+function mkRockTexture(w, h, baseColor) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+  x.fillStyle = baseColor; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < 30; i++) { x.strokeStyle = `rgba(50,30,20,${0.3 + Math.random() * 0.4})`; x.lineWidth = 1 + Math.random() * 2; x.beginPath(); x.arc(Math.random() * w, Math.random() * h, 2 + Math.random() * 8, 0, PI2); x.stroke(); }
+  return new THREE.CanvasTexture(c);
+}
+
+function mkMoonOrbit(radius, inclination, color) {
+  const pts = []; const incRad = inclination * D2R;
+  for (let i = 0; i <= 128; i++) {
+    const angle = (i / 128) * PI2;
+    const x = radius * Math.cos(angle);
+    const z = radius * Math.sin(angle);
+    const y = z * Math.sin(incRad);
+    const zPrime = z * Math.cos(incRad);
+    pts.push(new THREE.Vector3(x, y, zPrime));
+  }
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.4 }));
+}
+
+function mkMoons() {
+  phobosGrp = new THREE.Group(); scene.add(phobosGrp); deimosGrp = new THREE.Group(); scene.add(deimosGrp);
+  phobosMesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 12), new THREE.MeshStandardMaterial({ map: mkRockTexture(128, 64, '#886655'), roughness: 1 })); phobosGrp.add(phobosMesh);
+  deimosMesh = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 10), new THREE.MeshStandardMaterial({ map: mkRockTexture(64, 32, '#998877'), roughness: 1 })); deimosGrp.add(deimosMesh);
+
+  const r_phobos = altToScene(6000);
+  const r_deimos = altToScene(20000);
+  phobosOrbit = mkMoonOrbit(r_phobos, 5, 0xffaa66); 
+  deimosOrbit = mkMoonOrbit(r_deimos, 10, 0xcc9977); 
+  scene.add(phobosOrbit);
+  scene.add(deimosOrbit);
+}
+
+function getSatPos(sat, time) {
+  const r = altToScene(sat.alt), inc = sat.inc * D2R, raan = (sat.raan0 || 0) * D2R, M = ((time / (sat.period * 60)) * PI2 + (sat.phase0 || 0));
+  const xO = r * Math.cos(M), yO = r * Math.sin(M), xI = xO, yI = yO * Math.cos(inc), zI = yO * Math.sin(inc);
+  return new THREE.Vector3(xI * Math.cos(raan) - zI * Math.sin(raan), yI, xI * Math.sin(raan) + zI * Math.cos(raan));
+}
+function createOrbitTrail(sat, segs = 128) {
+  const pts = []; const t0 = performance.now() / 1000;
+  for (let i = 0; i <= segs; i++) { pts.push(getSatPos(sat, t0 + (i / segs) * sat.period * 60)); }
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: sat.color, transparent: true, opacity: .2 }));
+}
+function mkOrbiters() { ORBITERS.forEach(sat => { const g = new THREE.SphereGeometry(Math.max(.02, sat.size), 16, 12); const m = new THREE.MeshBasicMaterial({ color: sat.color }); const mesh = new THREE.Mesh(g, m); mesh.userData = { sat, type: 'sat' }; scene.add(mesh); satMeshes[sat.id] = mesh; const trail = createOrbitTrail(sat); scene.add(trail); trailMeshes[sat.id] = trail; }); }
+
+function mkGeoFeatures() {
+  GEO_FEATURES.forEach(f => {
+    const pos = ll2v(f.lat, f.lng, ER * 1.005), isVolcano = f.type.includes('Volcano');
+    const g = isVolcano ? new THREE.ConeGeometry(.05, .1, 6) : new THREE.SphereGeometry(.04, 8, 6);
+    const m = new THREE.MeshBasicMaterial({ color: isVolcano ? 0xff5522 : 0x88aaff });
+    const mesh = new THREE.Mesh(g, m); mesh.position.copy(pos);
+    if (isVolcano) { mesh.lookAt(0, 0, 0); mesh.rotateX(PI / 2); }
+    mesh.userData = { feature: f, type: 'feature' }; scene.add(mesh); geoMeshes.push(mesh);
+  });
+}
+
+function mkRovers() {
+  ROVERS.forEach(r => {
+    const pos = ll2v(r.lat, r.lng, ER * 1.005);
+    const g = new THREE.OctahedronGeometry(.06, 0), m = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+    const mesh = new THREE.Mesh(g, m); mesh.position.copy(pos); mesh.userData = { rover: r, type: 'rover' }; scene.add(mesh); roverMeshes.push(mesh);
+    const rg = new THREE.RingGeometry(.08, .12, 16), rm = new THREE.MeshBasicMaterial({ color: 0x00ff88, side: THREE.DoubleSide, transparent: true, opacity: .5 });
+    const ring = new THREE.Mesh(rg, rm); ring.position.copy(pos); ring.lookAt(0, 0, 0); ring.userData = { rover: r, pulse: true }; scene.add(ring); roverMeshes.push(ring);
+  });
+}
+
+/* ═══════════ HIGH-DETAIL 3D ROVER VIEWER ═══════════ */
+function initRoverViewer() {
+  rvClock = new THREE.Clock();
+  rvScene = new THREE.Scene();
+  rvScene.fog = new THREE.FogExp2(0x884422, 0.015); // Dusty atmospheric fog
+  rvCam = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  
+  const canvas = document.getElementById('rvCanvas');
+  rvRend = new THREE.WebGLRenderer({ canvas, antialias: true });
+  rvRend.setPixelRatio(window.devicePixelRatio);
+  rvRend.toneMapping = THREE.ACESFilmicToneMapping;
+  rvRend.toneMappingExposure = 1.2;
+  
+  const pmremGenerator = new THREE.PMREMGenerator(rvRend);
+  rvScene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+
+  rvCtrl = new OrbitControls(rvCam, canvas);
+  rvCtrl.enableDamping = true;
+  rvCtrl.minDistance = 3;
+  rvCtrl.maxDistance = 25;
+  rvCtrl.autoRotate = true;
+  rvCtrl.autoRotateSpeed = 1.5;
+
+  // Lighting (Mars daytime)
+  rvScene.add(new THREE.AmbientLight(0x884422, 0.4));
+  const sun = new THREE.DirectionalLight(0xffeecc, 2.5);
+  sun.position.set(5, 10, 7);
+  rvScene.add(sun);
+  const fill = new THREE.DirectionalLight(0xff7a33, 0.6);
+  fill.position.set(-5, -2, -5);
+  rvScene.add(fill);
+
+  // Realistic Displaced Mars Terrain
+  const groundGeo = new THREE.PlaneGeometry(40, 40, 64, 64);
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x6b2e1c, roughness: 1, metalness: 0, flatShading: true });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -PI / 2;
+  ground.position.y = 0;
+  // Displace vertices for dunes
+  const pos = groundGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i);
+    const dist = Math.sqrt(x*x + y*y);
+    if (dist > 4) {
+      pos.setZ(i, Math.sin(x*0.5)*0.5 + Math.cos(y*0.5)*0.5 + Math.random()*0.3);
+    } else {
+      pos.setZ(i, Math.random()*0.05);
+    }
+  }
+  groundGeo.computeVertexNormals();
+  rvScene.add(ground);
+
+  // Scatter Rocks
+  for(let i=0; i<40; i++) {
+    const r = 5 + Math.random() * 12;
+    const angle = Math.random() * PI2;
+    const rockGeo = new THREE.DodecahedronGeometry(0.2 + Math.random() * 0.4, 0);
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x552211, roughness: 0.9, flatShading: true });
+    const rock = new THREE.Mesh(rockGeo, rockMat);
+    rock.position.set(Math.cos(angle)*r, 0.1, Math.sin(angle)*r);
+    rock.rotation.set(Math.random()*PI, Math.random()*PI, Math.random()*PI);
+    rvScene.add(rock);
+  }
+
+  document.getElementById('rvClose').onclick = closeRoverViewer;
+}
+
+function buildRoverModel(id) {
+  const grp = new THREE.Group();
+  
+  const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xD4AF37, metalness: 1.0, roughness: 0.15, clearcoat: 1.0, envMapIntensity: 1.5 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.6, roughness: 0.5 });
+  const solarMat = new THREE.MeshPhysicalMaterial({ color: 0x000088, metalness: 0.1, roughness: 0.1, clearcoat: 1.0, reflectivity: 0.9, envMapIntensity: 1.5 });
+  const whiteMat = new THREE.MeshPhysicalMaterial({ color: 0xeeeeee, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2, envMapIntensity: 1.0 });
+  const blueMat = new THREE.MeshStandardMaterial({ color: 0x1133aa, metalness: 0.3, roughness: 0.6 });
+
+  function wheel(x, y, z) {
+    const wGrp = new THREE.Group();
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 32), darkMat);
+    tire.rotation.x = PI / 2; wGrp.add(tire);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.42, 16), goldMat);
+    hub.rotation.x = PI / 2; wGrp.add(hub);
+    for(let i=0; i<6; i++) {
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.06), darkMat);
+      spoke.rotation.x = PI / 2; spoke.rotation.z = i * PI / 3;
+      wGrp.add(spoke);
+    }
+    wGrp.position.set(x, y, z); grp.add(wGrp);
+  }
+
+  if (id === 'perseverance' || id === 'curiosity') {
+    const body = new THREE.Mesh(new RoundedBoxGeometry(2.2, 0.9, 1.6, 4, 0.15), whiteMat);
+    body.position.y = 1.1; grp.add(body);
+    const goldBox = new THREE.Mesh(new RoundedBoxGeometry(1.9, 0.8, 1.3, 4, 0.1), goldMat);
+    goldBox.position.y = 1.8; grp.add(goldBox);
+    [-1, 0, 1].forEach(i => { wheel(-1.3, 0.5, i * 0.8); wheel(1.3, 0.5, i * 0.8); });
+    [-1, 1].forEach(s => {
+      [-0.8, 0, 0.8].forEach(z => {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1), darkMat);
+        arm.position.set(s*1.3, 0.8, z); grp.add(arm);
+      });
+    });
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 2.0, 8), whiteMat);
+    mast.position.set(0, 2.7, 0); grp.add(mast);
+    const head = new THREE.Mesh(new RoundedBoxGeometry(0.6, 0.4, 0.5, 2, 0.05), whiteMat);
+    head.position.set(0, 3.7, 0); grp.add(head);
+    [-0.15, 0.15].forEach(x => {
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.2, 16), darkMat);
+      lens.rotation.x = PI / 2; lens.position.set(x, 3.7, 0.3); grp.add(lens);
+      const glass = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), goldMat);
+      glass.position.set(x, 3.7, 0.4); grp.add(glass);
+    });
+    const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.9, 16), darkMat);
+    rtg.rotation.z = PI / 2; rtg.position.set(0, 1.1, -1.2); grp.add(rtg);
+    for(let i=0; i<12; i++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.02, 0.3), goldMat);
+      fin.rotation.x = PI / 2; fin.rotation.y = i * PI / 6;
+      fin.position.set(0, 1.1, -1.2); grp.add(fin);
+    }
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.8, 8), goldMat);
+    arm.rotation.x = PI / 3; arm.position.set(0.9, 0.9, 0.9); grp.add(arm);
+    const hand = new THREE.Mesh(new RoundedBoxGeometry(0.3, 0.3, 0.3, 2, 0.05), darkMat);
+    hand.position.set(1.4, 0.5, 1.4); grp.add(hand);
+  } else if (id === 'zhurong') {
+    const body = new THREE.Mesh(new RoundedBoxGeometry(2.0, 0.9, 1.5, 4, 0.1), blueMat);
+    body.position.y = 1.1; grp.add(body);
+    const goldTop = new THREE.Mesh(new RoundedBoxGeometry(1.7, 0.4, 1.2, 4, 0.08), goldMat);
+    goldTop.position.y = 1.7; grp.add(goldTop);
+    const sp1 = new THREE.Mesh(new RoundedBoxGeometry(2.8, 0.06, 1.3, 2, 0.02), solarMat); sp1.position.set(-2.0, 1.4, 0); grp.add(sp1);
+    const sp2 = new THREE.Mesh(new RoundedBoxGeometry(2.8, 0.06, 1.3, 2, 0.02), solarMat); sp2.position.set(2.0, 1.4, 0); grp.add(sp2);
+    wheel(-1.1, 0.5, -0.8); wheel(1.1, 0.5, -0.8); wheel(-1.1, 0.5, 0.8); wheel(1.1, 0.5, 0.8);
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.8, 8), whiteMat); mast.position.set(0, 2.5, 0); grp.add(mast);
+    const head = new THREE.Mesh(new RoundedBoxGeometry(0.4, 0.3, 0.3, 2, 0.05), whiteMat); head.position.set(0, 3.4, 0); grp.add(head);
+    [-0.1, 0.1].forEach(x => {
+      const lens = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 16), darkMat);
+      lens.position.set(x, 3.4, 0.2); grp.add(lens);
+    });
+  } else if (id === 'insight') {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.6, 16), goldMat); base.position.y = 0.9; grp.add(base);
+    const deck = new THREE.Mesh(new RoundedBoxGeometry(2.2, 0.12, 2.2, 4, 0.05), whiteMat); deck.position.y = 1.2; grp.add(deck);
+    const sp1 = new THREE.Mesh(new RoundedBoxGeometry(2.8, 0.06, 1.1, 2, 0.02), solarMat); sp1.position.set(0, 1.2, 2.0); grp.add(sp1);
+    const sp2 = new THREE.Mesh(new RoundedBoxGeometry(2.8, 0.06, 1.1, 2, 0.02), solarMat); sp2.position.set(0, 1.2, -2.0); grp.add(sp2);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.8, 8), darkMat); arm.rotation.z = PI / 4; arm.position.set(0.9, 2.0, 0.5); grp.add(arm);
+    const claw = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.2, 0.2, 2, 0.03), goldMat); claw.position.set(1.7, 2.6, 0.5); grp.add(claw);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 16, 0, PI2, 0, PI / 2), goldMat); dome.position.set(-0.5, 1.26, -0.5); grp.add(dome);
+    const domeWind = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.3, 16, 1, true), whiteMat); domeWind.position.set(-0.5, 1.4, -0.5); grp.add(domeWind);
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8), darkMat); ant.position.set(0.6, 1.8, -0.5); grp.add(ant);
+  }
+  return grp;
+}
+
+function openRoverViewer(rover) {
+  document.getElementById('rvModal').classList.add('vis');
+  document.getElementById('rvTitle').textContent = rover.name;
+  document.getElementById('rvStatus').textContent = rover.status;
+  document.getElementById('rvDesc').textContent = rover.desc;
+  document.getElementById('rvStats').innerHTML = `
+    <div class="rvRow"><span class="lbl">Location</span><span class="val">${rover.lat}°, ${rover.lng}°</span></div>
+    <div class="rvRow"><span class="lbl">Local Solar Time</span><span class="val" style="color:var(--gold)">${getMarsTime(rover.lng)}</span></div>
+    <div class="rvRow"><span class="lbl">Mission Sol</span><span class="val">${rover.sol}</span></div>
+    <div class="rvRow"><span class="lbl">Launch Date</span><span class="val">${rover.launch}</span></div>
+    <div class="rvRow"><span class="lbl">Landing Date</span><span class="val">${rover.landing}</span></div>
+    <div class="rvRow"><span class="lbl">Mass</span><span class="val">${rover.mass}</span></div>
+    <div class="rvRow"><span class="lbl">Power Source</span><span class="val">${rover.power}</span></div>
+    <a class="dl" href="${rover.url}" target="_blank" style="margin-top:20px;"><i class="fas fa-rocket"></i>Official Mission</a>
+  `;
+  
+  const img = document.getElementById('rvImage');
+  const imgFallback = document.getElementById('rvImgFallback');
+  img.src = rover.img;
+  img.style.display = 'block';
+  imgFallback.classList.remove('show');
+  imgFallback.href = rover.url;
+  
+  img.onerror = () => {
+    img.style.display = 'none';
+    imgFallback.classList.add('show');
+  };
+  img.onload = () => {
+    img.style.display = 'block';
+    imgFallback.classList.remove('show');
+  };
+  
+  document.getElementById('rvImgCaption').textContent = rover.imgCaption;
+  
+  if (rvMesh) rvScene.remove(rvMesh);
+  rvMesh = buildRoverModel(rover.id);
+  rvScene.add(rvMesh);
+  
+  // Auto-frame the camera perfectly on the model
+  const box = new THREE.Box3().setFromObject(rvMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = rvCam.fov * (Math.PI / 180);
+  let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.8;
+  rvCam.position.set(center.x + cameraZ * 0.6, center.y + cameraZ * 0.4, center.z + cameraZ);
+  rvCam.lookAt(center);
+  rvCtrl.target.copy(center);
+  rvCtrl.update();
+
+  // Explicitly size the canvas to the wrapper to prevent layout issues
+  const wrap = document.getElementById('rvCanvasWrap');
+  rvRend.setSize(wrap.clientWidth, wrap.clientHeight, false);
+  rvCam.aspect = wrap.clientWidth / wrap.clientHeight;
+  rvCam.updateProjectionMatrix();
+  
+  rvAnimating = true;
+  document.getElementById('vSol').textContent = rover.sol;
+}
+
+function closeRoverViewer() {
+  document.getElementById('rvModal').classList.remove('vis');
+  rvAnimating = false;
+}
+
+function animateRoverViewer() {
+  if (!rvAnimating) return;
+  requestAnimationFrame(animateRoverViewer);
+  const t = rvClock.getElapsedTime();
+  if (rvMesh) rvMesh.position.y = Math.sin(t * 1.5) * 0.05; 
+  rvCtrl.update();
+  rvRend.render(rvScene, rvCam);
+}
+
+/* ═══════════ LIVE DATA ═══════════ */
+async function fetchSpaceWeather() {
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-5-minute.json'); const d = await r.json();
+    if (d && d.length > 1) {
+      const l = d[d.length - 1], sp = parseFloat(l[2]), den = parseFloat(l[3]), temp = parseFloat(l[4]);
+      if (!isNaN(sp) && sp > 0) { S.swSpd = sp; document.getElementById('vSW').textContent = sp.toFixed(0) + ' km/s'; document.getElementById('rSWf').textContent = sp.toFixed(0) + ' km/s'; document.getElementById('bSW').textContent = sp.toFixed(0) + ' km/s'; }
+      if (!isNaN(temp) && temp > 0) { S.swTemp = temp; document.getElementById('rSWt').textContent = (temp / 1000).toFixed(0) + 'k K'; document.getElementById('bSWT').textContent = (temp / 1000).toFixed(0) + 'k K'; }
+    }
+  } catch (e) {}
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'); const d = await r.json();
+    let v = 2; for (let i = d.length - 1; i >= 1; i--) { if (d[i][2] === 'observed') { const x = parseFloat(d[i][1]); if (!isNaN(x)) { v = x; break; } } }
+    S.kp = v; document.getElementById('rKp').textContent = v.toFixed(1);
+  } catch (e) {}
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json'); const d = await r.json();
+    if (d && d.length > 0) {
+      const x = parseFloat(d[d.length - 1].flux);
+      if (!isNaN(x)) {
+        S.xray = x; let cls = 'A';
+        if (x >= 1e-4) cls = 'X'; else if (x >= 1e-5) cls = 'M'; else if (x >= 1e-6) cls = 'C'; else if (x >= 1e-7) cls = 'B';
+        const divisor = cls === 'X' ? 1e-4 : cls === 'M' ? 1e-5 : cls === 'C' ? 1e-6 : cls === 'B' ? 1e-7 : 1e-8;
+        document.getElementById('rXray').textContent = cls + '-' + (x / divisor).toFixed(1);
+        if (x >= 1e-5) { const delay = (S.earthMarsDistAU * AU_KM / C / 60).toFixed(1); toast(`⚠️ ${cls}-Class Solar Flare Detected! Impact at Mars in ${delay} min.`, 'alert'); }
+      }
+    }
+  } catch (e) {}
+}
+
+async function fetchMarsWeather() {
+  try {
+    const r = await fetch('https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0');
+    if (!r.ok) throw new Error('API error'); const d = await r.json();
+    const sols = Object.keys(d).filter(k => !isNaN(k) && k !== 'validity_checks');
+    if (sols.length > 0) { const wd = d[sols[sols.length - 1]]; if (wd.AT) document.getElementById('rT').textContent = wd.AT.av.toFixed(1) + '°C'; if (wd.PRE) document.getElementById('rP').textContent = wd.PRE.av.toFixed(0) + ' Pa'; }
+  } catch (e) { document.getElementById('rT').textContent = '-55.0°C'; document.getElementById('rP').textContent = '690 Pa'; }
+}
+
+function updateOrbitalData() {
+  const now = new Date(), dist = earthMarsDistance(now);
+  S.earthMarsDistAU = dist.dist; S.lightDelay = dist.lightSec / 60; S.marsLs = marsLsCalc(now);
+  document.getElementById('vDist').textContent = dist.dist.toFixed(3) + ' AU'; document.getElementById('vDelay').textContent = S.lightDelay.toFixed(1) + 'm';
+  document.getElementById('rDist').textContent = (dist.distKm).toFixed(0) + ' km'; document.getElementById('rOWT').textContent = dist.lightSec.toFixed(0) + ' s'; document.getElementById('rRTT').textContent = (dist.lightSec * 2).toFixed(0) + ' s';
+  const marsPos = planetHelioPos(now.getTime() / 86400000 + 2451545 - 0.5, 'mars'), r_m = marsPos.r * AU_KM * 1000, a_m = 1.524 * AU_KM * 1000, v = Math.sqrt(SOL_GM * (2 / r_m - 1 / a_m));
+  document.getElementById('rVel').textContent = (v / 1000).toFixed(2) + ' km/s';
+  document.getElementById('rSunDist').textContent = (marsPos.r * AU_KM).toFixed(0) + ' km';
+  const { lat, lng } = sunSubSolarPoint(now); document.getElementById('bSun').textContent = lat.toFixed(1) + '°, ' + lng.toFixed(1) + '°';
+  updateTicker();
+}
+
+function updateClocks() {
+  const n = new Date();
+  document.getElementById('vUTC').textContent = n.toISOString().substr(11, 8) + 'Z';
+  document.getElementById('vMTC').textContent = getMarsTime(0);
+  document.getElementById('vJezero').textContent = getMarsTime(77.4508);
+  document.getElementById('vGale').textContent = getMarsTime(137.4417);
+}
+
+function updateTicker() {
+  const facts = [
+    `> LIVE: Mars is currently ${S.earthMarsDistAU.toFixed(3)} AU from Earth.`,
+    `> DATA: One-way light delay is ${S.lightDelay.toFixed(2)} minutes.`,
+    `> ORBIT: Mars is moving at ${(document.getElementById('rVel').textContent.split(' ')[0])} km/s around the Sun.`,
+    `> TIME: A Mars day (Sol) is 24h 39m 35.24s long.`,
+    `> WEATHER: Solar wind temperature is ${(S.swTemp / 1000).toFixed(0)},000 Kelvin.`,
+    `> PHYSICS: Mars gravity is 3.711 m/s² (38% of Earth's).`,
+    `> GEOLOGY: Olympus Mons is 2.5x the height of Mount Everest.`,
+    `> DSN: Light takes ${S.lightDelay.toFixed(1)} mins to reach Mars orbiters right now.`
+  ];
+  document.getElementById('ticker').innerHTML = facts.join('&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;');
+}
+
+function toast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = ''; if (type) t.classList.add(type); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); }
+
+function buildLayerPanel() {
+  const pan = document.getElementById('lpan'); pan.innerHTML = '';
+  LAYERS.forEach(sec => { const d = document.createElement('div'); d.className = 'ps'; d.innerHTML = `<h3>${sec.sec}</h3>`; sec.items.forEach(it => { const el = document.createElement('div'); el.className = 'li2' + (it.on ? ' on' : ''); el.innerHTML = `<div class="cd" style="background:${it.c};color:${it.c}"></div><span class="nm">${it.n}</span>`; el.onclick = () => { it.on = !it.on; el.classList.toggle('on'); toggleLayer(it.id, it.on); }; d.appendChild(el); }); pan.appendChild(d); });
+}
+function toggleLayer(id, on) { S.layers[id] = on; switch (id) { case 'dust': if (dustMesh) dustMesh.visible = on; break; case 'atmo': if (atmoMesh) atmoMesh.visible = on; break; case 'ice': if (iceMeshN) iceMeshN.visible = on; break; case 'rovers': roverMeshes.forEach(m => m.visible = on); break; case 'volcanoes': case 'craters': case 'canyons': geoMeshes.forEach(m => m.visible = on); break; case 'trails': Object.values(trailMeshes).forEach(m => m.visible = on); break; default: if (satMeshes[id]) satMeshes[id].visible = on; if (trailMeshes[id] && S.layers.trails) trailMeshes[id].visible = on; break; } }
+
+function showDetail(title, sub, rows, link) { const dp = document.getElementById('dpan'); document.getElementById('dT').textContent = title; document.getElementById('dS').textContent = sub || ''; let html = ''; rows.forEach(r => { html += `<div class="dr"><span class="lb">${r[0]}</span><span class="vl" style="color:${r[2] || 'var(--text)'}">${r[1]}</span></div>`; }); if (link) html += `<a class="dl" href="${link}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i>More Info</a>`; document.getElementById('dB').innerHTML = html; dp.classList.add('vis'); }
+
+function setupEvents() {
+  document.querySelectorAll('[data-m]').forEach(btn => { btn.onclick = () => { document.querySelectorAll('[data-m]').forEach(b => b.classList.remove('on')); btn.classList.add('on'); S.mode = btn.dataset.m; if (S.mode === 'mars') ['dust', 'atmo', 'ice', 'volcanoes', 'rovers'].forEach(id => { if (S.layers[id]) toggleLayer(id, true); }); if (S.mode === 'orbit') ['maven', 'mro', 'odyssey', 'express', 'tianwen', 'trails'].forEach(id => toggleLayer(id, true)); if (S.mode === 'geo') ['volcanoes', 'craters', 'canyons'].forEach(id => toggleLayer(id, true)); if (S.mode === 'dust') ['dust', 'atmo', 'ice'].forEach(id => toggleLayer(id, true)); }; });
+  document.getElementById('relBtn').onclick = () => { S.relVis = !S.relVis; document.getElementById('relPan').classList.toggle('vis', S.relVis); document.getElementById('relBtn').classList.toggle('on', S.relVis); };
+  document.getElementById('bordBtn').onclick = () => { S.layers.volcanoes = !S.layers.volcanoes; toggleLayer('volcanoes', S.layers.volcanoes); document.getElementById('bordBtn').classList.toggle('on', S.layers.volcanoes); };
+  document.getElementById('popBtn').onclick = () => { S.layers.rovers = !S.layers.rovers; toggleLayer('rovers', S.layers.rovers); document.getElementById('popBtn').classList.toggle('on', S.layers.rovers); };
+  document.getElementById('mobBtn').onclick = () => { const p = document.getElementById('lpan'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
+  document.getElementById('launchBtn').onclick = launchAnimation;
+  ren.domElement.addEventListener('click', onCanvasClick);
+  ren.domElement.addEventListener('mousemove', e => { mouse.x = (e.clientX / innerWidth) * 2 - 1; mouse.y = -(e.clientY / innerHeight) * 2 + 1; });
+  window.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); ctrl.autoRotate = !ctrl.autoRotate; } if (e.code === 'KeyL') launchAnimation(); if (e.code === 'Escape') closeRoverViewer(); });
+}
+
+function onCanvasClick(e) {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1; mouse.y = -(e.clientY / innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, cam);
+  let hits = raycaster.intersectObjects(roverMeshes.filter(m => m.visible && !m.userData.pulse), false);
+  if (hits.length > 0) { openRoverViewer(hits[0].object.userData.rover); return; }
+  const satArr = Object.values(satMeshes).filter(m => m.visible);
+  hits = raycaster.intersectObjects(satArr, false);
+  if (hits.length > 0) { const sat = hits[0].object.userData.sat; if (sat && sat.name) { const t0 = performance.now() / 1000; const pos = getSatPos(sat, t0); const ll = v2ll(pos); showDetail(sat.name, sat.type, [['Altitude', sat.alt + ' km'], ['Inclination', sat.inc + '°'], ['Period', sat.period + ' min'], ['Lat', ll.lat.toFixed(2) + '°'], ['Lng', ll.lng.toFixed(2) + '°'], ['Status', 'Active', 'var(--ok)']], sat.url); return; } }
+  hits = raycaster.intersectObjects(geoMeshes.filter(m => m.visible), false);
+  if (hits.length > 0) { const f = hits[0].object.userData.feature; if (f) { showDetail(f.name, f.type, [['Elevation', f.elev > 0 ? f.elev + ' m' : Math.abs(f.elev) + ' m deep'], ['Lat', f.lat + '°'], ['Lng', f.lng + '°'], ['Description', f.desc]]); return; } }
+  document.getElementById('dpan').classList.remove('vis');
+}
+
+function launchAnimation() {
+  if (S.launching) return; S.launching = true; ctrl.enabled = false; ctrl.autoRotate = false;
+  const surfPos = ll2v(18.4, 77.4, ER * 1.02), normal = surfPos.clone().normalize(), targetPos = new THREE.Vector3(12, 6, 14);
+  const duration = 5000, start = performance.now(); toast('Initiating orbital insertion...');
+  function anim(now) {
+    const elapsed = now - start, t = Math.min(elapsed / duration, 1); let ease;
+    if (t < .1) ease = t / .1 * .15; else if (t < .3) ease = .15 + (t - .1) / .2 * .15; else if (t < .8) ease = .3 + (t - .3) / .5 * .5; else ease = .8 + (t - .8) / .2 * .2;
+    const pos = surfPos.clone().lerp(targetPos, ease); pos.add(normal.clone().multiplyScalar(Math.sin(ease * PI) * 8));
+    cam.position.copy(pos); cam.lookAt(0, 0, 0);
+    if (t > .15 && t < .7) { ren.toneMappingExposure = 1.2 + Math.sin((t - .15) / .55* PI) * .8; } else { ren.toneMappingExposure = 1.0; }
+    if (t < 1) { requestAnimationFrame(anim); } else { ctrl.enabled = true; S.launching = false; toast('Orbital insertion complete.'); setTimeout(() => { ren.toneMappingExposure = 1.0; }, 500); }
+  }
+  requestAnimationFrame(anim);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta(), t = clock.getElapsedTime();
+  const sunDir = getSunDir();
+  if (scene.userData.sunMesh) scene.userData.sunMesh.position.copy(sunDir.clone().multiplyScalar(150));
+  if (atmoMesh) atmoMesh.material.uniforms.uSD.value.copy(sunDir);
+  if (eGrp) eGrp.rotation.y += .00005;
+  if (dustMesh && dustMesh.visible) dustMesh.rotation.y += .0002;
+  const now = performance.now() / 1000;
+  Object.entries(satMeshes).forEach(([id, mesh]) => { const sat = mesh.userData.sat; if (!sat || !sat.period) return; mesh.position.copy(getSatPos(sat, now)); });
+  
+  if (phobosGrp) {
+    const r_p = altToScene(6000), inc_p = 5 * D2R, ang_p = t * 0.5;
+    phobosMesh.position.set(r_p * Math.cos(ang_p), r_p * Math.sin(ang_p) * Math.sin(inc_p), r_p * Math.sin(ang_p) * Math.cos(inc_p));
+  }
+  if (deimosGrp) {
+    const r_d = altToScene(20000), inc_d = 10 * D2R, ang_d = t * 0.2;
+    deimosMesh.position.set(r_d * Math.cos(ang_d), r_d * Math.sin(ang_d) * Math.sin(inc_d), r_d * Math.sin(ang_d) * Math.cos(inc_d));
+  }
+
+  if (starMesh && starMesh.material.uniforms) starMesh.material.uniforms.uT.value = t;
+  roverMeshes.forEach(m => { if (m.userData.pulse) { const s = 1 + Math.sin(t * 3) * .3; m.scale.set(s, s, s); m.material.opacity = .5 - s * .15; } });
+  if (S.introDone) ctrl.update();
+  composer.render();
+  if (rvAnimating) animateRoverViewer();
+}
+
+init();
+</script>
+</body>
+</html>

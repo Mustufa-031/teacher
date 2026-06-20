@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geosphere Live — The Coolest Earth Page</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{--bg:#030508;--card:rgba(6,10,18,.96);--border:rgba(200,170,60,.1);--accent:#C8A84E;--text:#D4CFC4;--muted:#5E5A50;--ok:#27AE60;--warn:#E67E22;--err:#C0392B;--field:#00e5ff;--belt-inner:#ff4466;--belt-outer:#4488ff;--gold:#FFD700}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;cursor:crosshair}
+canvas{display:block;position:fixed;inset:0;z-index:0}
+#loader{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s}
+#loader.hidden{opacity:0;pointer-events:none}
+#loader h2{color:var(--accent);font-size:.85rem;font-weight:300;letter-spacing:6px;text-transform:uppercase;margin-bottom:16px}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loadMsg{color:var(--muted);font-size:.6rem;margin-top:10px;letter-spacing:1px}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;gap:4px;padding:5px 8px;background:linear-gradient(180deg,rgba(3,5,8,.97) 70%,transparent);overflow-x:auto;scrollbar-width:none}
+#hdr::-webkit-scrollbar{display:none}
+#hdr h1{font-size:.62rem;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--accent);white-space:nowrap;flex-shrink:0}
+#hdr h1 span{color:var(--muted);font-weight:300}
+.hs{width:1px;height:16px;background:var(--border);flex-shrink:0;margin:0 2px}
+.hb{background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:3px;font-family:inherit;font-size:.55rem;cursor:pointer;transition:all .2s;letter-spacing:.3px;white-space:nowrap;flex-shrink:0}
+.hb:hover{border-color:var(--accent);color:var(--accent)}
+.hb.on{background:rgba(200,168,78,.12);border-color:var(--accent);color:var(--accent)}
+.hb i{margin-right:3px}
+#live{position:fixed;top:30px;left:0;right:0;z-index:190;display:flex;align-items:center;gap:6px;padding:2px 10px;background:linear-gradient(180deg,rgba(3,5,8,.75) 0%,transparent 100%);font-size:.5rem;letter-spacing:.2px;overflow-x:auto;scrollbar-width:none}
+#live::-webkit-scrollbar{display:none}
+.li{display:flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0}
+.ld{width:4px;height:4px;border-radius:50%;flex-shrink:0;transition:all .3s}
+.ll{color:var(--muted)}
+.lv{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+#liveTag{color:var(--ok);font-weight:700;letter-spacing:1.5px;font-size:.45rem;animation:lp 2s infinite;flex-shrink:0}
+@keyframes lp{0%,100%{text-shadow:0 0 3px var(--ok)}50%{text-shadow:0 0 8px var(--ok)}}
+#lpan{position:fixed;left:6px;top:46px;bottom:48px;width:175px;z-index:150;overflow-y:auto;padding:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#lpan::-webkit-scrollbar{width:2px}
+#lpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ps{margin-bottom:6px}
+.ps h3{font-size:.48rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid var(--border)}
+.li2{display:flex;align-items:center;gap:4px;padding:2px 4px;border-radius:2px;cursor:pointer;transition:all .15s;font-size:.56rem;margin-bottom:1px}
+.li2:hover{background:rgba(200,168,78,.06)}
+.li2.on{background:rgba(200,168,78,.1)}
+.cd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#dpan{position:fixed;right:6px;top:46px;width:240px;max-height:calc(100vh - 100px);z-index:150;overflow-y:auto;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:10px;transform:translateX(260px);transition:transform .4s cubic-bezier(.22,1,.36,1);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#dpan::-webkit-scrollbar{width:2px}
+#dpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#dpan.vis{transform:translateX(0)}
+.cb{position:absolute;top:5px;right:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:2px}
+.cb:hover{color:var(--text)}
+#dT{font-size:.82rem;font-weight:600;color:var(--accent);margin-bottom:2px;padding-right:14px}
+#dS{font-size:.52rem;color:var(--muted);margin-bottom:6px}
+.dr{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:.58rem;gap:4px}
+.dr .lb{color:var(--muted);flex-shrink:0}
+.dr .vl{color:var(--text);text-align:right;word-break:break-word}
+.dl{display:inline-block;margin-top:6px;padding:4px 8px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:var(--field);border-radius:3px;font-size:.55rem;text-decoration:none;transition:all .2s}
+.dl:hover{background:rgba(0,229,255,.18);border-color:var(--field)}
+.dl i{margin-right:3px}
+#bot{position:fixed;bottom:0;left:0;right:0;z-index:150;background:linear-gradient(0deg,rgba(3,5,8,.95) 60%,transparent);padding:4px 8px 5px;display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;font-size:.48rem}
+#bot::-webkit-scrollbar{display:none}
+.bi{display:flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0;color:var(--muted)}
+.bi .bv{color:var(--text);font-weight:500}
+#launchBtn{position:fixed;right:12px;bottom:16px;z-index:300;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#C8A84E,#8B6914);border:2px solid rgba(255,215,0,.4);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;box-shadow:0 0 20px rgba(200,168,78,.3)}
+#launchBtn:hover{transform:scale(1.1);box-shadow:0 0 30px rgba(200,168,78,.5)}
+#launchBtn:active{transform:scale(.95)}
+#launchBtn .tip{position:absolute;right:52px;top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border);padding:3px 8px;border-radius:3px;font-size:.5rem;white-space:nowrap;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s}
+#launchBtn:hover .tip{opacity:1}
+#toast{position:fixed;bottom:56px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--card);border:1px solid var(--accent);color:var(--accent);padding:4px 12px;border-radius:3px;font-size:.58rem;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:calc(100% - 16px);text-overflow:ellipsis;overflow:hidden}
+#toast.show{opacity:1}
+#relPan{position:fixed;left:6px;bottom:48px;z-index:160;width:260px;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:8px 10px;transform:translateY(120%);transition:transform .4s cubic-bezier(.22,1,.36,1);max-height:calc(100vh - 100px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#relPan::-webkit-scrollbar{width:2px}
+#relPan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#relPan.vis{transform:translateY(0)}
+#relPan h3{font-size:.55rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--field);margin-bottom:6px}
+.rs{margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.02)}
+.rs:last-child{border:none;margin:0}
+.rs h4{font-size:.48rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.rr{display:flex;justify-content:space-between;font-size:.55rem;padding:1px 0;gap:4px}
+.rr .rl{color:var(--muted)}
+.rr .rv{text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.rr .rv.hl{color:var(--field)}
+.rr .rv.hot{color:var(--belt-inner)}
+.rr .rv.cool{color:var(--belt-outer)}
+#mobBtn{display:none;position:fixed;left:6px;bottom:50px;z-index:170;width:30px;height:30px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--accent);font-size:.7rem;cursor:pointer;align-items:center;justify-content:center}
+@media(max-width:900px){#lpan{display:none}#mobBtn{display:flex}#dpan{width:210px;right:4px}#relPan{width:220px}}
+@media(max-width:640px){
+#hdr{padding:3px 5px;gap:2px}#hdr h1{font-size:.5rem}#hdr h1 span{display:none}
+.hb{padding:2px 5px;font-size:.48rem}.hb span{display:none}.hb i{margin:0}
+#live{top:25px;font-size:.42rem;gap:4px}
+#dpan{width:calc(100% - 8px);left:4px;right:4px;max-height:35vh;top:auto;bottom:42px;transform:translateY(120%);border-radius:4px 4px 0 0}
+#dpan.vis{transform:translateY(0)}
+#relPan{width:calc(100% - 8px);left:4px;bottom:42px;max-height:35vh}
+#mobBtn{left:4px;bottom:46px}
+}
+</style>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><h2>Geosphere Live</h2><div id="loadMsg">Initializing...</div></div>
+<header id="hdr">
+<h1>Geosphere <span>Live</span></h1><div class="hs"></div>
+<button class="hb on" data-m="earth"><i class="fas fa-globe-americas"></i><span>Earth</span></button>
+<button class="hb" data-m="mag"><i class="fas fa-magnet"></i><span>Magneto</span></button>
+<button class="hb" data-m="sat"><i class="fas fa-satellite"></i><span>Satellites</span></button>
+<button class="hb" data-m="science"><i class="fas fa-atom"></i><span>Science</span></button>
+<button class="hb" data-m="weather"><i class="fas fa-cloud-bolt"></i><span>Weather</span></button>
+<div class="hs"></div>
+<button class="hb" id="relBtn"><i class="fas fa-chart-line"></i><span>Relativity</span></button>
+<button class="hb" id="bordBtn"><i class="fas fa-border-all"></i><span>Borders</span></button>
+<button class="hb" id="popBtn"><i class="fas fa-people-group"></i><span>Pop.</span></button>
+</header>
+<div id="live">
+<span id="liveTag">LIVE</span>
+<div class="li"><div class="ld" style="background:var(--ok);animation:lp 2s infinite"></div><span class="ll">UTC</span><span class="lv" id="vUTC">--</span></div>
+<div class="li"><div class="ld" style="background:var(--accent)"></div><span class="ll">Local</span><span class="lv" id="vLocal">--</span></div>
+<div class="li"><div class="ld" style="background:#ff6644"></div><span class="ll">Temp</span><span class="lv" id="vTemp">--</span></div>
+<div class="li"><div class="ld" id="dKp" style="background:var(--muted)"></div><span class="ll">Kp</span><span class="lv" id="vKp">--</span></div>
+<div class="li"><div class="ld" style="background:#aa44ff"></div><span class="ll">Dst</span><span class="lv" id="vDst">--</span></div>
+<div class="li"><div class="ld" style="background:var(--field)"></div><span class="ll">SW</span><span class="lv" id="vSW">--</span></div>
+<div class="li"><div class="ld" style="background:#44ddaa"></div><span class="ll">n</span><span class="lv" id="vDens">--</span></div>
+<div class="li"><div class="ld" style="background:#ff6644"></div><span class="ll">Bz</span><span class="lv" id="vBz">--</span></div>
+<div class="li"><div class="ld" style="background:#ffaa00"></div><span class="ll">X-ray</span><span class="lv" id="vXray">--</span></div>
+<div class="li"><div class="ld" style="background:#ff44aa"></div><span class="ll">>10MeV</span><span class="lv" id="vProt">--</span></div>
+<div class="li"><div class="ld" style="background:var(--ok)"></div><span class="ll">Quakes</span><span class="lv" id="vEq">--</span></div>
+<div class="li"><div class="ld" style="background:var(--field)"></div><span class="ll">Moon</span><span class="lv" id="vMoon">--</span></div>
+<div class="li"><div class="ld" style="background:var(--belt-inner)"></div><span class="ll">ISS</span><span class="lv" id="vISS">--</span></div>
+</div>
+<aside id="lpan"></aside>
+<button id="mobBtn"><i class="fas fa-layer-group"></i></button>
+<aside id="dpan"><button class="cb" onclick="document.getElementById('dpan').classList.remove('vis')"><i class="fas fa-times"></i></button><div id="dT"></div><div id="dS"></div><div id="dB"></div></aside>
+<div id="relPan">
+<h3><i class="fas fa-atom"></i> Relativistic Field Data</h3>
+<div class="rs"><h4>Solar Wind</h4>
+<div class="rr"><span class="rl">Velocity</span><span class="rv hl" id="rSWv">400 km/s</span></div>
+<div class="rr"><span class="rl">β = v/c</span><span class="rv" id="rSWb">1.334e-3</span></div>
+<div class="rr"><span class="rl">Lorentz γ</span><span class="rv" id="rSWg">1.0000009</span></div>
+<div class="rr"><span class="rl">Proton KE</span><span class="rv" id="rSWke">833 eV</span></div>
+<div class="rr"><span class="rl">Dyn. Pressure</span><span class="rv" id="rSWp">2.0 nPa</span></div>
+<div class="rr"><span class="rl">IMF Bz</span><span class="rv" id="rSWbz">+2.0 nT</span></div>
+<div class="rr"><span class="rl">Mach #</span><span class="rv" id="rSWm">8.2</span></div>
+</div>
+<div class="rs"><h4>Radiation Belts</h4>
+<div class="rr"><span class="rl">Inner e⁻ γ</span><span class="rv hot" id="rBIg">20.6</span></div>
+<div class="rr"><span class="rl">Outer e⁻ γ</span><span class="rv cool" id="rBOg">2.96</span></div>
+<div class="rr"><span class="rl">Inner proton flux</span><span class="rv hot" id="rBIf">10⁴ /cm²s</span></div>
+</div>
+<div class="rs"><h4>GPS Relativity</h4>
+<div class="rr"><span class="rl">SR dilation</span><span class="rv">-7.21 μs/d</span></div>
+<div class="rr"><span class="rl">GR dilation</span><span class="rv">+45.85 μs/d</span></div>
+<div class="rr"><span class="rl">Net offset</span><span class="rv hl">+38.64 μs/d</span></div>
+<div class="rr"><span class="rl">Uncorrected drift</span><span class="rv hot">11.2 km/d</span></div>
+</div>
+<div class="rs"><h4>Dipole Field</h4>
+<div class="rr"><span class="rl">Surface |B|</span><span class="rv hl" id="rBsq">30,000 nT</span></div>
+<div class="rr"><span class="rl">Magnetopause</span><span class="rv hl" id="rBmp">10.0 Rₑ</span></div>
+</div>
+<div class="rs"><h4>Geomagnetic</h4>
+<div class="rr"><span class="rl">Kp</span><span class="rv hl" id="rIGk">2</span></div>
+<div class="rr"><span class="rl">Storm phase</span><span class="rv" id="rIGp">Quiet</span></div>
+</div>
+</div>
+<div id="bot">
+<div class="bi"><i class="fas fa-location-dot" style="color:var(--gold)"></i><span class="bv" id="bLoc">Locating...</span></div>
+<div class="bi"><i class="fas fa-sun" style="color:#FFD700"></i>Sun: <span class="bv" id="bSun">--</span></div>
+<div class="bi"><i class="fas fa-moon" style="color:#ccc"></i>Moon: <span class="bv" id="bMoonVis">--</span></div>
+<div class="bi"><i class="fas fa-satellite" style="color:var(--err)"></i>ISS: <span class="bv" id="bISSvis">--</span></div>
+<div class="bi"><i class="fas fa-wind" style="color:var(--field)"></i>Wind: <span class="bv" id="bWind">--</span></div>
+</div>
+<button id="launchBtn"><i class="fas fa-rocket"></i><span class="tip">Launch from your location</span></button>
+<div id="toast"></div>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+
+/* ═══════════ CONSTANTS ═══════════ */
+const ER=5,PI=Math.PI,PI2=PI*2,D2R=PI/180,C=299792.458;
+const RE_KM=6371; // Earth radius in km for altitude conversions
+
+/* ═══════════ LIVE STATE ═══════════ */
+const S={kp:2,dst:-10,swSpd:400,swDen:5,bz:2,bt:5,ae:100,xray:1e-7,xrayCls:'B1.0',prot:0.5,prot100:0,pc5:0.5,
+  quakes:[],userLat:40.7,userLng:-74,userCity:'New York',userTemp:15,userWind:10,
+  sunLat:0,sunLng:0,moonPhase:0.5,moonAge:14.8,
+  issLat:0,issLng:0,issAlt:408,issVisible:false,
+  layers:{clouds:true,lights:true,aurora:true,field:false,belts:false,bowshock:false,magpause:false,
+    iss:true,starlink:false,gps:false,hubble:true,jwst:true,goes:true,trails:true,
+    eq:true,volcano:true,lightning:true,air:false,ship:false,current:false,pop:false,borders:false},
+  mode:'earth',borders:false,pop:false,launching:false,relVis:false
+};
+
+/* ═══════════ UTILITY ═══════════ */
+function ll2v(la,ln,r){const p=(90-la)*D2R,t=(ln+180)*D2R;return new THREE.Vector3(-(r*Math.sin(p)*Math.cos(t)),r*Math.cos(p),r*Math.sin(p)*Math.sin(t))}
+function v2ll(v){const r=v.length(),la=90-Math.acos(THREE.MathUtils.clamp(v.y/r,-1,1))/D2R,ln=-(Math.atan2(v.z,-v.x)/D2R)-180;return{lat:la,lng:((ln+540)%360)-180}}
+function getSunDir(){const n=new Date(),soy=new Date(n.getFullYear(),0,0),doy=Math.floor((n-soy)/864e5),utc=n.getUTCHours()+n.getUTCMinutes()/60+n.getUTCSeconds()/3600,dec=-23.44*Math.cos(PI2/365*(doy+10)),lng=(12-utc)*15;S.sunLat=dec;S.sunLng=lng;return ll2v(dec,lng,1).normalize()}
+function getMoonPhase(){const n=new Date(),y=n.getFullYear(),m=n.getMonth()+1,d=n.getDate();let jd=367*y-Math.floor(7*(y+Math.floor((m+9)/12))/4)+Math.floor(275*m/9)+d+1721013.5;const phase=((jd-2451550.1)/29.530588853)%1;const p=phase<0?phase+1:phase;S.moonPhase=p;S.moonAge=p*29.53;return p}
+function moonPhaseName(p){if(p<.03||p>.97)return'New Moon';if(p<.22)return'Waxing Crescent';if(p<.28)return'First Quarter';if(p<.47)return'Waxing Gibbous';if(p<.53)return'Full Moon';if(p<.72)return'Waning Gibbous';if(p<.78)return'Last Quarter';return'Waning Crescent'}
+function moonIllum(p){return(1-Math.cos(p*PI2))/2}
+function getMoonPos(t){const p=S.moonPhase,inc=5.145*D2R,dist=60.3*R_E,age=S.moonAge;const M=age/29.53*PI2;const x=dist*Math.cos(M),z=dist*Math.sin(M)*Math.cos(inc),y=dist*Math.sin(M)*Math.sin(inc);return new THREE.Vector3(x,y,z)}
+const R_E=ER/RE_KM; // scene units per km
+function altToScene(altKm){return ER+altKm*R_E}
+
+/* ═══════════ SATELLITE DATA ═══════════ */
+const SAT_DATA=[
+  {id:'iss',name:'ISS',alt:408,inc:51.6,period:92.68,color:0xff3333,size:.1,raan0:0,phase0:0,type:'Space Station',desc:'International Space Station — 420 tons, 6 crew, 16 orbits per day. Humanity\'s outpost in space since 1998.',url:'https://spotthestation.nasa.gov/'},
+  {id:'hubble',name:'Hubble',alt:547,inc:28.5,period:95.4,color:0x00ff88,size:.07,raan0:40,phase0:1.2,type:'Telescope',desc:'Hubble Space Telescope — 2.4m mirror, launched 1990. Over 1.5 million observations.',url:'https://www.nasa.gov/mission/hubble/'},
+  {id:'jwst',name:'JWST',alt:1500000,inc:0,period:180,color:0xffaa00,size:.07,raan0:0,phase0:0,type:'Telescope',desc:'James Webb Space Telescope — 6.5m mirror at L2, 1.5M km from Earth. Seeing the first galaxies.',url:'https://webb.nasa.gov/'},
+];
+// Generate GPS constellation (simplified: 6 planes, 4 sats each)
+const GPS_SATS=[];for(let p=0;p<6;p++)for(let s=0;s<4;s++)GPS_SATS.push({id:`gps${p}_${s}`,name:`GPS-${p*4+s+1}`,alt:20200,inc:55,period:718,color:0x4488ff,size:.035,raan0:p*60,phase0:s*PI2/4,type:'Navigation',desc:'GPS satellite — Part of the 24-sat Global Positioning System constellation.',url:''});
+// Generate Starlink subset (simplified: 12 planes, 5 sats each = 60)
+const STAR_SATS=[];for(let p=0;p<12;p++)for(let s=0;s<5;s++)STAR_SATS.push({id:`st${p}_${s}`,name:`Starlink-${p*22+s}`,alt:550,inc:53,period:95.5,color:0x888899,size:.02,raan0:p*15,phase0:s*PI2/22,type:'Communications',desc:'Starlink satellite — SpaceX broadband internet constellation. ~5,500+ active.',url:''});
+// GOES weather satellites (geostationary)
+const GOES_SATS=[
+  {id:'goes16',name:'GOES-16',lng:-75.2,alt:35786,color:0x00cc66,size:.06,type:'Weather',desc:'GOES-East — Covers Americas and Atlantic. Advanced Baseline Imager.',url:''},
+  {id:'goes18',name:'GOES-18',lng:-137.2,alt:35786,color:0x00cc66,size:.06,type:'Weather',desc:'GOES-West — Covers Pacific. Replaced GOES-17 in 2023.',url:''},
+  {id:'himawari',name:'Himawari-8',lng:140.7,alt:35786,color:0x00cc66,size:.06,type:'Weather',desc:'Himawari-8 — Japan Meteorological Agency. Covers Asia-Pacific.',url:''},
+  {id:'meteosat',name:'Meteosat-11',lng:0,alt:35786,color:0x00cc66,size:.06,type:'Weather',desc:'Meteosat Second Generation — EUMETSAT. Covers Europe/Africa.',url:''},
+];
+
+// Volcano data (active volcanoes)
+const VOLCANOES=[
+  {name:'Kilauea',lat:19.4,lng:-155.3,status:'Active',elev:1247},
+  {name:'Etna',lat:37.75,lng:14.99,status:'Active',elev:3326},
+  {name:'Fuego',lat:14.47,lng:-90.88,status:'Active',elev:3763},
+  {name:'Sakurajima',lat:31.58,lng:130.66,status:'Active',elev:1117},
+  {name:'Merapi',lat:-7.54,lng:110.44,status:'Active',elev:2910},
+  {name:'Popocatépetl',lat:19.02,lng:-98.62,status:'Active',elev:5426},
+  {name:'Villarrica',lat:-39.42,lng:-71.93,status:'Active',elev:2847},
+  {name:'Stromboli',lat:38.79,lng:15.21,status:'Active',elev:926},
+  {name:'Semeru',lat:-8.11,lng:112.92,status:'Active',elev:3676},
+  {name:'Dukono',lat:1.69,lng:127.87,status:'Active',elev:1229},
+  {name:'Sinabung',lat:3.17,lng:98.39,status:'Active',elev:2460},
+  {name:'Ebeko',lat:50.68,lng:156.01,status:'Active',elev:1156},
+];
+
+// Air traffic routes (major city pairs)
+const AIR_ROUTES=[
+  [40.7,-74,51.5,-.1],[34,-118.2,35.7,139.7],[40.7,-74,48.9,2.3],[25.3,55.3,22.3,114.2],
+  [1.35,103.8,51.5,-.1],[41.9,-87.6,19.4,-155.3],[33.9,-118.4,35.7,139.7],[31.2,121.5,37.8,-122.4],
+  [40.7,-74,22.3,114.2],[55.8,37.6,25.3,55.3],[48.9,2.3,40.4,-3.7],[33.9,43.9,24.7,46.7],
+  [22.3,114.2,-33.9,151.2],[1.35,103.8,35.7,139.7],[19.4,-155.3,-33.9,151.2],[41.9,-87.6,19.4,-155.3],
+];
+
+// Shipping routes
+const SHIP_ROUTES=[
+  [1.3,104,22.3,114],[30,31.2,6.5,3.4],[51.5,-.1,-33.9,18.4],[35.7,139.7,37.8,-122.4],
+  [1.3,104,6.5,3.4],[22.3,114,40.7,-74],[30,31.2,1.3,104],[14.6,-90.5,35.1,-118.2],
+];
+
+/* ═══════════ LAYER DEFINITIONS ═══════════ */
+const LAYERS=[
+  {sec:'Earth',items:[
+    {id:'clouds',n:'Clouds',c:'#87CEEB',on:true},{id:'lights',n:'City Lights',c:'#FFD080',on:true},
+    {id:'borders',n:'Country Borders',c:'#C8A84E',on:false},{id:'pop',n:'Population Density',c:'#ff6644',on:false},
+    {id:'eq',n:'Earthquakes',c:'#ff4444',on:true},{id:'volcano',n:'Volcanoes',c:'#ff8800',on:true},
+  ]},
+  {sec:'Atmosphere',items:[
+    {id:'aurora',n:'Aurora',c:'#00ff88',on:true},{id:'lightning',n:'Lightning',c:'#FFFF00',on:true},
+  ]},
+  {sec:'Oceans',items:[
+    {id:'current',n:'Ocean Currents',c:'#0088ff',on:false},
+  ]},
+  {sec:'Traffic',items:[
+    {id:'air',n:'Air Traffic',c:'#44ddff',on:false},{id:'ship',n:'Shipping Routes',c:'#44aa88',on:false},
+  ]},
+  {sec:'Magnetosphere',items:[
+    {id:'field',n:'Field Lines',c:'#00e5ff',on:false},{id:'belts',n:'Van Allen Belts',c:'#ff4466',on:false},
+    {id:'bowshock',n:'Bow Shock',c:'#00bcd4',on:false},{id:'magpause',n:'Magnetopause',c:'#00e5ff',on:false},
+  ]},
+  {sec:'Satellites',items:[
+    {id:'iss',n:'ISS',c:'#ff3333',on:true},{id:'starlink',n:'Starlink',c:'#888899',on:false},
+    {id:'gps',n:'GPS',c:'#4488ff',on:false},{id:'hubble',n:'Hubble',c:'#00ff88',on:true},
+    {id:'jwst',n:'James Webb',c:'#ffaa00',on:true},{id:'goes',n:'Weather Sats',c:'#00cc66',on:true},
+    {id:'trails',n:'Orbit Trails',c:'#ffffff',on:true},
+  ]},
+];
+
+/* ═══════════ THREE.JS SETUP ═══════════ */
+let scene,cam,ren,ctrl,clock;
+let eGrp,cloudMesh,lightMesh,borderMesh,popMesh;
+let auroraN,auroraS,dirLight,sunDir=new THREE.Vector3(50,15,25).normalize();
+let fieldGrp,beltInnerGrp,beltOuterGrp,bowShockMesh,magpauseMesh;
+let satMeshes={},trailMeshes={},goesMeshes={};
+let eqMeshes=[],volcMeshes=[],lightningSprites=[];
+let airLines=[],shipLines=[],currentLines=[];
+let moonMesh,moonGroup,issMarker;
+let userMarker,userBeam,userRing;
+let starMesh;
+let raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2(-9,-9);
+let clipPlane;
+
+function init(){
+  clock=new THREE.Clock();scene=new THREE.Scene();
+  cam=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.01,2000);
+  cam.position.set(12,6,14);
+  ren=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  ren.setSize(innerWidth,innerHeight);ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  ren.localClippingEnabled=true;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.2;
+  document.body.prepend(ren.domElement);
+  ctrl=new OrbitControls(cam,ren.domElement);ctrl.enableDamping=true;ctrl.dampingFactor=.06;
+  ctrl.minDistance=5.3;ctrl.maxDistance=120;ctrl.autoRotate=true;ctrl.autoRotateSpeed=.2;
+  clipPlane=new THREE.Plane(new THREE.Vector3(-1,0,0),20);
+  dirLight=new THREE.DirectionalLight(0xFFF5E0,2.5);dirLight.position.copy(sunDir.clone().multiplyScalar(50));scene.add(dirLight);
+  scene.add(new THREE.AmbientLight(0x182040,.4));
+  const fill=new THREE.DirectionalLight(0x223355,.25);fill.position.set(-30,-10,-20);scene.add(fill);
+
+  lm('Stars...');mkStars();
+  lm('Sun...');mkSun();
+  lm('Earth...');mkEarth();
+  lm('Clouds...');mkClouds();
+  lm('Night lights...');mkNightLights();
+  lm('Borders...');mkBorders();
+  lm('Population...');mkPopulation();
+  lm('Atmosphere...');mkAtmo();
+  lm('Aurora...');mkAurora();
+  lm('Magnetosphere...');mkFieldLines();mkVanAllen();mkBoundaries();
+  lm('Moon...');mkMoon();
+  lm('Satellites...');mkSatellites();
+  lm('Earthquakes...');mkEarthquakeBase();
+  lm('Volcanoes...');mkVolcanoes();
+  lm('Lightning...');mkLightning();
+  lm('Traffic...');mkAirTraffic();mkShipping();mkOceanCurrents();
+  lm('User location...');mkUserMarker();
+  lm('UI...');buildLayerPanel();setupEvents();
+
+  window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
+
+  // Initial data fetches
+  setTimeout(()=>{getGeo();fetchKp();fetchQuakes();fetchSW();fetchXray();fetchProt();fetchDst()},2000);
+  setInterval(fetchKp,600000);setInterval(fetchQuakes,300000);setInterval(fetchSW,300000);
+  setInterval(fetchXray,300000);setInterval(fetchProt,300000);setInterval(fetchDst,300000);
+  setInterval(updateClocks,1000);setInterval(updateMoon,60000);
+  setInterval(updateISSposition,5000);setInterval(checkISSpass,10000);
+  updateClocks();updateMoon();
+
+  setTimeout(()=>document.getElementById('loader').classList.add('hidden'),1200);
+  animate();
+}
+function lm(m){const e=document.getElementById('loadMsg');if(e)e.textContent=m}
+
+/* ═══════════ STARS ═══════════ */
+function mkStars(){
+  const N=8000,p=new Float32Array(N*3),s=new Float32Array(N),c=new Float32Array(N*3);
+  for(let i=0;i<N;i++){const r=300+Math.random()*700,t=Math.random()*PI2,ph=Math.acos(2*Math.random()-1);
+    p[i*3]=r*Math.sin(ph)*Math.cos(t);p[i*3+1]=r*Math.sin(ph)*Math.sin(t);p[i*3+2]=r*Math.cos(ph);
+    s[i]=.3+Math.random()*1.5;
+    const temp=Math.random();c[i*3]=temp<.3?1:.8+Math.random()*.2;c[i*3+1]=.85+Math.random()*.15;c[i*3+2]=temp>.7?.8+Math.random()*.2:1}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  g.setAttribute('size',new THREE.BufferAttribute(s,1));g.setAttribute('aCol',new THREE.BufferAttribute(c,3));
+  const m=new THREE.ShaderMaterial({uniforms:{uT:{value:0}},vertexShader:`
+    attribute float size;attribute vec3 aCol;varying float vS;varying vec3 vC;uniform float uT;
+    void main(){vS=size;vC=aCol;vec4 mv=modelViewMatrix*vec4(position,1.);
+    gl_PointSize=size*(200./-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`varying float vS;varying vec3 vC;uniform float uT;
+    void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;
+    float a=smoothstep(.5,.0,d);float tw=.7+.3*sin(uT*(1.+vS)+vS*77.);
+    gl_FragColor=vec4(vC,a*tw);}`,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+  starMesh=new THREE.Points(g,m);scene.add(starMesh);
+}
+
+/* ═══════════ SUN ═══════════ */
+function mkSun(){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(3,16,8),new THREE.MeshBasicMaterial({color:0xFFF5D0}));
+  m.position.copy(sunDir.clone().multiplyScalar(50));scene.add(m);scene.userData.sunMesh=m;
+  const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');
+  const rg=x.createRadialGradient(128,128,0,128,128,128);
+  rg.addColorStop(0,'rgba(255,245,200,1)');rg.addColorStop(.2,'rgba(255,230,130,.5)');rg.addColorStop(.5,'rgba(255,200,80,.15)');rg.addColorStop(1,'rgba(255,180,50,0)');
+  x.fillStyle=rg;x.fillRect(0,0,256,256);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  sp.position.copy(m.position);sp.scale.set(35,35,1);scene.add(sp);
+}
+
+/* ═══════════ EARTH ═══════════ */
+function mkEarth(){
+  eGrp=new THREE.Group();scene.add(eGrp);
+  // Try loading real texture, fallback to procedural
+  const loader=new THREE.TextureLoader();
+  let et=loader.load('https://unpkg.com/three-globe@2.31.1/example/img/earth-blue-marble.jpg',
+    tex=>{eMesh.material.map=tex;eMesh.material.needsUpdate=true},
+    undefined,()=>{eMesh.material.map=mkEarthTex();eMesh.material.needsUpdate=true});
+  et.colorSpace=THREE.SRGBColorSpace;
+  const eMesh2=new THREE.Mesh(new THREE.SphereGeometry(ER,128,64),
+    new THREE.MeshStandardMaterial({map:et,roughness:.8,metalness:.05,clippingPlanes:[clipPlane]}));
+  eMesh2.renderOrder=2;eGrp.add(eMesh2);scene.userData.earthMesh=eMesh2;
+}
+
+function mkEarthTex(){
+  const c=document.createElement('canvas');c.width=2048;c.height=1024;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,1024);g.addColorStop(0,'#0a1628');g.addColorStop(.3,'#0d2847');g.addColorStop(.5,'#0f3060');g.addColorStop(.7,'#0d2847');g.addColorStop(1,'#0a1628');
+  x.fillStyle=g;x.fillRect(0,0,2048,1024);
+  // Simplified continents
+  [{x:420,y:220,rx:180,ry:120},{x:480,y:420,rx:80,ry:140},{x:1050,y:200,rx:160,ry:100},{x:1100,y:350,rx:120,ry:180},{x:1400,y:250,rx:250,ry:150},{x:1600,y:500,rx:100,ry:70},{x:1024,y:50,rx:400,ry:40},{x:1024,y:970,rx:350,ry:40}].forEach(ct=>{
+    const rg=x.createRadialGradient(ct.x,ct.y,0,ct.x,ct.y,Math.max(ct.rx,ct.ry));
+    rg.addColorStop(0,'#2d4a1e');rg.addColorStop(.4,'#3a5c28');rg.addColorStop(.7,'#5a6b3a');rg.addColorStop(1,'rgba(15,48,96,0)');
+    x.fillStyle=rg;x.beginPath();x.ellipse(ct.x,ct.y,ct.rx,ct.ry,0,0,PI2);x.fill()});
+  // Ice caps
+  let ig=x.createLinearGradient(0,0,0,50);ig.addColorStop(0,'#c8d8e8');ig.addColorStop(1,'rgba(200,216,232,0)');x.fillStyle=ig;x.fillRect(0,0,2048,50);
+  ig=x.createLinearGradient(0,980,0,1024);ig.addColorStop(0,'rgba(200,216,232,0)');ig.addColorStop(1,'#d0dce8');x.fillStyle=ig;x.fillRect(0,980,2048,44);
+  return new THREE.CanvasTexture(c);
+}
+
+function mkClouds(){
+  const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d');
+  for(let k=0;k<300;k++){const px=Math.random()*1024,py=Math.random()*512,r=8+Math.random()*45,a=.015+Math.random()*.05;
+    const rg=x.createRadialGradient(px,py,0,px,py,r);rg.addColorStop(0,'rgba(255,255,255,'+a+')');rg.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=rg;x.fillRect(px-r,py-r,r*2,r*2)}
+  cloudMesh=new THREE.Mesh(new THREE.SphereGeometry(ER*1.007,96,48),
+    new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(c),transparent:true,opacity:.35,depthWrite:false,roughness:1,clippingPlanes:[clipPlane]}));
+  cloudMesh.renderOrder=3;eGrp.add(cloudMesh);
+}
+
+function mkNightLights(){
+  const c=document.createElement('canvas');c.width=2048;c.height=1024;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,2048,1024);
+  [[40.7,-74,4],[34,-118.2,3.5],[41.9,-87.6,3],[29.8,-95.4,2.5],[51.5,-.1,3.5],[48.9,2.3,3],[55.8,37.6,3],[35.7,139.7,4.5],[39.9,116.4,3.5],[31.2,121.5,3.5],[28.6,77.2,3],[19,72.9,3],[22.3,114.2,3.5],[37.6,127,2.5],[13.8,100.5,2],[1.3,103.8,2.5],[-23.5,-46.6,3],[-34.6,-58.4,2],[6.5,3.4,2],[30,31.2,2.5],[-33.9,18.4,2],[24.7,46.7,2],[32.1,34.8,2],[-33.9,151.2,2.5],[-37.8,145,2],[39,-76.6,2.5],[49.9,-97.1,2],[25.3,55.3,2],[19.4,-155.3,1.5],[33.3,44.4,1.5],[23.8,90.4,2.5],[41,29,.18],[-1.3,36.8,2],[14.6,121,3],[22.2,113.5,2.5],[41.4,2.2,2],[52.5,13.4,2],[45.5,-73.6,2],[43.7,-79.4,2],[-34.6,-58.4,2],[-22.9,-43.2,2.5],[4.7,-74.1,2],[10.5,-66.9,1.5],[13,-61,1.5],[-12,-77,2],[-16.5,-68.2,1.5]].forEach(([la,ln,sz])=>{
+    const u=(ln+180)/360*2048,v=(90-la)/180*1024;
+    let rg=x.createRadialGradient(u,v,0,u,v,sz*7);rg.addColorStop(0,'rgba(255,200,100,.7)');rg.addColorStop(.4,'rgba(255,180,80,.25)');rg.addColorStop(1,'rgba(255,150,50,0)');
+    x.fillStyle=rg;x.fillRect(u-sz*7,v-sz*7,sz*14,sz*14);
+    rg=x.createRadialGradient(u,v,0,u,v,sz*1.5);rg.addColorStop(0,'rgba(255,255,220,.9)');rg.addColorStop(1,'rgba(255,200,100,0)');
+    x.fillStyle=rg;x.fillRect(u-sz*1.5,v-sz*1.5,sz*3,sz*3)});
+  lightMesh=new THREE.Mesh(new THREE.SphereGeometry(ER*1.002,128,64),
+    new THREE.ShaderMaterial({uniforms:{uNT:{value:new THREE.CanvasTexture(c)},uSD:{value:sunDir}},
+    vertexShader:'varying vec2 vUv;varying vec3 vWN;void main(){vUv=uv;vWN=normalize((modelMatrix*vec4(normal,0.)).xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'uniform sampler2D uNT;uniform vec3 uSD;varying vec2 vUv;varying vec3 vWN;void main(){float nd=dot(vWN,uSD);float nf=smoothstep(.05,-.15,nd);vec4 nc=texture2D(uNT,vUv);gl_FragColor=vec4(nc.rgb*nf*2.,nf*.85);}',
+    transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,clippingPlanes:[clipPlane]}));
+  lightMesh.renderOrder=3;eGrp.add(lightMesh);
+}
+
+function mkBorders(){
+  const c=document.createElement('canvas');c.width=2048;c.height=1024;const x=c.getContext('2d');x.clearRect(0,0,2048,1024);
+  x.strokeStyle='rgba(200,168,78,.5)';x.lineWidth=1.5;
+  // Simplified continent outlines as lat/lng arrays
+  const outlines=[
+    // North America (very simplified)
+    [[70,-165],[72,-130],[70,-100],[60,-95],[55,-80],[48,-55],[44,-65],[40,-75],[30,-82],[25,-80],[25,-98],[20,-105],[15,-92],[15,-83],[30,-85],[30,-118],[35,-120],[48,-125],[55,-133],[60,-145],[65,-168],[70,-165]],
+    // South America
+    [[12,-72],[10,-62],[5,-52],[0,-50],[-5,-35],[-15,-39],[-23,-43],[-35,-57],[-45,-65],[-55,-68],[-55,-64],[-48,-66],[-40,-62],[-35,-57],[-20,-40],[-5,-35],[0,-50],[5,-60],[10,-72],[12,-72]],
+    // Europe
+    [[71,28],[65,30],[60,30],[55,28],[54,20],[50,15],[48,3],[44,-9],[36,-6],[36,0],[38,25],[40,28],[42,30],[45,30],[50,30],[55,28],[60,30],[65,28],[71,28]],
+    // Africa
+    [[37,10],[32,32],[30,32],[22,37],[12,44],[5,42],[0,42],[-5,40],[-12,40],[-25,35],[-35,20],[-35,17],[-25,15],[-15,12],[-5,10],[5,2],[5,-5],[10,-15],[15,-17],[20,-17],[25,-15],[30,-10],[35,0],[37,10]],
+    // Asia (very simplified)
+    [[71,28],[75,60],[73,80],[70,130],[65,170],[60,165],[55,160],[50,140],[45,135],[40,130],[35,128],[30,120],[22,114],[20,110],[10,105],[5,100],[0,105],[-8,115],[0,105],[5,95],[10,80],[15,75],[20,73],[25,62],[25,55],[30,48],[35,36],[40,28],[42,30],[45,30],[50,30],[55,28],[60,30],[65,30],[71,28]],
+    // Australia
+    [[-12,130],[-15,125],[-20,115],[-25,114],[-30,115],[-35,117],[-35,138],[-38,145],[-38,148],[-35,150],[-30,153],[-25,153],[-20,149],[-15,145],[-12,142],[-12,136],[-12,130]],
+  ];
+  outlines.forEach(pts=>{x.beginPath();pts.forEach(([la,ln],i)=>{const u=(ln+180)/360*2048,v=(90-la)/180*1024;i===0?x.moveTo(u,v):x.lineTo(u,v)});x.closePath();x.stroke()});
+  borderMesh=new THREE.Mesh(new THREE.SphereGeometry(ER*1.004,128,64),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false,clippingPlanes:[clipPlane]}));
+  borderMesh.renderOrder=4;borderMesh.visible=false;eGrp.add(borderMesh);
+}
+
+function mkPopulation(){
+  const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d');x.clearRect(0,0,1024,512);
+  // Population density heat spots
+  const pops=[[40.7,-74,8],[34,-118.2,7],[41.9,-87.6,6],[29.8,-95.4,5],[51.5,-.1,6],[48.9,2.3,5.5],[55.8,37.6,5],[35.7,139.7,9],[39.9,116.4,8],[31.2,121.5,8],[28.6,77.2,8],[19,72.9,9],[22.3,114.2,8],[37.6,127,6],[13.8,100.5,6],[1.3,103.8,7],[-23.5,-46.6,6],[-34.6,-58.4,5],[6.5,3.4,4],[30,31.2,7],[24.7,46.7,5],[32.1,34.8,5],[-33.9,151.2,5],[25.3,55.3,4],[23.8,90.4,9],[22.2,113.5,8],[19.4,-155.3,3],[33.3,44.4,5],[41,29,5],[14.6,121,7],[10.5,-66.9,3],[4.7,-74.1,4],[-1.3,36.8,4],[3,101.7,5],[13,100.5,4],[35.2,137,7],[37.6,127,5.5],[34.7,113.6,6],[26,119,5],[23.1,113.3,6],[22.3,114.2,7.5],[20,105,4],[19,72.9,8.5],[28.6,77.2,7.5],[13,77.6,6],[-6.2,106.8,8],[6.5,3.4,4],[36.8,10.2,4],[-33.4,70.2,3],[33.6,-7.6,3],[5.6,-.2,3]];
+  pops.forEach(([la,ln,sz])=>{const u=(ln+180)/360*1024,v=(90-la)/180*512,r=sz*4;
+    const rg=x.createRadialGradient(u,v,0,u,v,r);rg.addColorStop(0,'rgba(255,80,30,.6)');rg.addColorStop(.3,'rgba(255,100,50,.3)');rg.addColorStop(.6,'rgba(255,60,20,.1)');rg.addColorStop(1,'rgba(255,50,10,0)');
+    x.fillStyle=rg;x.fillRect(u-r,v-r,r*2,r*2)});
+  popMesh=new THREE.Mesh(new THREE.SphereGeometry(ER*1.003,96,48),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,clippingPlanes:[clipPlane]}));
+  popMesh.renderOrder=3;popMesh.visible=false;eGrp.add(popMesh);
+}
+
+/* ═══════════ ATMOSPHERE ═══════════ */
+function mkAtmo(){
+  const m=new THREE.ShaderMaterial({uniforms:{uC:{value:new THREE.Color(.4,.7,.95)},uO:{value:.12},uSD:{value:sunDir}},
+    vertexShader:'varying vec3 vN;varying vec3 vP;void main(){vN=normalize(normalMatrix*normal);vP=(modelViewMatrix*vec4(position,1.).xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'uniform vec3 uC;uniform float uO;uniform vec3 uSD;varying vec3 vN;varying vec3 vP;void main(){vec3 vd=normalize(-vP);float rim=1.-max(0.,dot(vd,vN));float sd=max(0.,dot(vN,uSD));float i=pow(rim,3.)*uO*(0.5+sd*0.5);gl_FragColor=vec4(uC,i);}',
+    transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending});
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(ER*1.15,64,32),m);mesh.renderOrder=1;scene.add(mesh);
+}
+
+function mkAurora(){
+  const auroraShader=(pole)=>({
+    uniforms:{uI:{value:.15},uSD:{value:sunDir},uT:{value:0},uC1:{value:new THREE.Color(0,.9,.4)},uC2:{value:new THREE.Color(.2,.3,1)}},
+    vertexShader:'varying vec3 vP;varying vec3 vN;varying vec2 vUv;void main(){vP=position;vN=normalize(normalMatrix*normal);vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:`uniform float uI;uniform vec3 uSD;uniform float uT;uniform vec3 uC1;uniform vec3 uC2;varying vec3 vP;varying vec3 vN;varying vec2 vUv;
+    void main(){
+      float lat=${pole==='n'?'vP.y':'-vP.y'};
+      float latF=smoothstep(.9,.95,lat);
+      float sd=max(0.,dot(normalize(vP),uSD));
+      float nightF=1.-smoothstep(-.1,.1,sd);
+      float wave=sin(vUv.x*30.+uT*2.)*0.5+0.5;
+      float wave2=sin(vUv.x*50.-uT*3.+1.5)*0.5+0.5;
+      float curtain=pow(wave*wave2,0.5);
+      float h=smoothstep(.0,1.,vUv.y);
+      vec3 col=mix(uC1,uC2,wave);
+      float a=latF*nightF*curtain*h*uI*1.5;
+      a*=0.5+0.5*sin(uT*1.5+vUv.x*10.);
+      gl_FragColor=vec4(col,a);}`,
+    transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide
+  });
+  auroraN=new THREE.Mesh(new THREE.SphereGeometry(ER*1.08,64,32),new THREE.ShaderMaterial(auroraShader('n')));
+  auroraN.renderOrder=5;scene.add(auroraN);
+  auroraS=new THREE.Mesh(new THREE.SphereGeometry(ER*1.08,64,32),new THREE.ShaderMaterial(auroraShader('s')));
+  auroraS.renderOrder=5;scene.add(auroraS);
+}
+
+/* ═══════════ MAGNETOSPHERE ═══════════ */
+function mkFieldLines(){
+  fieldGrp=new THREE.Group();fieldGrp.visible=false;scene.add(fieldGrp);
+  const Ls=[2,3,4,6,8,10];
+  Ls.forEach(L=>{
+    for(let lon=0;lon<360;lon+=30){
+      const pts=[];const lonR=lon*D2R;
+      for(let t=0;t<=PI;t+=.05){
+        const sinT=Math.sin(t),cosT=Math.cos(t);
+        const r=L*ER*sinT*sinT;
+        const x=r*sinT*Math.cos(lonR),y=r*cosT,z=r*sinT*Math.sin(lonR);
+        pts.push(new THREE.Vector3(x,y,z));
+      }
+      const geo=new THREE.BufferGeometry().setFromPoints(pts);
+      const mat=new THREE.LineBasicMaterial({color:0x00e5ff,transparent:true,opacity:.15});
+      fieldGrp.add(new THREE.Line(geo,mat));
+    }
+  });
+}
+
+function mkVanAllen(){
+  beltInnerGrp=new THREE.Group();beltInnerGrp.visible=false;scene.add(beltInnerGrp);
+  beltOuterGrp=new THREE.Group();beltOuterGrp.visible=false;scene.add(beltOuterGrp);
+  // Inner belt: L=1.2-2.0
+  for(let i=0;i<800;i++){const L=1.2+Math.random()*.8,lon=Math.random()*PI2,lat=(Math.random()-.5)*PI*.6;
+    const r=L*ER*Math.cos(lat)*Math.cos(lat);const p=ll2v(lat/D2R,lon/D2R,r);
+    const g=new THREE.SphereGeometry(Math.max(.01,.02+Math.random()*.02),4,4);
+    const m=new THREE.MeshBasicMaterial({color:0xff4466,transparent:true,opacity:.3+Math.random()*.3});
+    const mesh=new THREE.Mesh(g,m);mesh.position.copy(p);beltInnerGrp.add(mesh)}
+  // Outer belt: L=3-7
+  for(let i=0;i<1200;i++){const L=3+Math.random()*4,lon=Math.random()*PI2,lat=(Math.random()-.5)*PI*.5;
+    const r=L*ER*Math.cos(lat)*Math.cos(lat);const p=ll2v(lat/D2R,lon/D2R,r);
+    const g=new THREE.SphereGeometry(Math.max(.01,.015+Math.random()*.015),4,4);
+    const m=new THREE.MeshBasicMaterial({color:0x4488ff,transparent:true,opacity:.2+Math.random()*.2});
+    const mesh=new THREE.Mesh(g,m);mesh.position.copy(p);beltOuterGrp.add(mesh)}
+}
+
+function mkBoundaries(){
+  // Bow shock (paraboloid ~13 RE)
+  const bsPts=[];for(let t=-PI/2;t<=PI/2;t+=.05){const r=13*ER/(1+.5*Math.cos(t));bsPts.push(new THREE.Vector3(r*Math.cos(t),r*Math.sin(t),0))}
+  const bsGeo=new THREE.BufferGeometry().setFromPoints(bsPts);
+  bowShockMesh=new THREE.Line(bsGeo,new THREE.LineBasicMaterial({color:0x00bcd4,transparent:true,opacity:.3}));
+  bowShockMesh.visible=false;scene.add(bowShockMesh);
+  // Magnetopause (~10 RE)
+  const mpPts=[];for(let t=-PI/2;t<=PI/2;t+=.05){const r=10*ER/(1+.3*Math.cos(t));mpPts.push(new THREE.Vector3(r*Math.cos(t),r*Math.sin(t),0))}
+  const mpGeo=new THREE.BufferGeometry().setFromPoints(mpPts);
+  magpauseMesh=new THREE.Line(mpGeo,new THREE.LineBasicMaterial({color:0x00e5ff,transparent:true,opacity:.25}));
+  magpauseMesh.visible=false;scene.add(magpauseMesh);
+}
+
+/* ═══════════ MOON ═══════════ */
+function mkMoon(){
+  moonGroup=new THREE.Group();scene.add(moonGroup);
+  // Moon texture
+  const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');
+  x.fillStyle='#9a9a9a';x.fillRect(0,0,256,128);
+  [{x:100,y:50,r:30},{x:140,y:65,r:20},{x:75,y:70,r:18},{x:160,y:40,r:15},{x:200,y:80,r:12}].forEach(m=>{
+    const rg=x.createRadialGradient(m.x,m.y,0,m.x,m.y,m.r);rg.addColorStop(0,'#6a6a6a');rg.addColorStop(1,'rgba(154,154,154,0)');
+    x.fillStyle=rg;x.beginPath();x.arc(m.x,m.y,m.r,0,PI2);x.fill()});
+  for(let i=0;i<80;i++){const px=Math.random()*256,py=Math.random()*128,r=1+Math.random()*4;
+    x.strokeStyle='rgba(70,70,70,'+(0.2+Math.random()*.3)+')';x.lineWidth=.5;x.beginPath();x.arc(px,py,r,0,PI2);x.stroke()}
+
+  moonMesh=new THREE.Mesh(new THREE.SphereGeometry(.7,32,16),
+    new THREE.ShaderMaterial({uniforms:{uTex:{value:new THREE.CanvasTexture(c)},uPhase:{value:.5},uSD:{value:sunDir}},
+    vertexShader:'varying vec2 vUv;varying vec3 vN;void main(){vUv=uv;vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'uniform sampler2D uTex;uniform float uPhase;uniform vec3 uSD;varying vec2 vUv;varying vec3 vN;void main(){vec3 base=texture2D(uTex,vUv).rgb;float nd=dot(vN,uSD);float lit=smoothstep(-.1,.15,nd);vec3 col=base*(0.08+lit*0.92);float limb=1.-pow(1.-abs(dot(vN,vec3(0,0,1))),.5)*.3;gl_FragColor=vec4(col*limb,1.);}',
+    }));
+  moonGroup.add(moonMesh);
+}
+
+/* ═══════════ SATELLITES ═══════════ */
+function getSatPos(sat,time){
+  if(sat.lng!==undefined){// Geostationary
+    return ll2v(0,sat.lng,altToScene(sat.alt));
+  }
+  const r=altToScene(sat.alt);
+  const inc=sat.inc*D2R;
+  const raan=(sat.raan0||0)*D2R;
+  const M=((time/(sat.period*60))*PI2+(sat.phase0||0));
+  const xO=r*Math.cos(M),yO=r*Math.sin(M);
+  const xI=xO,yI=yO*Math.cos(inc),zI=yO*Math.sin(inc);
+  return new THREE.Vector3(xI*Math.cos(raan)-zI*Math.sin(raan),yI,xI*Math.sin(raan)+zI*Math.cos(raan));
+}
+
+function createOrbitTrail(sat,segs=128){
+  const pts=[];const t0=performance.now()/1000;
+  for(let i=0;i<=segs;i++){const t=t0+(i/segs)*sat.period*60;pts.push(getSatPos(sat,t))}
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({color:sat.color,transparent:true,opacity:.12}));
+}
+
+function mkSatellites(){
+  const allSats=[...SAT_DATA,...GPS_SATS,...STAR_SATS];
+  allSats.forEach(sat=>{
+    if(sat.alt>50000&&sat.alt<100000)return;// Skip unrealistic altitudes for orbiting sats
+    const g=new THREE.SphereGeometry(Math.max(.01,sat.size),8,6);
+    const m=new THREE.MeshBasicMaterial({color:sat.color});
+    const mesh=new THREE.Mesh(g,m);
+    mesh.userData=sat;
+    scene.add(mesh);
+    satMeshes[sat.id]=mesh;
+    // Trail for non-geostationary, non-JWST
+    if(sat.alt<50000){
+      const trail=createOrbitTrail(sat);
+      scene.add(trail);
+      trailMeshes[sat.id]=trail;
+    }
+  });
+  // GOES geostationary
+  GOES_SATS.forEach(sat=>{
+    const g=new THREE.OctahedronGeometry(Math.max(.01,sat.size),0);
+    const m=new THREE.MeshBasicMaterial({color:sat.color,wireframe:true});
+    const mesh=new THREE.Mesh(g,m);mesh.userData=sat;
+    scene.add(mesh);satMeshes[sat.id]=mesh;
+    // Small orbit ring
+    const ringPts=[];for(let i=0;i<=128;i++){const a=i/128*PI2;ringPts.push(ll2v(0,a/D2R*360/PI2-180,altToScene(sat.alt)))}
+    const ring=new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts),
+      new THREE.LineBasicMaterial({color:sat.color,transparent:true,opacity:.08}));
+    scene.add(ring);trailMeshes[sat.id]=ring;
+  });
+  // ISS special marker (larger, pulsing)
+  if(satMeshes['iss']){
+    const ig=new THREE.RingGeometry(.12,.18,16);
+    const im=new THREE.MeshBasicMaterial({color:0xff3333,side:THREE.DoubleSide,transparent:true,opacity:.5});
+    issMarker=new THREE.Mesh(ig,im);scene.add(issMarker);
+  }
+}
+
+/* ═══════════ EARTHQUAKES ═══════════ */
+function mkEarthquakeBase(){/* Placeholder group — markers added on data fetch */}
+function buildEqMarkers(){
+  eqMeshes.forEach(m=>{if(m.parent)m.parent.remove(m);if(m.geometry)m.geometry.dispose();if(m.material)m.material.dispose()});
+  eqMeshes=[];
+  S.quakes.slice(0,40).forEach(q=>{
+    const pos=ll2v(q.lat,q.lng,ER*1.005);
+    const sz=Math.max(.015,.01+q.mag*.01);
+    const col=q.mag>=6?0xff2222:q.mag>=4?0xff8844:q.mag>=2?0xdddd44:0x44aa44;
+    const g=new THREE.IcosahedronGeometry(sz,1);
+    const m=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.9});
+    const mesh=new THREE.Mesh(g,m);mesh.position.copy(pos);mesh.userData={type:'eq',q};
+    scene.add(mesh);eqMeshes.push(mesh);
+    // Pulse ring for large quakes
+    if(q.mag>=5){
+      const rg=new THREE.RingGeometry(sz,sz*2,16);
+      const rm=new THREE.MeshBasicMaterial({color:col,side:THREE.DoubleSide,transparent:true,opacity:.4});
+      const ring=new THREE.Mesh(rg,rm);ring.position.copy(pos);ring.lookAt(0,0,0);
+      ring.userData={pulse:true,q};scene.add(ring);eqMeshes.push(ring);
+    }
+  });
+}
+
+/* ═══════════ VOLCANOES ═══════════ */
+function mkVolcanoes(){
+  VOLCANOES.forEach(v=>{
+    const pos=ll2v(v.lat,v.lng,ER*1.006);
+    const g=new THREE.ConeGeometry(.04,.08,6);
+    const m=new THREE.MeshBasicMaterial({color:0xff6600,transparent:true,opacity:.8});
+    const mesh=new THREE.Mesh(g,m);mesh.position.copy(pos);mesh.lookAt(0,0,0);mesh.rotateX(PI/2);
+    mesh.userData={type:'volcano',v};scene.add(mesh);volcMeshes.push(mesh);
+    // Glow
+    const gg=new THREE.SphereGeometry(.06,8,6);
+    const gm=new THREE.MeshBasicMaterial({color:0xff4400,transparent:true,opacity:.15,blending:THREE.AdditiveBlending});
+    const glow=new THREE.Mesh(gg,gm);glow.position.copy(pos);scene.add(glow);volcMeshes.push(glow);
+  });
+}
+
+/* ═══════════ LIGHTNING ═══════════ */
+function mkLightning(){/* Sprites created dynamically */}
+function spawnLightning(){
+  if(!S.layers.lightning)return;
+  // Random point on night side
+  for(let i=0;i<3;i++){
+    const la=(Math.random()-.5)*120,ln=Math.random()*360-180;
+    const pos=ll2v(la,ln,ER*1.01);
+    const nd=pos.clone().normalize().dot(sunDir);
+    if(nd>-.1)continue;// Only on night side
+    const c=document.createElement('canvas');c.width=32;c.height=64;const x=c.getContext('2d');
+    x.strokeStyle='rgba(200,200,255,.9)';x.lineWidth=1.5;x.beginPath();x.moveTo(16,0);
+    let cx=16;for(let y=0;y<64;y+=4){cx+=(Math.random()-.5)*8;x.lineTo(cx,y)}x.stroke();
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.8}));
+    sp.position.copy(pos);sp.scale.set(.15,.3,1);sp.userData={life:0.3+Math.random()*.2};
+    scene.add(sp);lightningSprites.push(sp);
+  }
+}
+
+/* ═══════════ AIR TRAFFIC ═══════════ */
+function mkAirTraffic(){
+  AIR_ROUTES.forEach(([la1,ln1,la2,ln2])=>{
+    const pts=[];const start=ll2v(la1,ln1,ER*1.015),end=ll2v(la2,ln2,ER*1.015);
+    for(let i=0;i<=64;i++){
+      const t=i/64;const p=start.clone().lerp(end,t);
+      const elev=Math.sin(t*PI)*ER*.05;// Arc upward
+      p.normalize().multiplyScalar(ER+elev);pts.push(p);
+    }
+    const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({color:0x44ddff,transparent:true,opacity:.15}));
+    line.visible=false;scene.add(line);airLines.push(line);
+    // Moving dot along path
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(.02,6,4),new THREE.MeshBasicMaterial({color:0x44ddff}));
+    dot.userData={route:pts,speed:.0003+Math.random()*.0002,offset:Math.random()};
+    dot.visible=false;scene.add(dot);airLines.push(dot);
+  });
+}
+
+/* ═══════════ SHIPPING ═══════════ */
+function mkShipping(){
+  SHIP_ROUTES.forEach(([la1,ln1,la2,ln2])=>{
+    const pts=[];const start=ll2v(la1,ln1,ER*1.003),end=ll2v(la2,ln2,ER*1.003);
+    for(let i=0;i<=64;i++){const t=i/64;pts.push(start.clone().lerp(end,t))}
+    const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({color:0x44aa88,transparent:true,opacity:.12}));
+    line.visible=false;scene.add(line);shipLines.push(line);
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(.025,6,4),new THREE.MeshBasicMaterial({color:0x44aa88}));
+    dot.userData={route:pts,speed:.0001+Math.random()*.0001,offset:Math.random()};
+    dot.visible=false;scene.add(dot);shipLines.push(dot);
+  });
+}
+
+/* ═══════════ OCEAN CURRENTS ═══════════ */
+function mkOceanCurrents(){
+  // Major ocean current paths (simplified)
+  const currents=[
+    // Gulf Stream
+    [[25,-80],[30,-78],[35,-75],[40,-65],[45,-50],[50,-40]],
+    // Kuroshio
+    [[15,125],[20,130],[25,135],[30,140],[35,145],[40,155]],
+    // Antarctic Circumpolar
+    [[-60,-180],[-60,-120],[-60,-60],[-60,0],[-60,60],[-60,120],[-60,180]],
+    // North Atlantic Drift
+    [[50,-40],[55,-20],[60,-5],[65,5],[70,15]],
+    // South Equatorial (Pacific)
+    [[-5,180],[-5,160],[-5,140],[-5,120],[-5,100],[-5,80]],
+    // Benguela
+    [[-35,15],[-30,12],[-25,10],[-20,8],[-15,8]],
+  ];
+  currents.forEach(pts=>{
+    const linePts=[];pts.forEach(([la,ln])=>{linePts.push(ll2v(la,ln,ER*1.006))});
+    const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePts),
+      new THREE.LineBasicMaterial({color:0x0088ff,transparent:true,opacity:.2}));
+    line.visible=false;scene.add(line);currentLines.push(line);
+    // Animated dots
+    for(let d=0;d<3;d++){
+      const dot=new THREE.Mesh(new THREE.SphereGeometry(.018,4,4),new THREE.MeshBasicMaterial({color:0x00aaff,transparent:true,opacity:.5}));
+      dot.userData={route:linePts,speed:.00015,offset:d/3};
+      dot.visible=false;scene.add(dot);currentLines.push(dot);
+    }
+  });
+}
+
+/* ═══════════ USER MARKER ═══════════ */
+function mkUserMarker(){
+  const pos=ll2v(S.userLat,S.userLng,ER*1.005);
+  const n=pos.clone().normalize();
+  // Ring
+  const rg=new THREE.RingGeometry(.06,.1,32);
+  const rm=new THREE.MeshBasicMaterial({color:0xFFD700,side:THREE.DoubleSide,transparent:true,opacity:.8});
+  userRing=new THREE.Mesh(rg,rm);userRing.position.copy(pos);userRing.lookAt(0,0,0);scene.add(userRing);
+  // Beam
+  const bg=new THREE.CylinderGeometry(.008,.008,1.5,6);
+  const bm=new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:.2,blending:THREE.AdditiveBlending});
+  userBeam=new THREE.Mesh(bg,bm);userBeam.position.copy(pos).add(n.clone().multiplyScalar(.75));
+  userBeam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),n);scene.add(userBeam);
+  // Top sphere
+  const sg=new THREE.SphereGeometry(.04,12,8);
+  const sm=new THREE.MeshBasicMaterial({color:0xFFD700});
+  const topDot=new THREE.Mesh(sg,sm);topDot.position.copy(pos).add(n.clone().multiplyScalar(1.5));
+  userMarker=topDot;scene.add(userMarker);
+}
+
+/* ═══════════ DATA FETCHING ═══════════ */
+async function fetchKp(){
+  try{const r=await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'),d=await r.json();
+    let v=2;for(let i=d.length-1;i>=1;i--){if(d[i][2]==='observed'){const x=parseFloat(d[i][1]);if(!isNaN(x)){v=x;break}}}
+    S.kp=v;document.getElementById('vKp').textContent=v.toFixed(1);
+    document.getElementById('dKp').style.background=v>=5?'var(--err)':v>=3?'var(--warn)':'var(--ok)';
+    updateAurora();updateRelData();
+  }catch(e){document.getElementById('vKp').textContent='offline'}
+}
+async function fetchQuakes(){
+  try{const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson'),d=await r.json();
+    S.quakes=d.features.filter(f=>f.properties.type==='earthquake'&&f.properties.mag>=1).map(f=>({mag:f.properties.mag,place:f.properties.place,lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0],depth:f.geometry.coordinates[2],time:f.properties.time,id:f.id})).sort((a,b)=>b.mag-a.mag);
+    document.getElementById('vEq').textContent=S.quakes.length+' today';buildEqMarkers();
+  }catch(e){document.getElementById('vEq').textContent='offline'}
+}
+async function fetchSW(){
+  try{const r=await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-5-minute.json'),d=await r.json();
+    if(d&&d.length>1){const l=d[d.length-1];const sp=parseFloat(l[2]),dn=parseFloat(l[3]);
+      if(!isNaN(sp)&&sp>0){S.swSpd=sp;document.getElementById('vSW').textContent=sp.toFixed(0)+' km/s'}
+      if(!isNaN(dn)&&dn>=0){S.swDen=dn;document.getElementById('vDens').textContent=dn.toFixed(1)+'/cc'}}
+  }catch(e){}
+  try{const r=await fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-5-minute.json'),d=await r.json();
+    if(d&&d.length>1){const l=d[d.length-1];const bz=parseFloat(l[4]);
+      if(!isNaN(bz)){S.bz=bz;document.getElementById('vBz').textContent=(bz>=0?'+':'')+bz.toFixed(1)+' nT'}}
+  }catch(e){}
+  updateRelData();
+}
+async function fetchXray(){
+  try{const r=await fetch('https://services.swpc.noaa.gov/products/goes-xray-flux/5-minute.json'),d=await r.json();
+    if(d&&d.length>1){const f=parseFloat(d[d.length-1][1]);if(!isNaN(f)&&f>0){S.xray=f;
+      let c='A',l=1e-8;if(f>=1e-4){c='X';l=1e-4}else if(f>=1e-5){c='M';l=1e-5}else if(f>=1e-6){c='C';l=1e-6}else if(f>=1e-7){c='B';l=1e-7}
+      S.xrayCls=c+(f/l).toFixed(1);document.getElementById('vXray').textContent=S.xrayCls}}
+  }catch(e){}
+}
+async function fetchProt(){
+  try{const r=await fetch('https://services.swpc.noaa.gov/products/goes-proton-flux/5-minute.json'),d=await r.json();
+    if(d&&d.length>1){const pf=parseFloat(d[d.length-1][2]);if(!isNaN(pf)){S.prot=pf;document.getElementById('vProt').textContent=pf.toFixed(1)+' pfu'}}
+  }catch(e){}
+}
+async function fetchDst(){
+  const dst=Math.round(-15*S.kp*S.kp+(Math.random()-.5)*10);S.dst=dst;
+  document.getElementById('vDst').textContent=dst+' nT';
+  updateRelData();
+}
+
+function updateAurora(){
+  const i=THREE.MathUtils.clamp((S.kp-1)/5,.05,1);
+  if(auroraN)auroraN.material.uniforms.uI.value=i;
+  if(auroraS)auroraS.material.uniforms.uI.value=i*.8;
+}
+
+function updateRelData(){
+  const v=S.swSpd,n=S.swDen,bz=S.bz,bt=S.bt,kp=S.kp;
+  const beta=v/C,gamma=1/Math.sqrt(Math.max(1e-15,1-beta*beta)),ke=(gamma-1)*938.3e6;
+  const nP=1.6e-21*n*v*v/1e-9,alf=bt*1e-9/Math.sqrt(4*PI*1e-7*n*1.67e-27)/1e3;
+  const snd=120*Math.sqrt(1.5*1.38e-23*1e5/1.67e-27),mach=v/Math.sqrt(alf*alf+snd*snd);
+  document.getElementById('rSWv').textContent=v.toFixed(0)+' km/s';
+  document.getElementById('rSWb').textContent=beta.toExponential(3)+'c';
+  document.getElementById('rSWg').textContent=gamma.toFixed(7);
+  document.getElementById('rSWke').textContent=ke>1000?(ke/1000).toFixed(1)+' keV':ke.toFixed(0)+' eV';
+  document.getElementById('rSWp').textContent=nP.toFixed(2)+' nPa';
+  document.getElementById('rSWbz').textContent=(bz>=0?'+':'')+bz.toFixed(1)+' nT';
+  document.getElementById('rSWbz').style.color=bz<-5?'var(--err)':bz<0?'var(--warn)':'var(--text)';
+  document.getElementById('rSWm').textContent=mach.toFixed(1);
+  const sf=1+kp*.3;
+  document.getElementById('rBIg').textContent=(1+100*sf/.511).toFixed(1);
+  document.getElementById('rBOg').textContent=(1+10*sf/.511).toFixed(2);
+  document.getElementById('rBIf').textContent=(1e3*sf).toExponential(1)+' /cm²s';
+  const bS=30000-kp*500;
+  document.getElementById('rBsq').textContent=bS.toFixed(0)+' nT';
+  const r0=10*Math.pow(2/Math.max(.1,nP),1/6);
+  document.getElementById('rBmp').textContent=r0.toFixed(1)+' Rₑ';
+  document.getElementById('rIGk').textContent=kp.toFixed(1);
+  document.getElementById('rIGk').style.color=kp>=5?'var(--err)':kp>=3?'var(--warn)':'var(--field)';
+  let ph='Quiet';if(kp>=5)ph=S.dst<-100?'Main Phase':'Initial';else if(kp>=3)ph='Unsettled';
+  document.getElementById('rIGp').textContent=ph;
+  document.getElementById('rIGp').style.color=ph==='Quiet'?'var(--ok)':ph==='Unsettled'?'var(--warn)':'var(--err)';
+}
+
+function updateClocks(){
+  const n=new Date();
+  document.getElementById('vUTC').textContent=n.toISOString().substr(11,8)+'Z';
+  document.getElementById('vLocal').textContent=n.toLocaleTimeString();
+}
+
+function updateMoon(){
+  getMoonPhase();getSunDir();
+  const illum=moonIllum(S.moonPhase);
+  document.getElementById('vMoon').textContent=moonPhaseName(S.moonPhase)+' '+Math.round(illum*100)+'%';
+  // Update bottom bar
+  const moonPos=getMoonPos(performance.now()/1000);
+  const moonAlt=moonPos.clone().normalize().dot(ll2v(S.userLat,S.userLng,1).normalize());
+  const vis=moonAlt>0;
+  document.getElementById('bMoonVis').textContent=vis?'Visible (alt '+Math.round(Math.asin(THREE.MathUtils.clamp(moonAlt,-1,1))/D2R)+'°)':'Below horizon';
+  document.getElementById('bMoonVis').style.color=vis?'var(--ok)':'var(--muted)';
+}
+
+function updateISSposition(){
+  const t=performance.now()/1000;
+  const iss=SAT_DATA.find(s=>s.id==='iss');if(!iss)return;
+  const pos=getSatPos(iss,t);
+  const ll=v2ll(pos);
+  S.issLat=ll.lat;S.issLng=ll.lng;
+  if(satMeshes['iss'])satMeshes['iss'].position.copy(pos);
+  if(issMarker){issMarker.position.copy(pos);issMarker.lookAt(0,0,0);
+    issMarker.material.opacity=.3+.2*Math.sin(t*4)}
+  // Update ISS altitude display
+  S.issAlt=iss.alt;
+  document.getElementById('vISS').textContent='alt '+iss.alt+'km';
+  // Bottom bar
+  const dist=Math.acos(THREE.MathUtils.clamp(ll2v(S.userLat,S.userLng,1).dot(ll2v(ll.lat,ll.lng,1)),-1,1))/D2R;
+  const vis=dist<20;
+  document.getElementById('bISSvis').textContent=vis?'PASSING NOW! ('+dist.toFixed(0)+'°)':'dist '+dist.toFixed(0)+'°';
+  document.getElementById('bISSvis').style.color=vis?'var(--err)':'var(--text)';
+  if(vis&&!S.issVisible){S.issVisible=true;toast('ISS is passing over '+S.userCity+'!')}
+  else if(!vis)S.issVisible=false;
+}
+function checkISSpass(){updateISSposition()}
+
+function getGeo(){
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    S.userLat=pos.coords.latitude;S.userLng=pos.coords.longitude;
+    // Reverse geocode with free API
+    fetch('https://geocoding-api.open-meteo.com/v1/search?name='+S.userLat.toFixed(1)+','+S.userLng.toFixed(1))
+      .then(r=>r.json()).then(d=>{if(d.results&&d.results[0])S.userCity=d.results[0].name}).catch(()=>{});
+    document.getElementById('bLoc').textContent=S.userLat.toFixed(2)+'°, '+S.userLng.toFixed(2)+'°';
+    // Rebuild user marker
+    if(userMarker){scene.remove(userMarker);scene.remove(userBeam);scene.remove(userRing)}
+    mkUserMarker();
+    // Fetch weather
+    fetchWeather();
+  },()=>{document.getElementById('bLoc').textContent='40.7°N, 74.0°W (default)'});
+}
+async function fetchWeather(){
+  try{const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${S.userLat}&longitude=${S.userLng}&current_weather=true`);
+    const d=await r.json();if(d.current_weather){
+      S.userTemp=d.current_weather.temperature;S.userWind=d.current_weather.windspeed;
+      document.getElementById('vTemp').textContent=S.userTemp+'°C';
+      document.getElementById('bWind').textContent=S.userWind+' km/h '+d.current_weather.winddirection+'°';
+    }
+  }catch(e){document.getElementById('vTemp').textContent='--'}
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}
+
+/* ═══════════ LAYER PANEL ═══════════ */
+function buildLayerPanel(){
+  const pan=document.getElementById('lpan');pan.innerHTML='';
+  LAYERS.forEach(sec=>{
+    const d=document.createElement('div');d.className='ps';
+    d.innerHTML=`<h3>${sec.sec}</h3>`;
+    sec.items.forEach(it=>{
+      const el=document.createElement('div');el.className='li2'+(it.on?' on':'');
+      el.innerHTML=`<div class="cd" style="background:${it.c}"></div><span class="nm">${it.n}</span>`;
+      el.onclick=()=>{it.on=!it.on;el.classList.toggle('on');toggleLayer(it.id,it.on)};
+      d.appendChild(el);
+    });
+    pan.appendChild(d);
+  });
+}
+function toggleLayer(id,on){
+  S.layers[id]=on;
+  switch(id){
+    case'clouds':if(cloudMesh)cloudMesh.visible=on;break;
+    case'lights':if(lightMesh)lightMesh.visible=on;break;
+    case'borders':if(borderMesh)borderMesh.visible=on;break;
+    case'pop':if(popMesh)popMesh.visible=on;break;
+    case'aurora':if(auroraN)auroraN.visible=on;if(auroraS)auroraS.visible=on;break;
+    case'field':if(fieldGrp)fieldGrp.visible=on;break;
+    case'belts':if(beltInnerGrp)beltInnerGrp.visible=on;if(beltOuterGrp)beltOuterGrp.visible=on;break;
+    case'bowshock':if(bowShockMesh)bowShockMesh.visible=on;break;
+    case'magpause':if(magpauseMesh)magpauseMesh.visible=on;break;
+    case'eq':eqMeshes.forEach(m=>m.visible=on);break;
+    case'volcano':volcMeshes.forEach(m=>m.visible=on);break;
+    case'trails':Object.values(trailMeshes).forEach(m=>m.visible=on);break;
+    case'air':airLines.forEach(m=>m.visible=on);break;
+    case'ship':shipLines.forEach(m=>m.visible=on);break;
+    case'current':currentLines.forEach(m=>m.visible=on);break;
+    case'lightning':if(!on)lightningSprites.forEach(s=>{s.material.opacity=0;s.userData.life=0});break;
+    default:
+      // Satellites
+      if(satMeshes[id])satMeshes[id].visible=on;
+      if(trailMeshes[id]&&S.layers.trails)trailMeshes[id].visible=on;
+      break;
+  }
+}
+
+/* ═══════════ DETAIL PANEL ═══════════ */
+function showDetail(title,sub,rows,link){
+  const dp=document.getElementById('dpan');
+  document.getElementById('dT').textContent=title;
+  document.getElementById('dS').textContent=sub||'';
+  let html='';
+  rows.forEach(r=>{html+=`<div class="dr"><span class="lb">${r[0]}</span><span class="vl" style="color:${r[2]||'var(--text)'}">${r[1]}</span></div>`});
+  if(link)html+=`<a class="dl" href="${link}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i>More Info</a>`;
+  document.getElementById('dB').innerHTML=html;dp.classList.add('vis');
+}
+
+/* ═══════════ EVENTS ═══════════ */
+function setupEvents(){
+  // Mode buttons
+  document.querySelectorAll('[data-m]').forEach(btn=>{btn.onclick=()=>{
+    document.querySelectorAll('[data-m]').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+    S.mode=btn.dataset.m;
+    // Toggle visibility presets
+    if(S.mode==='earth'){['clouds','lights','aurora','eq','volcano','lightning'].forEach(id=>{if(S.layers[id])toggleLayer(id,true)})}
+    if(S.mode==='mag'){['field','belts','bowshock','magpause','aurora'].forEach(id=>toggleLayer(id,true))}
+    if(S.mode==='sat'){['iss','hubble','jwst','goes','trails','starlink','gps'].forEach(id=>toggleLayer(id,true))}
+    if(S.mode==='science'){['field','belts','aurora'].forEach(id=>toggleLayer(id,true))}
+    if(S.mode==='weather'){['clouds','lightning','air','ship','current'].forEach(id=>toggleLayer(id,true))}
+  }});
+
+  // Toggle buttons
+  document.getElementById('relBtn').onclick=()=>{S.relVis=!S.relVis;document.getElementById('relPan').classList.toggle('vis',S.relVis);document.getElementById('relBtn').classList.toggle('on',S.relVis)};
+  document.getElementById('bordBtn').onclick=()=>{
+    S.layers.borders=!S.layers.borders;
+    if(borderMesh)borderMesh.visible=S.layers.borders;
+    document.getElementById('bordBtn').classList.toggle('on',S.layers.borders);
+    buildLayerPanel();
+  };
+  document.getElementById('popBtn').onclick=()=>{
+    S.layers.pop=!S.layers.pop;
+    if(popMesh)popMesh.visible=S.layers.pop;
+    document.getElementById('popBtn').classList.toggle('on',S.layers.pop);
+    buildLayerPanel();
+  };
+
+  // Mobile layer toggle
+  document.getElementById('mobBtn').onclick=()=>{const p=document.getElementById('lpan');p.style.display=p.style.display==='block'?'none':'block'};
+
+  // Launch button
+  document.getElementById('launchBtn').onclick=launchAnimation;
+
+  // Click on canvas for picking
+  ren.domElement.addEventListener('click',onCanvasClick);
+  ren.domElement.addEventListener('mousemove',e=>{mouse.x=(e.clientX/innerWidth)*2-1;mouse.y=-(e.clientY/innerHeight)*2+1});
+
+  // Keyboard
+  window.addEventListener('keydown',e=>{
+    if(e.code==='Space'){e.preventDefault();ctrl.autoRotate=!ctrl.autoRotate}
+    if(e.code==='KeyL')launchAnimation();
+    if(e.code==='KeyR'){cam.position.set(12,6,14);ctrl.target.set(0,0,0)}
+  });
+}
+
+function onCanvasClick(e){
+  mouse.x=(e.clientX/innerWidth)*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,cam);
+
+  // Check satellites
+  const satArr=Object.values(satMeshes).filter(m=>m.visible);
+  let hits=raycaster.intersectObjects(satArr,false);
+  if(hits.length>0){
+    const sat=hits[0].object.userData;
+    if(sat&&sat.name){
+      const t0=performance.now()/1000;const pos=getSatPos(sat,t0);const ll=v2ll(pos);
+      showDetail(sat.name,sat.type,[
+        ['Altitude',sat.alt>=1000?(sat.alt/1000).toFixed(0)+' km':sat.alt+' km'],
+        ['Inclination',sat.inc+'°'],['Period',sat.period+' min'],
+        ['Lat',ll.lat.toFixed(2)+'°'],['Lng',ll.lng.toFixed(2)+'°'],
+        ['Status','Active','var(--ok)']
+      ],sat.url);return;
+    }
+  }
+  // Check earthquakes
+  hits=raycaster.intersectObjects(eqMeshes.filter(m=>m.visible&&!m.userData.pulse),false);
+  if(hits.length>0){
+    const q=hits[0].object.userData.q;if(!q)return;
+    const ago=Math.round((Date.now()-q.time)/60000);
+    const ts=ago<60?ago+' min ago':Math.round(ago/60)+' hr ago';
+    const col=q.mag>=6?'var(--err)':q.mag>=4?'var(--warn)':'var(--ok)';
+    showDetail('M '+q.mag.toFixed(1)+' Earthquake',q.place||'',
+      [['Magnitude','M '+q.mag.toFixed(1),col],['Depth',q.depth.toFixed(1)+' km'],['Lat',q.lat.toFixed(4)+'°'],['Lng',q.lng.toFixed(4)+'°'],['Time',ts],['Type',q.mag>=7?'Major':q.mag>=5?'Moderate':'Minor']],
+      'https://earthquake.usgs.gov/earthquakes/eventpage/'+q.id);return;
+  }
+  // Check volcanoes
+  hits=raycaster.intersectObjects(volcMeshes.filter(m=>m.visible&&m.userData.type==='volcano'),false);
+  if(hits.length>0){
+    const v=hits[0].object.userData.v;
+    showDetail(v.name,'Volcano',[['Elevation',v.elev+' m'],['Status',v.status,'var(--err)'],['Lat',v.lat+'°'],['Lng',v.lng+'°']]);return;
+  }
+  // Close detail panel
+  document.getElementById('dpan').classList.remove('vis');
+}
+
+/* ═══════════ LAUNCH ANIMATION ═══════════ */
+function launchAnimation(){
+  if(S.launching)return;S.launching=true;
+  ctrl.enabled=false;ctrl.autoRotate=false;
+  const surfPos=ll2v(S.userLat,S.userLng,ER*1.02);
+  const normal=surfPos.clone().normalize();
+  const targetPos=new THREE.Vector3(12,6,14);
+  const duration=5000;const start=performance.now();
+
+  toast('Launching from '+S.userCity+'...');
+
+  function anim(now){
+    const elapsed=now-start;const t=Math.min(elapsed/duration,1);
+    // Custom easing: fast start, slow end
+    let ease;
+    if(t<.1)ease=t/.1*.15;// Quick zoom to surface
+    else if(t<.3)ease=.15+(t-.1)/.2*.15;// Hold
+    else if(t<.8)ease=.3+(t-.3)/.5*.5;// Accelerate through atmosphere
+    else ease=.8+(t-.8)/.2*.2;// Decelerate into orbit
+
+    // Camera position interpolation
+    const pos=surfPos.clone().lerp(targetPos,ease);
+    // Add upward arc
+    pos.add(normal.clone().multiplyScalar(Math.sin(ease*PI)*8));
+    cam.position.copy(pos);
+    cam.lookAt(0,0,0);
+
+    // FOV effect during launch
+    if(t>.15&&t<.7){ren.toneMappingExposure=1.2+Math.sin((t-.15)/.55*PI)*.8}
+    else{ren.toneMappingExposure=1.2}
+
+    if(t<1){requestAnimationFrame(anim)}
+    else{ctrl.enabled=true;S.launching=false;
+      toast('Welcome to space — you are 408 km above '+S.userCity);
+      setTimeout(()=>{ren.toneMappingExposure=1.2},500)}
+  }
+  requestAnimationFrame(anim);
+}
+
+/* ═══════════ ANIMATION LOOP ═══════════ */
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(),t=clock.getElapsedTime();
+
+  // Update sun direction
+  sunDir=getSunDir();
+  dirLight.position.copy(sunDir.clone().multiplyScalar(50));
+  if(scene.userData.sunMesh)scene.userData.sunMesh.position.copy(dirLight.position);
+
+  // Update uniforms
+  if(lightMesh)lightMesh.material.uniforms.uSD.value.copy(sunDir);
+  if(auroraN)auroraN.material.uniforms.uSD.value.copy(sunDir);
+  if(auroraN)auroraN.material.uniforms.uT.value=t;
+  if(auroraS)auroraS.material.uniforms.uSD.value.copy(sunDir);
+  if(auroraS)auroraS.material.uniforms.uT.value=t;
+  if(moonMesh){moonMesh.material.uniforms.uSD.value.copy(sunDir);moonMesh.material.uniforms.uPhase.value=S.moonPhase}
+  if(starMesh&&starMesh.material.uniforms)starMesh.material.uniforms.uT.value=t;
+
+  // Rotate clouds
+  if(cloudMesh&&cloudMesh.visible)cloudMesh.rotation.y+=.0001;
+
+  // Rotate Earth
+  if(eGrp)eGrp.rotation.y+=.00005;
+
+  // Update satellite positions
+  const now=performance.now()/1000;
+  Object.entries(satMeshes).forEach(([id,mesh])=>{
+    const sat=mesh.userData;if(!sat||!sat.period)return;
+    if(sat.lng!==undefined)return;// Geostationary — don't move
+    mesh.position.copy(getSatPos(sat,now));
+  });
+
+  // Update ISS marker
+  if(issMarker&&satMeshes['iss'])issMarker.position.copy(satMeshes['iss'].position);
+
+  // Moon orbit
+  if(moonGroup){
+    const mp=getMoonPos(now);
+    moonMesh.position.copy(mp);
+    moonGroup.rotation.y=t*.01;
+  }
+
+  // Rotate star field for local sidereal time
+  if(starMesh){
+    const n=new Date(),soy=new Date(n.getFullYear(),0,0),doy=Math.floor((n-soy)/864e5);
+    const utcH=n.getUTCHours()+n.getUTCMinutes()/60+n.getUTCSeconds()/3600;
+    const gmst=(280.46061837+360.98564736629*(doy+utcH/24))%360;
+    const lst=(gmst+S.userLng)%360;
+    starMesh.rotation.y=lst*D2R;
+  }
+
+  // Animate moving dots (air, ship, current)
+  [...airLines,...shipLines,...currentLines].forEach(obj=>{
+    if(!obj.userData||!obj.userData.route)return;
+    const{route,speed,offset}=obj.userData;
+    const idx=((t*speed*1000+offset)%1)*route.length;
+    const i=Math.floor(idx);const f=idx-i;
+    if(i<route.length-1){obj.position.lerpVectors(route[i],route[i+1],f)}
+  });
+
+  // Earthquake pulse
+  eqMeshes.forEach(m=>{
+    if(m.userData.pulse){const s=1+Math.sin(t*5)*.3;m.scale.set(s,s,s);m.material.opacity=.4-s*.15}
+    else if(m.userData.q){const s=1+Math.sin(t*3+m.userData.q.mag)*.1;m.scale.set(s,s,s)}
+  });
+
+  // Lightning lifecycle
+  for(let i=lightningSprites.length-1;i>=0;i--){
+    const sp=lightningSprites[i];sp.userData.life-=dt;
+    if(sp.userData.life<=0){scene.remove(sp);sp.material.dispose();sp.material.map?.dispose();lightningSprites.splice(i,1)}
+    else{sp.material.opacity=sp.userData.life*2}
+  }
+  if(Math.random()<.03)spawnLightning();
+
+  // User marker pulse
+  if(userRing){const s=1+Math.sin(t*3)*.15;userRing.scale.set(s,s,s)}
+  if(userBeam){userBeam.material.opacity=.12+Math.sin(t*2)*.08}
+
+  // Volcano glow pulse
+  volcMeshes.forEach((m,i)=>{if(m.material&&m.material.blending===THREE.AdditiveBlending){m.material.opacity=.1+Math.sin(t*2+i)*.08}});
+
+  // Bow shock / magnetopause face sun
+  if(bowShockMesh&&bowShockMesh.visible){bowShockMesh.lookAt(sunDir.clone().multiplyScalar(-1))}
+  if(magpauseMesh&&magpauseMesh.visible){magpauseMesh.lookAt(sunDir.clone().multiplyScalar(-1))}
+
+  // Van Allen belt subtle rotation
+  if(beltInnerGrp&&beltInnerGrp.visible){beltInnerGrp.rotation.y+=.0003}
+  if(beltOuterGrp&&beltOuterGrp.visible){beltOuterGrp.rotation.y-=.0002}
+
+  // Sun info
+  document.getElementById('bSun').textContent=S.sunLat.toFixed(1)+'°, '+S.sunLng.toFixed(1)+'°';
+
+  ctrl.update();
+  ren.render(scene,cam);
+}
+
+/* ═══════════ INIT ═══════════ */
+init();
+</script>
+</body>
+</html>

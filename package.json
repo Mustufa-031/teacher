@@ -1,0 +1,33 @@
+{
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
+    "@threlte/core": "^8.5.16",
+    "@threlte/extras": "^9.21.0",
+    "@threlte/rapier": "^3.5.0",
+    "@threlte/xr": "^1.6.1",
+    "three": "^0.184.0"
+  },
+  "name": "fr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "vite.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mustufa-031/teacher.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Mustufa-031/teacher/issues"
+  },
+  "homepage": "https://github.com/Mustufa-031/teacher#readme",
+  "devDependencies": {
+    "vite": "^8.0.16",
+    "vite-plugin-glsl": "^1.6.0"
+  }
+}
