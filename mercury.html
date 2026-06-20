@@ -22,7 +22,6 @@ html,body{height:100%;width:100%}
 body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;cursor:crosshair}
 canvas{display:block;position:fixed;inset:0;z-index:0}
 
-/* ===== Loader ===== */
 #loader{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#120e08 0%,#050402 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.5s}
 #loader.hidden{opacity:0;pointer-events:none}
 #loaderLogo{font-size:2.5rem;color:var(--accent);margin-bottom:1rem;text-shadow:var(--glow);animation:floatY 3s ease-in-out infinite}
@@ -37,34 +36,27 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 
 .glass{background:var(--card);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border:1px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.03)}
 
-/* ===== Header ===== */
 #hdr{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;gap:6px;padding:9px 14px;background:linear-gradient(180deg,rgba(5,4,2,.95) 70%,transparent);overflow-x:auto;scrollbar-width:none}
 #hdr::-webkit-scrollbar{display:none}
 #hdr h1{font-size:.85rem;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--accent);white-space:nowrap;flex-shrink:0;text-shadow:var(--glow);display:flex;align-items:center;gap:8px}
-#hdr h1 i{color:var(--accent)}
-#hdr h1 span{color:var(--muted);font-weight:300;letter-spacing:2px}
+#hdr h1 i{color:var(--accent)} #hdr h1 span{color:var(--muted);font-weight:300;letter-spacing:2px}
 .hs{width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 4px}
 .hb{background:rgba(25,15,5,.4);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:5px;font-family:inherit;font-size:.65rem;cursor:pointer;transition:all .25s;letter-spacing:1.5px;white-space:nowrap;flex-shrink:0;text-transform:uppercase;font-weight:500}
 .hb:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 14px rgba(200,170,140,.25);transform:translateY(-1px)}
 .hb.on{background:linear-gradient(180deg,rgba(200,170,140,.22),rgba(200,170,140,.08));border-color:var(--accent);color:var(--accent);box-shadow:0 0 18px rgba(200,170,140,.35),inset 0 0 12px rgba(200,170,140,.1)}
 .hb i{margin-right:6px}
 
-/* ===== Live Bar ===== */
 #live{position:fixed;top:48px;left:0;right:0;z-index:190;display:flex;align-items:center;gap:14px;padding:5px 14px;background:linear-gradient(180deg,rgba(5,4,2,.7) 0%,transparent 100%);font-size:.62rem;letter-spacing:.5px;overflow-x:auto;scrollbar-width:none;font-family:var(--mono)}
 #live::-webkit-scrollbar{display:none}
 .li{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
 .ld{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:all .3s;box-shadow:0 0 6px currentColor}
-.ld.pulse{animation:dotP 1.6s infinite}
-@keyframes dotP{0%,100%{opacity:1}50%{opacity:.4}}
-.ll{color:var(--muted);text-transform:uppercase}
-.lv{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.ld.pulse{animation:dotP 1.6s infinite} @keyframes dotP{0%,100%{opacity:1}50%{opacity:.4}}
+.ll{color:var(--muted);text-transform:uppercase} .lv{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
 #liveTag{color:var(--ok);font-weight:700;letter-spacing:2px;font-size:.55rem;animation:lp 2s infinite;flex-shrink:0;padding:3px 8px;border:1px solid var(--ok);border-radius:3px;background:rgba(46,204,113,.08)}
 @keyframes lp{0%,100%{text-shadow:0 0 4px var(--ok);box-shadow:0 0 6px rgba(46,204,113,.5)}50%{text-shadow:0 0 12px var(--ok);box-shadow:0 0 18px rgba(46,204,113,.8)}}
 
-/* ===== Left Panel ===== */
 #lpan{position:fixed;left:10px;top:78px;bottom:90px;width:210px;z-index:150;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;border-radius:10px}
-#lpan::-webkit-scrollbar{width:3px}
-#lpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#lpan::-webkit-scrollbar{width:3px} #lpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .ps{margin-bottom:14px}
 .ps h3{font-size:.62rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--accent);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
 .ps h3 i{font-size:.6rem;opacity:.7}
@@ -75,13 +67,10 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .tg{width:26px;height:14px;background:rgba(255,255,255,.1);border-radius:8px;position:relative;transition:background .2s;flex-shrink:0}
 .tg::after{content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:all .2s}
-.li2.on .tg{background:rgba(200,170,140,.4)}
-.li2.on .tg::after{left:14px;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.li2.on .tg{background:rgba(200,170,140,.4)} .li2.on .tg::after{left:14px;background:var(--accent);box-shadow:0 0 6px var(--accent)}
 
-/* ===== Detail Panel ===== */
 #dpan{position:fixed;right:10px;top:78px;width:320px;max-height:calc(100vh - 170px);z-index:150;overflow-y:auto;padding:18px;transform:translateX(360px);transition:transform .5s cubic-bezier(.22,1,.36,1);scrollbar-width:thin;scrollbar-color:var(--border) transparent;border-radius:10px}
-#dpan::-webkit-scrollbar{width:3px}
-#dpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#dpan::-webkit-scrollbar{width:3px} #dpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 #dpan.vis{transform:translateX(0)}
 .cb{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.05);border:1px solid var(--border);width:26px;height:26px;border-radius:50%;color:var(--muted);cursor:pointer;font-size:.8rem;transition:all .2s;display:flex;align-items:center;justify-content:center}
 .cb:hover{color:var(--accent);border-color:var(--accent);transform:rotate(90deg)}
@@ -89,13 +78,10 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 #dS{font-size:.65rem;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:2px;font-family:var(--mono)}
 #dDesc{font-size:.75rem;line-height:1.65;color:var(--text);margin-bottom:14px;opacity:.9}
 .dr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.72rem;gap:8px}
-.dr:last-child{border:none}
-.dr .lb{color:var(--muted);flex-shrink:0}
-.dr .vl{color:var(--text);text-align:right;word-break:break-word;font-weight:600;font-family:var(--mono);font-size:.7rem}
+.dr:last-child{border:none} .dr .lb{color:var(--muted);flex-shrink:0} .dr .vl{color:var(--text);text-align:right;word-break:break-word;font-weight:600;font-family:var(--mono);font-size:.7rem}
 .dl{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;padding:8px 14px;background:linear-gradient(180deg,rgba(255,179,71,.18),rgba(255,179,71,.06));border:1px solid rgba(255,179,71,.4);color:var(--gold);border-radius:5px;font-size:.65rem;text-decoration:none;transition:all .2s;width:100%;letter-spacing:1px;text-transform:uppercase;font-weight:600}
 .dl:hover{background:linear-gradient(180deg,rgba(255,179,71,.3),rgba(255,179,71,.12));box-shadow:0 0 18px rgba(255,179,71,.3)}
 
-/* ===== 3D Viewer Modal ===== */
 #rvModal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.88);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s}
 #rvModal.vis{opacity:1;pointer-events:auto}
 #rvContainer{width:94%;max-width:1200px;height:92%;background:var(--bg);border:1px solid var(--border);border-radius:14px;position:relative;overflow:hidden;box-shadow:0 0 80px rgba(200,170,140,.25);display:flex}
@@ -109,16 +95,13 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 #rvStatus{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:18px;font-family:var(--mono)}
 #rvDesc{font-size:.8rem;line-height:1.7;color:var(--text);margin-bottom:22px;opacity:.9}
 .rvRow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.75rem}
-.rvRow .lbl{color:var(--muted)}
-.rvRow .val{color:var(--text);font-weight:600;font-family:var(--mono);font-size:.72rem}
+.rvRow .lbl{color:var(--muted)} .rvRow .val{color:var(--text);font-weight:600;font-family:var(--mono);font-size:.72rem}
 #rvImgWrap{width:100%;height:200px;border-radius:8px;margin-top:22px;border:1px solid var(--border);position:relative;background:#000;overflow:hidden}
 #rvImage{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .3s}
 #rvImgFallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--accent);font-size:.8rem;text-decoration:none;padding:14px;box-sizing:border-box;background:rgba(12,8,5,.95);opacity:0;transition:opacity .3s}
-#rvImgFallback.show{opacity:1}
-#rvImgFallback i{font-size:1.8rem;margin-bottom:10px;color:var(--gold)}
+#rvImgFallback.show{opacity:1} #rvImgFallback i{font-size:1.8rem;margin-bottom:10px;color:var(--gold)}
 #rvImgCaption{font-size:.6rem;color:var(--muted);margin-top:8px;text-align:center;letter-spacing:1px;text-transform:uppercase}
 
-/* ===== Bottom ===== */
 #bot{position:fixed;bottom:0;left:0;right:0;z-index:150;background:linear-gradient(0deg,rgba(5,4,2,.97) 60%,transparent);padding:8px 0 6px;display:flex;flex-direction:column;gap:6px}
 #tickerWrap{width:100%;overflow:hidden;white-space:nowrap;font-size:.65rem;color:var(--muted);padding:3px 0;font-family:var(--mono)}
 #ticker{display:inline-block;padding-left:100%;animation:tickerMove 80s linear infinite}
@@ -126,10 +109,8 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 #botStats{display:flex;align-items:center;gap:18px;padding:0 14px;overflow-x:auto;scrollbar-width:none}
 #botStats::-webkit-scrollbar{display:none}
 .bi{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;color:var(--muted);font-size:.66rem}
-.bi .bv{color:var(--text);font-weight:600;font-family:var(--mono)}
-.bi i{color:var(--accent)}
+.bi .bv{color:var(--text);font-weight:600;font-family:var(--mono)} .bi i{color:var(--accent)}
 
-/* ===== Time Control ===== */
 #timeCtrl{position:fixed;left:50%;bottom:55px;transform:translateX(-50%);z-index:160;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:30px}
 #timeCtrl i{color:var(--accent);font-size:.7rem}
 #timeSlider{width:280px;height:4px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,.1);border-radius:2px;outline:none}
@@ -140,160 +121,44 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 .tbtn:hover{border-color:var(--accent);color:var(--accent)}
 .tbtn.on{background:rgba(200,170,140,.2);border-color:var(--accent);color:var(--accent)}
 
-/* ===== Telemetry Panel ===== */
 #relPan{position:fixed;left:10px;bottom:110px;z-index:160;width:300px;padding:14px;transform:translateY(200%);transition:transform .5s cubic-bezier(.22,1,.36,1);max-height:calc(100vh - 180px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;border-radius:10px}
-#relPan::-webkit-scrollbar{width:3px}
-#relPan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#relPan::-webkit-scrollbar{width:3px} #relPan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 #relPan.vis{transform:translateY(0)}
 #relPan h3{font-size:.72rem;text-transform:uppercase;letter-spacing:2.5px;color:var(--comms);margin-bottom:12px;text-shadow:0 0 6px rgba(255,215,0,.5);display:flex;align-items:center;gap:8px}
 .rs{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.05)}
 .rs:last-child{border:none;margin:0}
 .rs h4{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
 .rr{display:flex;justify-content:space-between;font-size:.66rem;padding:3px 0;gap:6px}
-.rr .rl{color:var(--muted)}
-.rr .rv{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--mono)}
-.rr .rv.hl{color:var(--comms);text-shadow:0 0 4px rgba(255,215,0,.5)}
-.rr .rv.hot{color:var(--dust)}
-.rr .rv.cool{color:var(--ice)}
-.rr .rv.warn{color:var(--warn)}
-.rr .rv.err{color:var(--err)}
-.rr .rv.mag{color:var(--mag);text-shadow:0 0 4px rgba(0,229,255,.5)}
+.rr .rl{color:var(--muted)} .rr .rv{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.rr .rv.hl{color:var(--comms);text-shadow:0 0 4px rgba(255,215,0,.5)} .rr .rv.hot{color:var(--dust)} .rr .rv.cool{color:var(--ice)} .rr .rv.warn{color:var(--warn)} .rr .rv.err{color:var(--err)} .rr .rv.mag{color:var(--mag);text-shadow:0 0 4px rgba(0,229,255,.5)}
 
-/* ===== Launch Button ===== */
 #launchBtn{position:fixed;right:18px;bottom:105px;z-index:300;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#C8AA8A,#5a4530);border:1px solid rgba(200,170,140,.5);color:#fff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;box-shadow:0 0 22px rgba(200,170,140,.45)}
 #launchBtn:hover{transform:scale(1.1) rotate(8deg);box-shadow:0 0 38px rgba(200,170,140,.75)}
 #launchBtn:active{transform:scale(.95)}
 #launchBtn .tip{position:absolute;right:66px;top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--border);padding:6px 12px;border-radius:5px;font-size:.66rem;white-space:nowrap;color:var(--accent);opacity:0;pointer-events:none;transition:opacity .2s;letter-spacing:1px;text-transform:uppercase}
 #launchBtn:hover .tip{opacity:1}
 
-/* ===== Toast ===== */
 #toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%) translateY(20px);z-index:9999;background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--accent);color:var(--accent);padding:10px 22px;border-radius:6px;font-size:.75rem;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:calc(100% - 40px);text-overflow:ellipsis;overflow:hidden;text-shadow:var(--glow);letter-spacing:.5px}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.alert{border-color:var(--err);color:var(--err);text-shadow:var(--alert-glow)}
 
 #mobBtn{display:none;position:fixed;left:10px;bottom:110px;z-index:170;width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--accent);font-size:.9rem;cursor:pointer;align-items:center;justify-content:center}
 
-@media (max-width: 960px) {
-  #lpan { display: none; } #mobBtn { display: flex; } #dpan { width: 280px; right: 6px; max-height: calc(100vh - 170px); } #relPan { width: 280px; bottom: 110px; } #timeSlider { width: 180px; } #timeCtrl { bottom: 50px; } #launchBtn { bottom: 100px; } #toast { bottom: 165px; }
-}
-@media (max-width: 680px) {
-  #hdr { padding: 6px 8px; gap: 4px; } #hdr h1 { font-size: .7rem; } #hdr h1 span { display: none; } .hb { padding: 5px 8px; font-size: .6rem; } .hb span { display: none; } .hb i { margin: 0; }
-  #live { top: 38px; font-size: .55rem; gap: 10px; padding: 4px 8px; }
-  #dpan { width: calc(100% - 16px); left: 8px; right: 8px; max-height: 45vh; top: auto; bottom: 160px; transform: translateY(200%); border-radius: 10px; } #dpan.vis { transform: translateY(0); }
-  #relPan { width: calc(100% - 16px); left: 8px; bottom: 160px; max-height: 40vh; } #mobBtn { left: 10px; bottom: 160px; }
-  #rvContainer { flex-direction: column; height: 96%; width: 96%; } #rvCanvasWrap { height: 55%; width: 100%; flex: none; } #rvInfo { width: 100%; height: 45%; border-left: none; border-top: 1px solid var(--border); }
-  #timeCtrl { width: calc(100% - 20px); left: 10px; transform: none; bottom: 55px; padding: 6px 10px; box-sizing: border-box; gap: 8px; } #timeSlider { flex: 1; min-width: 0; width: auto; }
-  #launchBtn { bottom: 110px; right: 15px; width: 46px; height: 46px; font-size: 1.1rem; }
-  #bot { padding: 4px 0; gap: 2px; } #botStats { padding: 0 8px; gap: 12px; font-size: .6rem; overflow: hidden; white-space: nowrap; } #botStats .bi { font-size: .6rem; } #tickerWrap { display: none; }
-  #toast { bottom: 170px; }
-}
+@media (max-width: 960px) { #lpan { display: none; } #mobBtn { display: flex; } #dpan { width: 280px; right: 6px; max-height: calc(100vh - 170px); } #relPan { width: 280px; bottom: 110px; } #timeSlider { width: 180px; } #timeCtrl { bottom: 50px; } #launchBtn { bottom: 100px; } #toast { bottom: 165px; } }
+@media (max-width: 680px) { #hdr { padding: 6px 8px; gap: 4px; } #hdr h1 { font-size: .7rem; } #hdr h1 span { display: none; } .hb { padding: 5px 8px; font-size: .6rem; } .hb span { display: none; } .hb i { margin: 0; } #live { top: 38px; font-size: .55rem; gap: 10px; padding: 4px 8px; } #dpan { width: calc(100% - 16px); left: 8px; right: 8px; max-height: 45vh; top: auto; bottom: 160px; transform: translateY(200%); border-radius: 10px; } #dpan.vis { transform: translateY(0); } #relPan { width: calc(100% - 16px); left: 8px; bottom: 160px; max-height: 40vh; } #mobBtn { left: 10px; bottom: 160px; } #rvContainer { flex-direction: column; height: 96%; width: 96%; } #rvCanvasWrap { height: 55%; width: 100%; flex: none; } #rvInfo { width: 100%; height: 45%; border-left: none; border-top: 1px solid var(--border); } #timeCtrl { width: calc(100% - 20px); left: 10px; transform: none; bottom: 55px; padding: 6px 10px; box-sizing: border-box; gap: 8px; } #timeSlider { flex: 1; min-width: 0; width: auto; } #launchBtn { bottom: 110px; right: 15px; width: 46px; height: 46px; font-size: 1.1rem; } #bot { padding: 4px 0; gap: 2px; } #botStats { padding: 0 8px; gap: 12px; font-size: .6rem; overflow: hidden; white-space: nowrap; } #botStats .bi { font-size: .6rem; } #tickerWrap { display: none; } #toast { bottom: 170px; } }
 </style>
 </head>
 <body>
-<div id="loader">
-  <div id="loaderLogo"><i class="fas fa-sun"></i></div>
-  <h2>Astrophile</h2>
-  <div class="spin"></div>
-  <div id="loadMsg">Initializing Hermes Systems</div>
-  <div class="loadbar"><i></i></div>
-</div>
-
-<header id="hdr">
-  <h1><i class="fas fa-sun"></i>Astrophile <span>// Mercury Live</span></h1>
-  <div class="hs"></div>
-  <button class="hb on" data-m="mercury"><i class="fas fa-globe"></i><span>Mercury</span></button>
-  <button class="hb" data-m="magneto"><i class="fas fa-magnet"></i><span>Magneto</span></button>
-  <button class="hb" data-m="orbit"><i class="fas fa-satellite"></i><span>Probes</span></button>
-  <div class="hs"></div>
-  <button class="hb" id="tourBtn"><i class="fas fa-route"></i><span>Tour</span></button>
-  <button class="hb" id="relBtn"><i class="fas fa-tower-broadcast"></i><span>Telemetry</span></button>
-</header>
-
-<div id="live">
-  <span id="liveTag">LIVE</span>
-  <div class="li"><div class="ld pulse" style="background:var(--ok);color:var(--ok)"></div><span class="ll">UTC</span><span class="lv" id="vUTC">--</span></div>
-  <div class="li"><div class="ld" style="background:var(--accent);color:var(--accent)"></div><span class="ll">Solar Day</span><span class="lv" id="vJD">--</span></div>
-  <div class="li"><div class="ld" style="background:var(--comms);color:var(--comms)"></div><span class="ll">Earth↔Mer</span><span class="lv" id="vDist">--</span></div>
-  <div class="li"><div class="ld" style="background:var(--comms);color:var(--comms)"></div><span class="ll">Delay</span><span class="lv" id="vDelay">--</span></div>
-  <div class="li"><div class="ld" style="background:var(--err);color:var(--err)"></div><span class="ll">Day Temp</span><span class="lv" id="vTemp">430°C</span></div>
-  <div class="li"><div class="ld" style="background:var(--ice);color:var(--ice)"></div><span class="ll">Night Temp</span><span class="lv" id="vTempN">-180°C</span></div>
-</div>
-
-<aside id="lpan" class="glass"></aside>
-<button id="mobBtn" class="glass"><i class="fas fa-layer-group"></i></button>
-
-<aside id="dpan" class="glass">
-  <button class="cb" onclick="document.getElementById('dpan').classList.remove('vis')"><i class="fas fa-times"></i></button>
-  <div id="dT"></div><div id="dS"></div><div id="dDesc"></div><div id="dB"></div>
-</aside>
-
-<div id="relPan" class="glass">
-  <h3><i class="fas fa-tower-broadcast"></i> Hermes Telemetry</h3>
-  <div class="rs"><h4><i class="fas fa-link"></i> Earth-Mercury Link</h4>
-    <div class="rr"><span class="rl">Range</span><span class="rv hl" id="rDist">--</span></div>
-    <div class="rr"><span class="rl">One-way light time</span><span class="rv hl" id="rOWT">--</span></div>
-    <div class="rr"><span class="rl">Round-trip ping</span><span class="rv hl" id="rRTT">--</span></div>
-    <div class="rr"><span class="rl">Mercury orbital velocity</span><span class="rv" id="rVel">--</span></div>
-  </div>
-  <div class="rs"><h4><i class="fas fa-magnet"></i> Magnetosphere</h4>
-    <div class="rr"><span class="rl">Solar Wind Speed</span><span class="rv hot" id="rSWf">--</span></div>
-    <div class="rr"><span class="rl">Magnetopause Standoff</span><span class="rv mag" id="rMag">--</span></div>
-    <div class="rr"><span class="rl">Field Strength</span><span class="rv mag">1% of Earth</span></div>
-    <div class="rr"><span class="rl">Axis Offset</span><span class="rv mag">20° North</span></div>
-  </div>
-  <div class="rs"><h4><i class="fas fa-temperature-high"></i> Surface Environment</h4>
-    <div class="rr"><span class="rl">Day Side Temp</span><span class="rv err">430°C</span></div>
-    <div class="rr"><span class="rl">Night Side Temp</span><span class="rv cool">-180°C</span></div>
-    <div class="rr"><span class="rl">Atmosphere</span><span class="rv">Trace Exosphere</span></div>
-    <div class="rr"><span class="rl">Solar Day Length</span><span class="rv">176 Earth Days</span></div>
-    <div class="rr"><span class="rl">Orbital Resonance</span><span class="rv">3:2 Spin-Orbit</span></div>
-  </div>
-</div>
-
-<div id="bot">
-  <div id="tickerWrap"><div id="ticker">Initializing live data feeds...</div></div>
-  <div id="botStats">
-    <div class="bi"><i class="fas fa-sun"></i>Sun Dist: <span class="bv" id="bSun">--</span></div>
-    <div class="bi"><i class="fas fa-wind"></i>SW: <span class="bv" id="bSW">--</span></div>
-    <div class="bi"><i class="fas fa-temperature-high"></i>Max T: <span class="bv">430°C</span></div>
-    <div class="bi"><i class="fas fa-satellite-dish"></i>DSN: <span class="bv">Online</span></div>
-    <div class="bi"><i class="fas fa-clock"></i>Sim: <span class="bv" id="bSim">1×</span></div>
-  </div>
-</div>
-
-<div id="timeCtrl" class="glass">
-  <button class="tbtn" id="tRewind" title="Rewind 1 day"><i class="fas fa-backward-step"></i></button>
-  <button class="tbtn on" id="tPlay" title="Play / Pause"><i class="fas fa-pause"></i></button>
-  <button class="tbtn" id="tForward" title="Forward 1 day"><i class="fas fa-forward-step"></i></button>
-  <i class="fas fa-clock"></i>
-  <input type="range" id="timeSlider" min="-365" max="365" value="0">
-  <span id="timeLabel">Now</span>
-  <button class="tbtn" id="tNow" title="Jump to now"><i class="fas fa-circle-dot"></i></button>
-</div>
-
-<div id="rvModal">
-  <div id="rvContainer">
-    <button id="rvClose"><i class="fas fa-times"></i></button>
-    <div id="rvCanvasWrap"><canvas id="rvCanvas"></canvas></div>
-    <div id="rvInfo">
-      <div id="rvTitle">Object Name</div>
-      <div id="rvStatus">Status</div>
-      <div id="rvDesc">Description</div>
-      <div id="rvStats"></div>
-      <div id="rvImgWrap">
-        <img id="rvImage" src="" alt="Spacecraft">
-        <a id="rvImgFallback" href="#" target="_blank">
-          <i class="fas fa-image"></i>
-          Image API Offline<br>Click to View Archives
-        </a>
-      </div>
-      <div id="rvImgCaption"></div>
-    </div>
-  </div>
-</div>
-
-<button id="launchBtn"><i class="fas fa-rocket"></i><span class="tip">Solar Flyby</span></button>
-<div id="toast"></div>
+<div id="loader"><div id="loaderLogo"><i class="fas fa-sun"></i></div><h2>Astrophile</h2><div class="spin"></div><div id="loadMsg">Initializing Hermes Systems</div><div class="loadbar"><i></i></div></div>
+<header id="hdr"><h1><i class="fas fa-sun"></i>Astrophile <span>// Mercury Live</span></h1><div class="hs"></div><button class="hb on" data-m="mercury"><i class="fas fa-globe"></i><span>Mercury</span></button><button class="hb" data-m="magneto"><i class="fas fa-magnet"></i><span>Magneto</span></button><button class="hb" data-m="orbit"><i class="fas fa-satellite"></i><span>Probes</span></button><div class="hs"></div><button class="hb" id="tourBtn"><i class="fas fa-route"></i><span>Tour</span></button><button class="hb" id="relBtn"><i class="fas fa-tower-broadcast"></i><span>Telemetry</span></button></header>
+<div id="live"><span id="liveTag">LIVE</span><div class="li"><div class="ld pulse" style="background:var(--ok);color:var(--ok)"></div><span class="ll">UTC</span><span class="lv" id="vUTC">--</span></div><div class="li"><div class="ld" style="background:var(--accent);color:var(--accent)"></div><span class="ll">Solar Day</span><span class="lv" id="vJD">--</span></div><div class="li"><div class="ld" style="background:var(--comms);color:var(--comms)"></div><span class="ll">Earth↔Mer</span><span class="lv" id="vDist">--</span></div><div class="li"><div class="ld" style="background:var(--comms);color:var(--comms)"></div><span class="ll">Delay</span><span class="lv" id="vDelay">--</span></div><div class="li"><div class="ld" style="background:var(--err);color:var(--err)"></div><span class="ll">Day Temp</span><span class="lv" id="vTemp">430°C</span></div></div>
+<aside id="lpan" class="glass"></aside><button id="mobBtn" class="glass"><i class="fas fa-layer-group"></i></button>
+<aside id="dpan" class="glass"><button class="cb" onclick="document.getElementById('dpan').classList.remove('vis')"><i class="fas fa-times"></i></button><div id="dT"></div><div id="dS"></div><div id="dDesc"></div><div id="dB"></div></aside>
+<div id="relPan" class="glass"><h3><i class="fas fa-tower-broadcast"></i> Hermes Telemetry</h3><div class="rs"><h4><i class="fas fa-link"></i> Earth-Mercury Link</h4><div class="rr"><span class="rl">Range</span><span class="rv hl" id="rDist">--</span></div><div class="rr"><span class="rl">One-way light time</span><span class="rv hl" id="rOWT">--</span></div><div class="rr"><span class="rl">Round-trip ping</span><span class="rv hl" id="rRTT">--</span></div><div class="rr"><span class="rl">Mercury orbital velocity</span><span class="rv" id="rVel">--</span></div></div><div class="rs"><h4><i class="fas fa-magnet"></i> Magnetosphere</h4><div class="rr"><span class="rl">Solar Wind Speed</span><span class="rv hot" id="rSWf">--</span></div><div class="rr"><span class="rl">Magnetopause Standoff</span><span class="rv mag" id="rMag">--</span></div><div class="rr"><span class="rl">Field Strength</span><span class="rv mag">1% of Earth</span></div><div class="rr"><span class="rl">Axis Offset</span><span class="rv mag">20° North</span></div></div><div class="rs"><h4><i class="fas fa-temperature-high"></i> Surface Environment</h4><div class="rr"><span class="rl">Day Side Temp</span><span class="rv err">430°C</span></div><div class="rr"><span class="rl">Night Side Temp</span><span class="rv cool">-180°C</span></div><div class="rr"><span class="rl">Atmosphere</span><span class="rv">Trace Exosphere</span></div><div class="rr"><span class="rl">Solar Day Length</span><span class="rv">176 Earth Days</span></div><div class="rr"><span class="rl">Orbital Resonance</span><span class="rv">3:2 Spin-Orbit</span></div></div></div>
+<div id="bot"><div id="tickerWrap"><div id="ticker">Initializing live data feeds...</div></div><div id="botStats"><div class="bi"><i class="fas fa-sun"></i>Sun Dist: <span class="bv" id="bSun">--</span></div><div class="bi"><i class="fas fa-wind"></i>SW: <span class="bv" id="bSW">--</span></div><div class="bi"><i class="fas fa-temperature-high"></i>Max T: <span class="bv">430°C</span></div><div class="bi"><i class="fas fa-satellite-dish"></i>DSN: <span class="bv">Online</span></div><div class="bi"><i class="fas fa-clock"></i>Sim: <span class="bv" id="bSim">1×</span></div></div></div>
+<div id="timeCtrl" class="glass"><button class="tbtn" id="tRewind" title="Rewind 1 day"><i class="fas fa-backward-step"></i></button><button class="tbtn on" id="tPlay" title="Play / Pause"><i class="fas fa-pause"></i></button><button class="tbtn" id="tForward" title="Forward 1 day"><i class="fas fa-forward-step"></i></button><i class="fas fa-clock"></i><input type="range" id="timeSlider" min="-365" max="365" value="0"><span id="timeLabel">Now</span><button class="tbtn" id="tNow" title="Jump to now"><i class="fas fa-circle-dot"></i></button></div>
+<div id="rvModal"><div id="rvContainer"><button id="rvClose"><i class="fas fa-times"></i></button><div id="rvCanvasWrap"><canvas id="rvCanvas"></canvas></div><div id="rvInfo"><div id="rvTitle">Object Name</div><div id="rvStatus">Status</div><div id="rvDesc">Description</div><div id="rvStats"></div><div id="rvImgWrap"><img id="rvImage" src="" alt="Spacecraft"><a id="rvImgFallback" href="#" target="_blank"><i class="fas fa-image"></i>Image API Offline<br>Click to View Archives</a></div><div id="rvImgCaption"></div></div></div></div>
+<button id="launchBtn"><i class="fas fa-rocket"></i><span class="tip">Solar Flyby</span></button><div id="toast"></div>
 
 <script type="importmap">
 {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
@@ -308,32 +173,24 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-/* ═══════════ CONSTANTS ═══════════ */
 const ER = 5, MR_KM = 2439.7, PI = Math.PI, PI2 = PI * 2, D2R = PI / 180;
 const AU_KM = 149597870.7, C = 299792.458, SOL_GM = 1.32712440018e20;
 const R_KM = ER / MR_KM;
-const MAG_TILT = 14 * D2R; // Magnetic axis tilt
-const MAG_OFFSET = 0.2 * ER; // 20% offset North
+const MAG_TILT = 14 * D2R; 
+const MAG_OFFSET = 0.2 * ER; 
 
 const S = {
   earthMerDistAU: 0.5, lightDelay: 240, swSpd: 450, swDen: 5, kp: 2.5,
-  simTime: new Date(),
-  timeOffset: 0,
-  playing: true,
-  touring: false,
+  simTime: new Date(), timeOffset: 0, playing: true, touring: false,
   layers: { surf: true, mag: true, messenger: true, bepi: true, trails: true },
   mode: 'mercury', launching: false, relVis: false, introDone: false,
   focus: null, focusTarget: new THREE.Vector3()
 };
 
-/* ═══════════ ORBITAL MECHANICS ═══════════ */
 function mercurySolDate(date) { return date.getTime() / 86400000 + 2440587.5 - 2451545.0; }
 function getMercurySolarDay(lng) {
-  const jd = mercurySolDate(S.simTime);
-  // A solar day on Mercury is 176 Earth days due to the 3:2 spin-orbit resonance.
-  const mer_hours_per_day = 24 / 176.0;
-  const mtc = (jd * mer_hours_per_day) % 24;
-  const ltst = (mtc + (lng / 15) + 24) % 24;
+  const jd = mercurySolDate(S.simTime); const mer_hours_per_day = 24 / 176.0;
+  const mtc = (jd * mer_hours_per_day) % 24; const ltst = (mtc + (lng / 15) + 24) % 24;
   const h = Math.floor(ltst), m = Math.floor((ltst - h) * 60), s = Math.floor(((ltst - h) * 60 - m) * 60);
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
@@ -343,49 +200,24 @@ function planetHelioPos(jd, planet) {
   else { e = { a: 0.38709927, e: 0.20563593, I: 7.005, L: 252.250 + 149472.674 * cy, longPeri: 77.457, longNode: 48.33 }; }
   const Lr = (e.L * D2R) % (2 * PI), w = (e.longPeri * D2R) % (2 * PI), Om = (e.longNode * D2R) % (2 * PI), I = e.I * D2R;
   const M = (Lr - w + 2 * PI) % (2 * PI); let E = M;
-  for (let i = 0; i < 8; i++) E = M + e.e * Math.sin(E); // High eccentricity, might need more loops
+  for (let i = 0; i < 8; i++) E = M + e.e * Math.sin(E); 
   const v = 2 * Math.atan2(Math.sqrt(1 + e.e) * Math.sin(E / 2), Math.sqrt(1 - e.e) * Math.cos(E / 2));
   const r = e.a * (1 - e.e * Math.cos(E)), xp = r * Math.cos(v + w), yp = r * Math.sin(v + w);
   const x = xp, y = yp * Math.cos(I), z = yp * Math.sin(I);
   return { x: x * Math.cos(Om) - y * Math.sin(Om), y: x * Math.sin(Om) + y * Math.cos(Om), z: z, r: r };
 }
 function earthMerDistance(date) {
-  const jd = date.getTime() / 86400000 + 2451545 - 0.5;
-  const e = planetHelioPos(jd, 'earth'), m = planetHelioPos(jd, 'mercury');
+  const jd = date.getTime() / 86400000 + 2451545 - 0.5; const e = planetHelioPos(jd, 'earth'), m = planetHelioPos(jd, 'mercury');
   const dx = m.x - e.x, dy = m.y - e.y, dz = m.z - e.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
   return { dist: d, distKm: d * AU_KM, lightSec: d * AU_KM / C };
 }
-function sunSubSolarPoint(date) {
-  const lat = 0.034 * Math.sin(mercurySolDate(date) * 0.0172025) / D2R; 
-  const jd = mercurySolDate(date);
-  let lng = ((jd * 6.138) % 360) - 180; // 6.138 deg/day is the spin rate
-  return { lat, lng };
-}
+function sunSubSolarPoint(date) { const lat = 0.034 * Math.sin(mercurySolDate(date) * 0.0172025) / D2R; const jd = mercurySolDate(date); let lng = ((jd * 6.138) % 360) - 180; return { lat, lng }; }
 function getSunDir() { const { lat, lng } = sunSubSolarPoint(S.simTime); return ll2v(lat, lng, 1).normalize(); }
 function ll2v(la, ln, r) { const p = (90 - la) * D2R, t = (ln + 180) * D2R; return new THREE.Vector3(-(r * Math.sin(p) * Math.cos(t)), r * Math.cos(p), r * Math.sin(p) * Math.sin(t)); }
 
-/* ═══════════ MISSION DATA ═══════════ */
 const PROBES = [
-  { 
-    id: 'messenger', name: 'MESSENGER', alt: 200, inc: 82.5, period: 12, color: 0xaaaaaa, size: .08, raan0: 0, phase0: 0, 
-    type: 'Orbiter · Historic (2011-2015)', 
-    desc: 'The first spacecraft to orbit Mercury. Provided detailed maps of the surface, confirmed water ice in polar craters, and discovered that Mercury is shrinking. Ended its mission by crashing into the surface in 2015.', 
-    url: 'https://science.nasa.gov/mission/messenger/', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/MESSENGER_-_Mercury_Surface%2C_Space_Environment%2C_Geochemistry%2C_and_Ranging_spacecraft.jpg/1024px-MESSENGER_-_Mercury_Surface%2C_Space_Environment%2C_Geochemistry%2C_and_Ranging_spacecraft.jpg', imgCaption: 'MESSENGER spacecraft',
-    scientificData: [
-      ['Launch Date', '03 Aug 2004'], ['Mercury Orbit Insertion', '18 Mar 2011'], ['Altitude', '200 to 15,000 km'], ['Instruments', '7 (Imagers, Spectrometers)'],
-      ['Surface Mapped', '100%'], ['Mission End', '30 Apr 2015 (Crash)'], ['Mass', '1,093 kg'], ['Power', '485 W (Solar)']
-    ]
-  },
-  { 
-    id: 'bepi', name: 'BepiColombo', alt: 400, inc: 90, period: 20, color: 0xffdd66, size: .08, raan0: 45, phase0: 0.5, 
-    type: 'Orbiter · En Route (Arrives 2025)', 
-    desc: 'Joint ESA/JAXA mission consisting of two orbiters: Mio (JAXA) and Mercury Planetary Orbiter (ESA). Uses ion propulsion and multiple flybys to eventually map Mercury\'s magnetic field and surface composition in unprecedented detail.', 
-    url: 'https://sci.esa.int/web/bepicolombo', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/BepiColombo.png/1024px-BepiColombo.png', imgCaption: 'BepiColombo stack',
-    scientificData: [
-      ['Launch Date', '20 Oct 2018'], ['Mercury Arrival', 'Dec 2025'], ['Cruise Altitude', '400 to 1,500 km'], ['Instruments', '16 (Total)'],
-      ['Propulsion', 'Ion Engines'], ['Mass', '4,100 kg'], ['Mission Duration', '1-2 Years (Nominal)'], ['Status', 'Cruise Phase']
-    ]
-  }
+  { id: 'messenger', name: 'MESSENGER', alt: 200, inc: 82.5, period: 12, color: 0xaaaaaa, size: .08, raan0: 0, phase0: 0, type: 'Orbiter · Historic (2011-2015)', desc: 'The first spacecraft to orbit Mercury. Provided detailed maps of the surface, confirmed water ice in polar craters, and discovered that Mercury is shrinking. Ended its mission by crashing into the surface in 2015.', url: 'https://science.nasa.gov/mission/messenger/', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/MESSENGER_-_Mercury_Surface%2C_Space_Environment%2C_Geochemistry%2C_and_Ranging_spacecraft.jpg/1024px-MESSENGER_-_Mercury_Surface%2C_Space_Environment%2C_Geochemistry%2C_and_Ranging_spacecraft.jpg', imgCaption: 'MESSENGER spacecraft', scientificData: [['Launch Date', '03 Aug 2004'], ['Mercury Orbit Insertion', '18 Mar 2011'], ['Altitude', '200 to 15,000 km'], ['Instruments', '7 (Imagers, Spectrometers)'], ['Surface Mapped', '100%'], ['Mission End', '30 Apr 2015 (Crash)'], ['Mass', '1,093 kg'], ['Power', '485 W (Solar)']] },
+  { id: 'bepi', name: 'BepiColombo', alt: 400, inc: 90, period: 20, color: 0xffdd66, size: .08, raan0: 45, phase0: 0.5, type: 'Orbiter · En Route (Arrives 2025)', desc: 'Joint ESA/JAXA mission consisting of two orbiters: Mio (JAXA) and Mercury Planetary Orbiter (ESA). Uses ion propulsion and multiple flybys to eventually map Mercury\'s magnetic field and surface composition in unprecedented detail.', url: 'https://sci.esa.int/web/bepicolombo', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/BepiColombo.png/1024px-BepiColombo.png', imgCaption: 'BepiColombo stack', scientificData: [['Launch Date', '20 Oct 2018'], ['Mercury Arrival', 'Dec 2025'], ['Cruise Altitude', '400 to 1,500 km'], ['Instruments', '16 (Total)'], ['Propulsion', 'Ion Engines'], ['Mass', '4,100 kg'], ['Mission Duration', '1-2 Years (Nominal)'], ['Status', 'Cruise Phase']] }
 ];
 
 const LAYERS = [
@@ -394,7 +226,6 @@ const LAYERS = [
   { sec: 'Spacecraft', items: [ { id: 'messenger', n: 'MESSENGER', c: '#aaaaaa', on: true }, { id: 'bepi', n: 'BepiColombo', c: '#ffdd66', on: true }, { id: 'trails', n: 'Orbit Trails', c: '#ffffff', on: true } ]}
 ];
 
-/* ═══════════ THREE.JS GLOBALS ═══════════ */
 let scene, cam, ren, ctrl, clock, composer;
 let merGroup, merMesh, satMeshes = {}, trailMeshes = {};
 let magMesh, starMesh, milkywayMesh;
@@ -402,7 +233,6 @@ let raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2(-9, -9);
 let camAnim = null;
 let rvScene, rvCam, rvRend, rvCtrl, rvMesh, rvClock, rvAnimating = false;
 
-/* ═══════════ INIT ═══════════ */
 function init() {
   clock = new THREE.Clock(); scene = new THREE.Scene();
   cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, .01, 4000);
@@ -410,7 +240,7 @@ function init() {
 
   ren = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
   ren.setSize(innerWidth, innerHeight); ren.setPixelRatio(Math.min(devicePixelRatio, 2));
-  ren.toneMapping = THREE.ACESFilmicToneMapping; ren.toneMappingExposure = 1.0;
+  ren.toneMapping = THREE.ACESFilmicToneMapping; ren.toneMappingExposure = 1.1;
   document.body.prepend(ren.domElement);
 
   composer = new EffectComposer(ren);
@@ -425,23 +255,16 @@ function init() {
   ctrl.enabled = false;
 
   const sunDir = getSunDir();
-  const dl = new THREE.DirectionalLight(0xFFFFFF, 3.5); // Intense, unfiltered sunlight
+  const dl = new THREE.DirectionalLight(0xFFFFFF, 4.0); 
   dl.position.copy(sunDir.clone().multiplyScalar(100)); scene.add(dl);
-  scene.add(new THREE.AmbientLight(0x111111, .2)); // Very dark ambient (no atmosphere to scatter light)
+  scene.add(new THREE.AmbientLight(0x222222, .4)); 
 
-  lm('Generating Milky Way...'); mkMilkyWay();
-  lm('Rendering Starfield...'); mkStars();
-  lm('Calculating Offset Magnetosphere...'); mkMagnetosphere();
-  lm('Rendering Sun...'); mkSun(sunDir);
-  lm('Scanning Cratered Surface...'); mkMercury();
-  lm('Linking Probes...'); mkProbes();
-  lm('Initializing UI...'); buildLayerPanel(); setupEvents(); initViewer(); setupTimeControls();
+  mkMilkyWay(); mkStars(); mkMagnetosphere(); mkSun(sunDir); mkMercury(); mkProbes();
+  buildLayerPanel(); setupEvents(); initViewer(); setupTimeControls();
 
   window.addEventListener('resize', onResize);
   setTimeout(() => { fetchSpaceWeather(); updateOrbitalData(); }, 1500);
-  setInterval(fetchSpaceWeather, 300000);
-  setInterval(updateOrbitalData, 60000);
-  setInterval(updateClocks, 1000);
+  setInterval(fetchSpaceWeather, 300000); setInterval(updateOrbitalData, 60000); setInterval(updateClocks, 1000);
   updateClocks(); updateOrbitalData();
 
   setTimeout(() => document.getElementById('loader').classList.add('hidden'), 2800);
@@ -452,208 +275,162 @@ function init() {
 function onResize() {
   cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
   ren.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
-  if (rvRend) {
-    const wrap = document.getElementById('rvCanvasWrap');
-    rvCam.aspect = wrap.clientWidth / wrap.clientHeight;
-    rvCam.updateProjectionMatrix();
-    rvRend.setSize(wrap.clientWidth, wrap.clientHeight, false);
-  }
+  if (rvRend) { const wrap = document.getElementById('rvCanvasWrap'); rvCam.aspect = wrap.clientWidth / wrap.clientHeight; rvCam.updateProjectionMatrix(); rvRend.setSize(wrap.clientWidth, wrap.clientHeight, false); }
 }
-
-function lm(m) { const e = document.getElementById('loadMsg'); if (e) e.textContent = m; }
 
 function startIntro() {
   const startPos = cam.position.clone(), endPos = new THREE.Vector3(7, 2.5, 7), duration = 4500, startTime = performance.now();
-  function anim(now) {
-    const t = Math.min((now - startTime) / duration, 1), ease = 1 - Math.pow(1 - t, 3);
-    cam.position.lerpVectors(startPos, endPos, ease); cam.lookAt(0, 0, 0);
-    if (t < 1) requestAnimationFrame(anim);
-    else { ctrl.enabled = true; S.introDone = true; toast('System Online. Welcome to Mercury.'); }
-  }
+  function anim(now) { const t = Math.min((now - startTime) / duration, 1), ease = 1 - Math.pow(1 - t, 3); cam.position.lerpVectors(startPos, endPos, ease); cam.lookAt(0, 0, 0); if (t < 1) requestAnimationFrame(anim); else { ctrl.enabled = true; S.introDone = true; toast('System Online. Welcome to Mercury.'); } }
   requestAnimationFrame(anim);
 }
 
-/* ═══════════ MILKY WAY ═══════════ */
 function mkMilkyWay() {
   const c = document.createElement('canvas'); c.width = 2048; c.height = 1024; const x = c.getContext('2d');
   x.fillStyle = '#000'; x.fillRect(0,0,2048,1024);
-  for (let i=0; i<8; i++) {
-    const px = Math.random()*2048, py = Math.random()*1024, r = 200 + Math.random()*400;
-    const g = x.createRadialGradient(px,py,0,px,py,r);
-    const hue = ['rgba(80,40,120,', 'rgba(120,60,40,', 'rgba(40,80,120,', 'rgba(100,80,60,'][Math.floor(Math.random()*4)];
-    g.addColorStop(0, hue + '0.15)'); g.addColorStop(1, hue + '0)');
-    x.fillStyle = g; x.fillRect(0,0,2048,1024);
-  }
-  x.save(); x.translate(1024, 512); x.rotate(-0.3);
-  const band = x.createLinearGradient(0,-300,0,300);
+  for (let i=0; i<8; i++) { const px = Math.random()*2048, py = Math.random()*1024, r = 200 + Math.random()*400; const g = x.createRadialGradient(px,py,0,px,py,r); const hue = ['rgba(80,40,120,', 'rgba(120,60,40,', 'rgba(40,80,120,', 'rgba(100,80,60,'][Math.floor(Math.random()*4)]; g.addColorStop(0, hue + '0.15)'); g.addColorStop(1, hue + '0)'); x.fillStyle = g; x.fillRect(0,0,2048,1024); }
+  x.save(); x.translate(1024, 512); x.rotate(-0.3); const band = x.createLinearGradient(0,-300,0,300);
   band.addColorStop(0, 'rgba(180,150,120,0)'); band.addColorStop(0.4, 'rgba(200,170,140,0.12)'); band.addColorStop(0.5, 'rgba(220,190,160,0.18)'); band.addColorStop(0.6, 'rgba(200,170,140,0.12)'); band.addColorStop(1, 'rgba(180,150,120,0)');
-  x.fillStyle = band; x.fillRect(-2048, -300, 4096, 600);
-  x.restore();
+  x.fillStyle = band; x.fillRect(-2048, -300, 4096, 600); x.restore();
   milkywayMesh = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), side: THREE.BackSide, depthWrite: false }));
   scene.add(milkywayMesh);
 }
 
-/* ═══════════ STARS ═══════════ */
 function mkStars() {
   const N = 14000, p = new Float32Array(N * 3), s = new Float32Array(N), c = new Float32Array(N * 3);
-  for (let i = 0; i < N; i++) {
-    const r = 400 + Math.random() * 800, t = Math.random() * PI2, ph = Math.acos(2 * Math.random() - 1);
-    p[i * 3] = r * Math.sin(ph) * Math.cos(t); p[i * 3 + 1] = r * Math.sin(ph) * Math.sin(t); p[i * 3 + 2] = r * Math.cos(ph);
-    s[i] = .3 + Math.random() * 1.8; const temp = Math.random();
-    if (temp < .15) { c[i*3]=1; c[i*3+1]=.6; c[i*3+2]=.4; } else if (temp < .75) { c[i*3]=1; c[i*3+1]=.98; c[i*3+2]=.95; } else { c[i*3]=.8; c[i*3+1]=.9; c[i*3+2]=1; }
-  }
-  starMesh = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(p, 3)).setAttribute('size', new THREE.BufferAttribute(s, 1)).setAttribute('aCol', new THREE.BufferAttribute(c, 3)), 
-  new THREE.ShaderMaterial({
-    uniforms: { uT: { value: 0 } },
-    vertexShader: `attribute float size;attribute vec3 aCol;varying float vS;varying vec3 vC;void main(){vS=size;vC=aCol;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=size*(350./-mv.z);gl_Position=projectionMatrix*mv;}`,
-    fragmentShader: `varying float vS;varying vec3 vC;uniform float uT;void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;float a=smoothstep(.5,.0,d);float tw=.7+.3*sin(uT*(1.+vS)+vS*77.);gl_FragColor=vec4(vC,a*tw);}`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
-  })); scene.add(starMesh);
+  for (let i = 0; i < N; i++) { const r = 400 + Math.random() * 800, t = Math.random() * PI2, ph = Math.acos(2 * Math.random() - 1); p[i * 3] = r * Math.sin(ph) * Math.cos(t); p[i * 3 + 1] = r * Math.sin(ph) * Math.sin(t); p[i * 3 + 2] = r * Math.cos(ph); s[i] = .3 + Math.random() * 1.8; const temp = Math.random(); if (temp < .15) { c[i*3]=1; c[i*3+1]=.6; c[i*3+2]=.4; } else if (temp < .75) { c[i*3]=1; c[i*3+1]=.98; c[i*3+2]=.95; } else { c[i*3]=.8; c[i*3+1]=.9; c[i*3+2]=1; } }
+  starMesh = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(p, 3)).setAttribute('size', new THREE.BufferAttribute(s, 1)).setAttribute('aCol', new THREE.BufferAttribute(c, 3)), new THREE.ShaderMaterial({ uniforms: { uT: { value: 0 } }, vertexShader: `attribute float size;attribute vec3 aCol;varying float vS;varying vec3 vC;void main(){vS=size;vC=aCol;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=size*(350./-mv.z);gl_Position=projectionMatrix*mv;}`, fragmentShader: `varying float vS;varying vec3 vC;uniform float uT;void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;float a=smoothstep(.5,.0,d);float tw=.7+.3*sin(uT*(1.+vS)+vS*77.);gl_FragColor=vec4(vC,a*tw);}`, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  scene.add(starMesh);
 }
 
-/* ═══════════ SUN ═══════════ */
 function mkSun(sunDir) {
   const sunPos = sunDir.clone().multiplyScalar(100);
   const c = document.createElement('canvas'); c.width = 512; c.height = 512; const x = c.getContext('2d');
-  const rg = x.createRadialGradient(256, 256, 0, 256, 256, 256);
-  rg.addColorStop(0, 'rgba(255,255,240,1)'); rg.addColorStop(0.1, 'rgba(255,240,200,0.95)'); rg.addColorStop(0.4, 'rgba(255,180,100,0.5)'); rg.addColorStop(1, 'rgba(255,100,50,0)');
+  const rg = x.createRadialGradient(256, 256, 0, 256, 256, 256); rg.addColorStop(0, 'rgba(255,255,240,1)'); rg.addColorStop(0.1, 'rgba(255,240,200,0.95)'); rg.addColorStop(0.4, 'rgba(255,180,100,0.5)'); rg.addColorStop(1, 'rgba(255,100,50,0)');
   x.fillStyle = rg; x.fillRect(0,0,512,512);
   const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-  sunSprite.position.copy(sunPos); sunSprite.scale.set(25, 25, 1); scene.add(sunSprite); // Sun looks huge from Mercury
+  sunSprite.position.copy(sunPos); sunSprite.scale.set(25, 25, 1); scene.add(sunSprite);
   scene.userData.sunMesh = sunSprite;
 }
 
-/* ═══════════ MERCURY SURFACE ═══════════ */
+/* ═══════════ HYPER-DETAILED MERCURY SURFACE ═══════════ */
 function mkMercuryTex() {
   const c = document.createElement('canvas'); c.width = 2048; c.height = 1024; const x = c.getContext('2d');
-  // Grayish-brown base
-  x.fillStyle = '#8C7853'; x.fillRect(0, 0, 2048, 1024);
-  
-  // Variegated terrain
-  for(let i=0; i<20000; i++) {
-    const px = Math.random()*2048, py = Math.random()*1024;
-    const v = (Math.random()-0.5) * 0.4;
-    const r = Math.max(0, Math.min(255, (140 + v*100)|0));
-    const g = Math.max(0, Math.min(255, (120 + v*80)|0));
-    const b = Math.max(0, Math.min(255, (83 + v*50)|0));
-    x.fillStyle = `rgb(${r},${g},${b})`;
-    x.fillRect(px, py, 1+Math.random()*2, 1+Math.random()*2);
-  }
-  
+  x.fillStyle = '#8C7853'; x.fillRect(0, 0, 2048, 1024); // Base regolith
+
+  // Mottled terrain variations
+  for(let i=0; i<25000; i++) { const px = Math.random()*2048, py = Math.random()*1024; const v = (Math.random()-0.5) * 0.5; const r = Math.max(0, Math.min(255, (140 + v*120)|0)); const g = Math.max(0, Math.min(255, (120 + v*100)|0)); const b = Math.max(0, Math.min(255, (83 + v*60)|0)); x.fillStyle = `rgb(${r},${g},${b})`; x.fillRect(px, py, 1+Math.random()*2, 1+Math.random()*2); }
+
   // Caloris Planitia (Massive impact basin ~1,550 km wide, approx at 30°N, 195°E)
-  const cx = 2048 * (195/360), cy = 1024 * (0.5 - (30/180));
-  const cRad = 150;
+  const cx = 2048 * (195/360), cy = 1024 * (0.5 - (30/180)), cRad = 150;
   const cg = x.createRadialGradient(cx, cy, 0, cx, cy, cRad);
   cg.addColorStop(0, '#6B5A45'); cg.addColorStop(0.8, '#786450'); cg.addColorStop(1, '#8C7853');
   x.fillStyle = cg; x.beginPath(); x.arc(cx, cy, cRad, 0, PI2); x.fill();
-  // Caloris concentric rings
-  x.strokeStyle = 'rgba(100,80,60,0.5)'; x.lineWidth = 2;
-  x.beginPath(); x.arc(cx, cy, 120, 0, PI2); x.stroke();
-  x.beginPath(); x.arc(cx, cy, 90, 0, PI2); x.stroke();
-  
-  // "Weird Terrain" (Antipodal to Caloris ~ 30°S, 15°E)
+  x.strokeStyle = 'rgba(100,80,60,0.6)'; x.lineWidth = 3; x.beginPath(); x.arc(cx, cy, 120, 0, PI2); x.stroke(); x.beginPath(); x.arc(cx, cy, 90, 0, PI2); x.stroke();
+
+  // "Weird Terrain" (Antipodal to Caloris)
   const wx = 2048 * (15/360), wy = 1024 * (0.5 + (30/180));
-  x.fillStyle = '#9C8666';
-  for(let i=0; i<50; i++) {
-    x.beginPath();
-    x.ellipse(wx + (Math.random()-0.5)*80, wy + (Math.random()-0.5)*60, Math.random()*15, Math.random()*8, Math.random()*PI, 0, PI2);
-    x.fill();
+  x.fillStyle = '#9C8666'; for(let i=0; i<100; i++) { x.beginPath(); x.ellipse(wx + (Math.random()-0.5)*100, wy + (Math.random()-0.5)*80, Math.random()*20, Math.random()*10, Math.random()*PI, 0, PI2); x.fill(); }
+
+  // Complex Crater Field (1000+ craters)
+  for(let i=0; i<1200; i++) {
+    const px = Math.random()*2048, py = Math.random()*1024, rad = 3 + Math.random()*30;
+    // Shadow
+    const g1 = x.createRadialGradient(px-rad*0.2, py-rad*0.2, 0, px, py, rad);
+    g1.addColorStop(0, 'rgba(30,20,10,0.8)'); g1.addColorStop(0.6, 'rgba(30,20,10,0.4)'); g1.addColorStop(1, 'rgba(30,20,10,0)');
+    x.fillStyle = g1; x.beginPath(); x.arc(px, py, rad, 0, PI2); x.fill();
+    // Bright Rim
+    x.strokeStyle = 'rgba(200,180,150,0.4)'; x.lineWidth = 1 + rad*0.05; x.beginPath(); x.arc(px, py, rad, 0, PI2); x.stroke();
+    // Ejecta rays for larger craters
+    if (rad > 15) {
+      for(let j=0; j<6; j++) {
+        const ang = Math.random() * PI2; const len = rad * (2 + Math.random()*2);
+        x.strokeStyle = 'rgba(200,180,150,0.2)'; x.lineWidth = 1 + Math.random()*2;
+        x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(ang)*len, py + Math.sin(ang)*len); x.stroke();
+      }
+    }
   }
-  
-  // Crater fields
-  for(let i=0; i<400; i++) {
-    const px = Math.random()*2048, py = Math.random()*1024, rad = 5 + Math.random()*25;
-    const g = x.createRadialGradient(px,py,0,px,py,rad);
-    g.addColorStop(0, 'rgba(40,30,20,0.7)'); g.addColorStop(0.7, 'rgba(40,30,20,0.3)'); g.addColorStop(1, 'rgba(255,255,255,0.1)');
-    x.fillStyle = g; x.beginPath(); x.arc(px,py,rad,0,PI2); x.fill();
-  }
-  
-  // Lobate scarps (giant cliffs formed by planetary shrinking)
-  for(let i=0; i<30; i++) {
-    x.strokeStyle = 'rgba(50,40,30,0.8)'; x.lineWidth = 2 + Math.random()*3;
-    x.beginPath();
-    const sx = Math.random()*2048, sy = Math.random()*1024;
-    x.moveTo(sx, sy);
-    // Jagged line for cliff
-    for(let j=0; j<5; j++) x.lineTo(sx + (Math.random()-0.5)*100, sy + (Math.random()-0.5)*60);
+
+  // Lobate scarps (giant cliffs)
+  for(let i=0; i<40; i++) {
+    x.strokeStyle = 'rgba(50,40,30,0.8)'; x.lineWidth = 2 + Math.random()*4;
+    x.beginPath(); const sx = Math.random()*2048, sy = Math.random()*1024; x.moveTo(sx, sy);
+    for(let j=0; j<6; j++) x.lineTo(sx + (Math.random()-0.5)*120, sy + (Math.random()-0.5)*80);
     x.stroke();
   }
-  
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; return tex;
+
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; return tex;
 }
 
 function mkMercury() {
   merGroup = new THREE.Group(); scene.add(merGroup);
   const merMat = new THREE.ShaderMaterial({
     uniforms: { uTex: { value: mkMercuryTex() }, uTime: { value: 0 }, uSunDir: { value: getSunDir() } },
-    vertexShader: `varying vec2 vUv;varying vec3 vNormal;void main(){vUv=uv;vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader: `uniform sampler2D uTex;uniform float uTime;uniform vec3 uSunDir;varying vec2 vUv;varying vec3 vNormal;
+    vertexShader: `
+      varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
+      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.); vView=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }
+    `,
+    fragmentShader: `
+      uniform sampler2D uTex; uniform float uTime; uniform vec3 uSunDir;
+      varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
+
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float noise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);}
+      float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<4;i++){v+=a*noise(p);p*=2.1;a*=0.5;}return v;}
+
       void main(){
         vec3 baseColor = texture2D(uTex, vUv).rgb;
         
-        // Polar Water Ice (Permanent shadows near poles)
-        float lat = abs(vUv.y - 0.5) * 2.0; // 0 at equator, 1 at poles
+        // Procedural Roughness/Bumpiness
+        float n = fbm(vUv * 80.0);
+        vec3 bumpNormal = normalize(vNormal + vec3(n, n, 0.0) * 0.05);
+        
+        // Polar Water Ice
+        float lat = abs(vUv.y - 0.5) * 2.0;
         float iceFactor = smoothstep(0.98, 1.0, lat);
         baseColor = mix(baseColor, vec3(0.95, 0.98, 1.0), iceFactor);
         
-        float light = max(0.0, dot(vNormal, uSunDir));
+        // Harsh Solar Lighting (Lambertian)
+        float light = max(0.0, dot(bumpNormal, uSunDir));
+        float ambient = 0.15; // Starlight ambient
         
-        // Extreme Heat Emission on day side (glows reddish-orange)
-        float heat = smoothstep(0.5, 1.0, light);
-        vec3 heatGlow = vec3(0.8, 0.2, 0.0) * heat * 0.3;
+        // Limb Darkening
+        float mu = max(0.0, dot(vNormal, vView));
+        float limb = 0.5 + 0.5 * pow(mu, 0.5);
         
-        // No atmosphere = pitch black night side
-        float ambient = 0.02; 
-        vec3 finalColor = (baseColor + heatGlow) * (ambient + light * 1.3);
+        // Extreme Heat Emission on day side
+        float heat = smoothstep(0.6, 1.0, light);
+        vec3 heatGlow = vec3(0.8, 0.2, 0.0) * heat * 0.15;
         
-        gl_FragColor = vec4(finalColor, 1.0);
-      }`
+        vec3 finalColor = (baseColor + heatGlow) * (ambient + light * limb * 1.4);
+        
+        // Sodium Exosphere Glow (Rim)
+        float rim = 1.0 - abs(dot(vView, vNormal));
+        vec3 exoGlow = vec3(1.0, 0.6, 0.2) * pow(rim, 4.0) * 0.1 * light;
+        
+        gl_FragColor = vec4(finalColor + exoGlow, 1.0);
+      }
+    `
   });
-  merMesh = new THREE.Mesh(new THREE.SphereGeometry(ER, 128, 64), merMat);
+  merMesh = new THREE.Mesh(new THREE.SphereGeometry(ER, 192, 96), merMat);
   merMesh.renderOrder = 2; merMesh.userData = { type: 'mercury', name: 'Mercury' }; merGroup.add(merMesh);
 }
 
-/* ═══════════ OFFSET MAGNETOSPHERE ═══════════ */
 function mkMagnetosphere() {
   magMesh = new THREE.Group();
-  const magMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending });
-  const magMatBright = new THREE.LineBasicMaterial({ color: 0x66f5ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
-  const Lshells = [1.2, 1.5, 2.0, 3.0]; // Very small field
-  
+  const magMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+  const Lshells = [1.2, 1.5, 2.0, 3.0]; 
   Lshells.forEach((L, idx) => {
     const numLines = 12;
     for (let i = 0; i < numLines; i++) {
-      const phi = (i / numLines) * PI2;
-      const pts = [];
-      const steps = 80;
-      for (let s = 0; s <= steps; s++) {
-        const t = (s / steps) * PI;
-        const theta = t;
-        const r = L * Math.sin(theta) * Math.sin(theta);
-        if (r < 1) continue;
-        const xm = r * Math.sin(theta) * Math.cos(phi) * ER;
-        const ym = r * Math.cos(theta) * ER;
-        const zm = r * Math.sin(theta) * Math.sin(phi) * ER;
-        const angle = MAG_TILT;
-        const x = xm * Math.cos(angle) + ym * Math.sin(angle);
-        const y = -xm * Math.sin(angle) + ym * Math.cos(angle);
-        const z = zm;
-        pts.push(new THREE.Vector3(x, y, z));
-      }
-      if (pts.length > 1) {
-        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), idx < 2 ? magMatBright : magMat);
-        magMesh.add(line);
-      }
+      const phi = (i / numLines) * PI2; const pts = []; const steps = 80;
+      for (let s = 0; s <= steps; s++) { const t = (s / steps) * PI; const theta = t; const r = L * Math.sin(theta) * Math.sin(theta); if (r < 1) continue; const xm = r * Math.sin(theta) * Math.cos(phi) * ER; const ym = r * Math.cos(theta) * ER; const zm = r * Math.sin(theta) * Math.sin(phi) * ER; const angle = MAG_TILT; const x = xm * Math.cos(angle) + ym * Math.sin(angle); const y = -xm * Math.sin(angle) + ym * Math.cos(angle); const z = zm; pts.push(new THREE.Vector3(x, y, z)); }
+      if (pts.length > 1) { const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), magMat); magMesh.add(line); }
     }
   });
-  
-  // 20% Northward Offset
   magMesh.position.set(0, MAG_OFFSET, 0);
-  magMesh.visible = S.layers.mag;
-  scene.add(magMesh);
+  magMesh.visible = S.layers.mag; scene.add(magMesh);
 }
 
-/* ═══════════ PROBES ═══════════ */
 function mkProbes() {
   PROBES.forEach(sat => {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(Math.max(.03, sat.size), 16, 16), new THREE.MeshBasicMaterial({ color: sat.color }));
@@ -665,273 +442,98 @@ function mkProbes() {
   });
 }
 
-function getSatPos(sat, time) {
-  const r = ER + (sat.alt * R_KM), inc = sat.inc * D2R, raan = (sat.raan0 || 0) * D2R, M = ((time / (sat.period * 86400)) * PI2 + (sat.phase0 || 0));
-  const xO = r * Math.cos(M), yO = r * Math.sin(M), xI = xO, yI = yO * Math.cos(inc), zI = yO * Math.sin(inc);
-  return new THREE.Vector3(xI * Math.cos(raan) - zI * Math.sin(raan), yI, xI * Math.sin(raan) + zI * Math.cos(raan));
-}
+function getSatPos(sat, time) { const r = ER + (sat.alt * R_KM), inc = sat.inc * D2R, raan = (sat.raan0 || 0) * D2R, M = ((time / (sat.period * 86400)) * PI2 + (sat.phase0 || 0)); const xO = r * Math.cos(M), yO = r * Math.sin(M), xI = xO, yI = yO * Math.cos(inc), zI = yO * Math.sin(inc); return new THREE.Vector3(xI * Math.cos(raan) - zI * Math.sin(raan), yI, xI * Math.sin(raan) + zI * Math.cos(raan)); }
 
-/* ═══════════ 3D VIEWER ═══════════ */
 function initViewer() {
   rvClock = new THREE.Clock(); rvScene = new THREE.Scene(); rvCam = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  const canvas = document.getElementById('rvCanvas');
-  rvRend = new THREE.WebGLRenderer({ canvas, antialias: true }); rvRend.setPixelRatio(window.devicePixelRatio);
-  rvRend.toneMapping = THREE.ACESFilmicToneMapping; rvRend.toneMappingExposure = 1.2;
-  const pmremGenerator = new THREE.PMREMGenerator(rvRend);
-  rvScene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+  const canvas = document.getElementById('rvCanvas'); rvRend = new THREE.WebGLRenderer({ canvas, antialias: true }); rvRend.setPixelRatio(window.devicePixelRatio); rvRend.toneMapping = THREE.ACESFilmicToneMapping; rvRend.toneMappingExposure = 1.2;
+  const pmremGenerator = new THREE.PMREMGenerator(rvRend); rvScene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
   rvCtrl = new OrbitControls(rvCam, canvas); rvCtrl.enableDamping = true; rvCtrl.minDistance = 2; rvCtrl.maxDistance = 25; rvCtrl.autoRotate = true; rvCtrl.autoRotateSpeed = 1.0;
-  rvScene.add(new THREE.AmbientLight(0x333344, 0.25));
-  const sun = new THREE.DirectionalLight(0xfff5e0, 3.0); sun.position.set(5, 10, 7); rvScene.add(sun);
-  const fill = new THREE.DirectionalLight(0xffaa55, 0.8); fill.position.set(-5, -2, -5); rvScene.add(fill);
+  rvScene.add(new THREE.AmbientLight(0x333344, 0.25)); const sun = new THREE.DirectionalLight(0xfff5e0, 3.0); sun.position.set(5, 10, 7); rvScene.add(sun); const fill = new THREE.DirectionalLight(0xffaa55, 0.8); fill.position.set(-5, -2, -5); rvScene.add(fill);
   document.getElementById('rvClose').onclick = closeViewer;
 }
 
 function buildModel(id) {
   const grp = new THREE.Group();
   if (id === 'messenger') {
-    const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xD4AF37, metalness: 1.0, roughness: 0.3, clearcoat: 0.8 });
-    const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5, roughness: 0.8 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.1, roughness: 0.6 });
-    const ceramicMat = new THREE.MeshPhysicalMaterial({ color: 0xffe0d0, metalness: 0.0, roughness: 0.9, clearcoat: 0.2 }); // Sunshade
-    
-    // 1. Ceramic Sunshade (Points at Sun)
+    const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xD4AF37, metalness: 1.0, roughness: 0.3, clearcoat: 0.8 }); const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5, roughness: 0.8 }); const ceramicMat = new THREE.MeshPhysicalMaterial({ color: 0xffe0d0, metalness: 0.0, roughness: 0.9, clearcoat: 0.2 });
     const shade = new THREE.Mesh(new RoundedBoxGeometry(2.0, 1.5, 0.1, 2, 0.1), ceramicMat); grp.add(shade);
-    
-    // 2. Bus (Behind shade)
     const bus = new THREE.Mesh(new RoundedBoxGeometry(1.2, 1.0, 1.0, 4, 0.1), darkMat); bus.position.z = -0.8; grp.add(bus);
-    
-    // 3. Solar Panels
-    const panel = new THREE.Mesh(new RoundedBoxGeometry(3.0, 0.05, 0.8, 2, 0.02), new THREE.MeshPhysicalMaterial({ color: 0x2233aa, metalness: 0.2, roughness: 0.2, clearcoat: 1 }));
-    panel.position.z = -1.2; grp.add(panel);
-    
-    // 4. High Gain Antenna
+    const panel = new THREE.Mesh(new RoundedBoxGeometry(3.0, 0.05, 0.8, 2, 0.02), new THREE.MeshPhysicalMaterial({ color: 0x2233aa, metalness: 0.2, roughness: 0.2, clearcoat: 1 })); panel.position.z = -1.2; grp.add(panel);
     const dish = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 16, 0, PI2, 0, PI/3), goldMat); dish.scale.y = 0.2; dish.position.y = -1.0; dish.rotation.x = PI; grp.add(dish);
-    
   } else if (id === 'bepi') {
-    const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xD4AF37, metalness: 1.0, roughness: 0.3, clearcoat: 0.8 });
-    const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5, roughness: 0.8 });
-    const blueMat = new THREE.MeshPhysicalMaterial({ color: 0x111144, metalness: 0.2, roughness: 0.2, clearcoat: 1 });
-    
-    // 1. Mercury Transfer Module (Bottom)
+    const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xD4AF37, metalness: 1.0, roughness: 0.3, clearcoat: 0.8 }); const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.5, roughness: 0.8 }); const blueMat = new THREE.MeshPhysicalMaterial({ color: 0x111144, metalness: 0.2, roughness: 0.2, clearcoat: 1 });
     const mtm = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.6, 1.5, 4, 0.1), darkMat); mtm.position.y = -0.8; grp.add(mtm);
-    // Ion Thrusters
     const thruster = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.4, 16), goldMat); thruster.position.y = -1.2; grp.add(thruster);
-    
-    // 2. Huge Solar Electric Panels
     const panel1 = new THREE.Mesh(new RoundedBoxGeometry(5.0, 0.05, 1.2, 2, 0.02), blueMat); panel1.position.x = 2.8; panel1.position.y = -0.8; grp.add(panel1);
     const panel2 = new THREE.Mesh(new RoundedBoxGeometry(5.0, 0.05, 1.2, 2, 0.02), blueMat); panel2.position.x = -2.8; panel2.position.y = -0.8; grp.add(panel2);
-    
-    // 3. Mercury Planetary Orbiter (Middle)
     const mpo = new THREE.Mesh(new RoundedBoxGeometry(1.2, 0.8, 1.2, 4, 0.1), goldMat); mpo.position.y = 0; grp.add(mpo);
-    
-    // 4. Mio (JAXA) Orbiter (Top)
-    const mio = new THREE.Mesh(new OctahedronGeometry(0.7, 0), darkMat); mio.position.y = 0.8; grp.add(mio);
-    
-  } else {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(2, 48, 32), new THREE.MeshStandardMaterial({ color: 0x8C7853, roughness: 1 })); grp.add(mesh);
-  }
+    const mio = new THREE.Mesh(new THREE.OctahedronGeometry(0.7, 0), darkMat); mio.position.y = 0.8; grp.add(mio);
+  } else { const mesh = new THREE.Mesh(new THREE.SphereGeometry(2, 48, 32), new THREE.MeshStandardMaterial({ color: 0x8C7853, roughness: 1 })); grp.add(mesh); }
   return grp;
 }
 
 function openViewer(obj) {
   document.getElementById('rvModal').classList.add('vis');
   document.getElementById('rvTitle').textContent = obj.name; document.getElementById('rvStatus').textContent = obj.type; document.getElementById('rvDesc').textContent = obj.desc;
-  let statsHtml = '';
-  if (obj.scientificData) { obj.scientificData.forEach(data => { statsHtml += `<div class="rvRow"><span class="lbl">${data[0]}</span><span class="val">${data[1]}</span></div>`; }); }
+  let statsHtml = ''; if (obj.scientificData) { obj.scientificData.forEach(data => { statsHtml += `<div class="rvRow"><span class="lbl">${data[0]}</span><span class="val">${data[1]}</span></div>`; }); }
   statsHtml += `<div class="rvRow" style="margin-top:12px;"><span class="lbl">Official Mission</span><span class="val"><a href="${obj.url}" target="_blank" style="color:var(--gold)">View Here →</a></span></div>`;
   document.getElementById('rvStats').innerHTML = statsHtml;
   const img = document.getElementById('rvImage'), imgFallback = document.getElementById('rvImgFallback');
   img.src = obj.img; img.style.display = 'block'; imgFallback.classList.remove('show'); imgFallback.href = obj.url;
-  img.onerror = () => { img.style.display = 'none'; imgFallback.classList.add('show'); };
-  img.onload = () => { img.style.display = 'block'; imgFallback.classList.remove('show'); };
+  img.onerror = () => { img.style.display = 'none'; imgFallback.classList.add('show'); }; img.onload = () => { img.style.display = 'block'; imgFallback.classList.remove('show'); };
   document.getElementById('rvImgCaption').textContent = obj.imgCaption || '';
-  if (rvMesh) rvScene.remove(rvMesh);
-  rvMesh = buildModel(obj.id); rvScene.add(rvMesh);
+  if (rvMesh) rvScene.remove(rvMesh); rvMesh = buildModel(obj.id); rvScene.add(rvMesh);
   const box = new THREE.Box3().setFromObject(rvMesh); const center = box.getCenter(new THREE.Vector3()); const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z); const fov = rvCam.fov * (Math.PI / 180);
-  let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.8;
-  rvCam.position.set(center.x + cameraZ * 0.6, center.y + cameraZ * 0.4, center.z + cameraZ); rvCam.lookAt(center);
-  rvCtrl.target.copy(center); rvCtrl.update();
-  const wrap = document.getElementById('rvCanvasWrap'); rvRend.setSize(wrap.clientWidth, wrap.clientHeight, false);
-  rvCam.aspect = wrap.clientWidth / wrap.clientHeight; rvCam.updateProjectionMatrix();
+  const maxDim = Math.max(size.x, size.y, size.z); const fov = rvCam.fov * (Math.PI / 180); let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.8;
+  rvCam.position.set(center.x + cameraZ * 0.6, center.y + cameraZ * 0.4, center.z + cameraZ); rvCam.lookAt(center); rvCtrl.target.copy(center); rvCtrl.update();
+  const wrap = document.getElementById('rvCanvasWrap'); rvRend.setSize(wrap.clientWidth, wrap.clientHeight, false); rvCam.aspect = wrap.clientWidth / wrap.clientHeight; rvCam.updateProjectionMatrix();
   rvAnimating = true; if (S.focus) releaseFocus();
 }
-
 function closeViewer() { document.getElementById('rvModal').classList.remove('vis'); rvAnimating = false; }
-function animateViewer() {
-  if (!rvAnimating) return; requestAnimationFrame(animateViewer);
-  const t = rvClock.getElapsedTime(); if (rvMesh) rvMesh.position.y = Math.sin(t * 1.0) * 0.05;
-  rvCtrl.update(); rvRend.render(rvScene, rvCam);
-}
+function animateViewer() { if (!rvAnimating) return; requestAnimationFrame(animateViewer); const t = rvClock.getElapsedTime(); if (rvMesh) rvMesh.position.y = Math.sin(t * 1.0) * 0.05; rvCtrl.update(); rvRend.render(rvScene, rvCam); }
 
-/* ═══════════ LIVE DATA ═══════════ */
 async function fetchSpaceWeather() {
-  try {
-    const r = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-5-minute.json'); const d = await r.json();
-    if (d && d.length > 1) {
-      const l = d[d.length - 1], sp = parseFloat(l[2]), den = parseFloat(l[3]);
-      if (!isNaN(sp) && sp > 0) { S.swSpd = sp; document.getElementById('rSWf').textContent = sp.toFixed(0) + ' km/s'; document.getElementById('bSW').textContent = sp.toFixed(0) + ' km/s'; }
-      if (!isNaN(den) && den > 0) { S.swDen = den; }
-    }
-  } catch (e) {}
-  try {
-    const r = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'); const d = await r.json();
-    let v = 2; for (let i = d.length - 1; i >= 1; i--) { if (d[i][2] === 'observed') { const x = parseFloat(d[i][1]); if (!isNaN(x)) { v = x; break; } } }
-    S.kp = v;
-    // Mercury magnetopause calculation (very close to sun, highly compressed)
-    const p_sw = S.swDen * S.swSpd * S.swSpd * 1.67e-6;
-    const magPause = 1.5 * Math.pow(Math.max(0.001, p_sw / 0.1), -1/6); // Varies ~1.4-1.6 Rm
-    document.getElementById('rMag').textContent = magPause.toFixed(2) + ' Rm';
-    if (v >= 5) toast(`⚠️ Solar Storm! Mercury's weak magnetosphere severely compressed.`, 'alert');
-  } catch (e) {}
+  try { const r = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-5-minute.json'); const d = await r.json(); if (d && d.length > 1) { const l = d[d.length - 1], sp = parseFloat(l[2]), den = parseFloat(l[3]); if (!isNaN(sp) && sp > 0) { S.swSpd = sp; document.getElementById('rSWf').textContent = sp.toFixed(0) + ' km/s'; document.getElementById('bSW').textContent = sp.toFixed(0) + ' km/s'; } if (!isNaN(den) && den > 0) { S.swDen = den; } } } catch (e) {}
+  try { const r = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'); const d = await r.json(); let v = 2; for (let i = d.length - 1; i >= 1; i--) { if (d[i][2] === 'observed') { const x = parseFloat(d[i][1]); if (!isNaN(x)) { v = x; break; } } } S.kp = v; const p_sw = S.swDen * S.swSpd * S.swSpd * 1.67e-6; const magPause = 1.5 * Math.pow(Math.max(0.001, p_sw / 0.1), -1/6); document.getElementById('rMag').textContent = magPause.toFixed(2) + ' Rm"; if (v >= 5) toast(`⚠️ Solar Storm! Mercury's weak magnetosphere severely compressed.`, 'alert'); } catch (e) {}
 }
 
 function updateOrbitalData() {
-  const now = S.simTime, dist = earthMerDistance(now);
-  S.earthMerDistAU = dist.dist; S.lightDelay = dist.lightSec / 60;
+  const now = S.simTime, dist = earthMerDistance(now); S.earthMerDistAU = dist.dist; S.lightDelay = dist.lightSec / 60;
   document.getElementById('vDist').textContent = dist.dist.toFixed(3) + ' AU'; document.getElementById('vDelay').textContent = (S.lightDelay/60).toFixed(1) + 'm';
-  document.getElementById('rDist').textContent = (dist.distKm).toLocaleString(undefined,{maximumFractionDigits:0}) + ' km'; document.getElementById('rOWT').textContent = dist.lightSec.toFixed(0) + ' s'; document.getElementById('rRTT').textContent = (dist.lightSec * 2).toFixed(0) + ' s';
-  const merPos = planetHelioPos(now.getTime() / 86400000 + 2451545 - 0.5, 'mercury');
-  // Mercury moves very fast due to high eccentricity
-  const r_m = merPos.r * AU_KM * 1000, a_m = 0.387 * AU_KM * 1000; const v = Math.sqrt(SOL_GM * (2 / r_m - 1 / a_m));
+  document.getElementById('rDist').textContent = (dist.distKm).toLocaleString(undefined,{maximumFractionDigits:0}) + ' km'; document.getElementById('rOWT').textContent = dist.lightSec.toFixed(0) + ' s'; document.getElementById('rRTT').textContent = (dist.lightSec * 2).toFixed(0) + ' s";
+  const merPos = planetHelioPos(now.getTime() / 86400000 + 2451545 - 0.5, 'mercury'); const r_m = merPos.r * AU_KM * 1000, a_m = 0.387 * AU_KM * 1000; const v = Math.sqrt(SOL_GM * (2 / r_m - 1 / a_m));
   document.getElementById('rVel').textContent = (v / 1000).toFixed(2) + ' km/s'; document.getElementById('bSun').textContent = (merPos.r * AU_KM).toLocaleString(undefined,{maximumFractionDigits:0}) + ' km';
   updateTicker();
 }
+function updateClocks() { const n = S.simTime; document.getElementById('vUTC').textContent = n.toISOString().substr(11, 8) + 'Z'; document.getElementById('vJD').textContent = getMercurySolarDay(0); }
+function updateTicker() { const facts = [`> LIVE: Mercury is currently ${S.earthMerDistAU.toFixed(3)} AU from Earth.`, `> DATA: One-way light delay is ${(S.lightDelay/60).toFixed(2)} minutes.`, `> TIME: A solar day on Mercury lasts 176 Earth days (3:2 resonance).`, `> HEAT: Day side temperatures reach 430°C, night side drops to -180°C.`, `> PHYSICS: Mercury is the smallest planet and has a massive iron core.`, `> GEOLOGY: The planet is actively shrinking as its core cools (lobate scarps).`, `> ICE: Water ice exists in permanently shadowed polar craters.`, `> MAGNETISM: The weak magnetic field is offset 20% north of the planet's center.`, `> ORBIT: Mercury has the most eccentric orbit of any planet (e=0.21).`]; document.getElementById('ticker').innerHTML = facts.join('&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;'); }
+function toast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = ''; if (type) t.classList.add(type); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); }
 
-function updateClocks() {
-  const n = S.simTime; document.getElementById('vUTC').textContent = n.toISOString().substr(11, 8) + 'Z'; document.getElementById('vJD').textContent = getMercurySolarDay(0);
-}
-
-function updateTicker() {
-  const facts = [
-    `> LIVE: Mercury is currently ${S.earthMerDistAU.toFixed(3)} AU from Earth.`,
-    `> DATA: One-way light delay is ${(S.lightDelay/60).toFixed(2)} minutes.`,
-    `> TIME: A solar day on Mercury lasts 176 Earth days (3:2 resonance).`,
-    `> HEAT: Day side temperatures reach 430°C, night side drops to -180°C.`,
-    `> PHYSICS: Mercury is the smallest planet and has a massive iron core.`,
-    `> GEOLOGY: The planet is actively shrinking as its core cools (lobate scarps).`,
-    `> ICE: Water ice exists in permanently shadowed polar craters.`,
-    `> MAGNETISM: The weak magnetic field is offset 20% north of the planet's center.`,
-    `> ORBIT: Mercury has the most eccentric orbit of any planet (e=0.21).`
-  ];
-  document.getElementById('ticker').innerHTML = facts.join('&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;');
-}
-
-function toast(msg, type = '') {
-  const t = document.getElementById('toast'); t.textContent = msg; t.className = '';
-  if (type) t.classList.add(type); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000);
-}
-
-/* ═══════════ UI BUILDING ═══════════ */
-function buildLayerPanel() {
-  const pan = document.getElementById('lpan'); pan.innerHTML = '';
-  LAYERS.forEach(sec => {
-    const d = document.createElement('div'); d.className = 'ps';
-    d.innerHTML = `<h3><i class="fas fa-${secIcon(sec.sec)}"></i>${sec.sec}</h3>`;
-    sec.items.forEach(it => {
-      const el = document.createElement('div'); el.className = 'li2' + (it.on ? ' on' : '');
-      el.innerHTML = `<div class="cd" style="background:${it.c};color:${it.c}"></div><span class="nm">${it.n}</span><div class="tg"></div>`;
-      el.onclick = () => { it.on = !it.on; el.classList.toggle('on'); toggleLayer(it.id, it.on); };
-      d.appendChild(el);
-    }); pan.appendChild(d);
-  });
-}
+function buildLayerPanel() { const pan = document.getElementById('lpan'); pan.innerHTML = ''; LAYERS.forEach(sec => { const d = document.createElement('div'); d.className = 'ps'; d.innerHTML = `<h3><i class="fas fa-${secIcon(sec.sec)}"></i>${sec.sec}</h3>`; sec.items.forEach(it => { const el = document.createElement('div'); el.className = 'li2' + (it.on ? ' on' : ''); el.innerHTML = `<div class="cd" style="background:${it.c};color:${it.c}"></div><span class="nm">${it.n}</span><div class="tg"></div>`; el.onclick = () => { it.on = !it.on; el.classList.toggle('on'); toggleLayer(it.id, it.on); }; d.appendChild(el); }); pan.appendChild(d); }); }
 function secIcon(s) { if (s === 'Hermian System') return 'sun'; if (s === 'Magnetosphere') return 'magnet'; if (s === 'Spacecraft') return 'satellite'; return 'circle'; }
-function toggleLayer(id, on) {
-  S.layers[id] = on;
-  switch (id) {
-    case 'surf': if (merMesh) merMesh.visible = on; break;
-    case 'mag': if (magMesh) magMesh.visible = on; break;
-    case 'messenger': case 'bepi': if (satMeshes[id]) satMeshes[id].visible = on; if (trailMeshes[id]) trailMeshes[id].visible = on; break;
-    case 'trails': Object.values(trailMeshes).forEach(m => m.visible = on); break;
-  }
-}
+function toggleLayer(id, on) { S.layers[id] = on; switch (id) { case 'surf': if (merMesh) merMesh.visible = on; break; case 'mag': if (magMesh) magMesh.visible = on; break; case 'messenger': case 'bepi': if (satMeshes[id]) satMeshes[id].visible = on; if (trailMeshes[id]) trailMeshes[id].visible = on; break; case 'trails': Object.values(trailMeshes).forEach(m => m.visible = on); break; } }
 
-function showDetail(title, sub, desc, rows, link) {
-  const dp = document.getElementById('dpan'); document.getElementById('dT').textContent = title; document.getElementById('dS').textContent = sub || ''; document.getElementById('dDesc').textContent = desc || '';
-  let html = ''; rows.forEach(r => { html += `<div class="dr"><span class="lb">${r[0]}</span><span class="vl" style="color:${r[2] || 'var(--text)'}">${r[1]}</span></div>`; });
-  if (link) html += `<a class="dl" href="${link}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i>More Info</a>`;
-  document.getElementById('dB').innerHTML = html; dp.classList.add('vis');
-}
+function showDetail(title, sub, desc, rows, link) { const dp = document.getElementById('dpan'); document.getElementById('dT').textContent = title; document.getElementById('dS').textContent = sub || ''; document.getElementById('dDesc').textContent = desc || ''; let html = ''; rows.forEach(r => { html += `<div class="dr"><span class="lb">${r[0]}</span><span class="vl" style="color:${r[2] || 'var(--text)'}">${r[1]}</span></div>`; }); if (link) html += `<a class="dl" href="${link}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i>More Info</a>`; document.getElementById('dB').innerHTML = html; dp.classList.add('vis'); }
 
-/* ═══════════ TIME CONTROLS ═══════════ */
-function setupTimeControls() {
-  const slider = document.getElementById('timeSlider'), label = document.getElementById('timeLabel'), playBtn = document.getElementById('tPlay');
-  slider.oninput = () => { S.timeOffset = parseInt(slider.value); updateSimTime(); };
-  document.getElementById('tRewind').onclick = () => { S.timeOffset -= 1; slider.value = S.timeOffset; updateSimTime(); };
-  document.getElementById('tForward').onclick = () => { S.timeOffset += 1; slider.value = S.timeOffset; updateSimTime(); };
-  document.getElementById('tNow').onclick = () => { S.timeOffset = 0; slider.value = 0; updateSimTime(); };
-  playBtn.onclick = () => { S.playing = !S.playing; playBtn.innerHTML = S.playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; playBtn.classList.toggle('on', S.playing); document.getElementById('bSim').textContent = S.playing ? '1×' : '⏸'; };
-}
-function updateSimTime() {
-  S.simTime = new Date(Date.now() + S.timeOffset * 86400000); const label = document.getElementById('timeLabel');
-  if (S.timeOffset === 0) label.textContent = 'Now'; else if (S.timeOffset > 0) label.textContent = '+' + S.timeOffset + 'd'; else label.textContent = S.timeOffset + 'd';
-  updateOrbitalData(); updateClocks();
-}
+function setupTimeControls() { const slider = document.getElementById('timeSlider'), label = document.getElementById('timeLabel'), playBtn = document.getElementById('tPlay'); slider.oninput = () => { S.timeOffset = parseInt(slider.value); updateSimTime(); }; document.getElementById('tRewind').onclick = () => { S.timeOffset -= 1; slider.value = S.timeOffset; updateSimTime(); }; document.getElementById('tForward').onclick = () => { S.timeOffset += 1; slider.value = S.timeOffset; updateSimTime(); }; document.getElementById('tNow').onclick = () => { S.timeOffset = 0; slider.value = 0; updateSimTime(); }; playBtn.onclick = () => { S.playing = !S.playing; playBtn.innerHTML = S.playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'; playBtn.classList.toggle('on', S.playing); document.getElementById('bSim').textContent = S.playing ? '1×' : '⏸'; }; }
+function updateSimTime() { S.simTime = new Date(Date.now() + S.timeOffset * 86400000); const label = document.getElementById('timeLabel'); if (S.timeOffset === 0) label.textContent = 'Now'; else if (S.timeOffset > 0) label.textContent = '+' + S.timeOffset + 'd'; else label.textContent = S.timeOffset + 'd'; updateOrbitalData(); updateClocks(); }
 
-/* ═══════════ CINEMATIC TOUR ═══════════ */
-function startTour() {
-  if (S.touring) return; S.touring = true; ctrl.enabled = false; ctrl.autoRotate = false; toast('Starting Cinematic Tour...');
-  const stops = [
-    { pos: new THREE.Vector3(7, 2.5, 7), target: new THREE.Vector3(0,0,0), dur: 3000, msg: "Welcome to Mercury" },
-    { pos: new THREE.Vector3(0, 0, 9), target: new THREE.Vector3(0,0,0), dur: 4000, msg: "The Scorched Day Side" },
-    { pos: new THREE.Vector3(0, 5, 0), target: new THREE.Vector3(0,0,0), dur: 4000, msg: "Polar Water Ice" },
-    { pos: new THREE.Vector3(0, 0, 0).add(getSatPos(PROBES[0], performance.now()/1000).multiplyScalar(2.0)), target: getSatPos(PROBES[0], performance.now()/1000), dur: 4000, msg: "MESSENGER Orbiter" },
-    { pos: new THREE.Vector3(10, 4, 10), target: new THREE.Vector3(0,0,0), dur: 3000, msg: "Tour Complete" }
-  ];
-  let step = 0;
-  function nextStop() {
-    if (step >= stops.length) { S.touring = false; ctrl.enabled = true; ctrl.autoRotate = true; return; }
-    const s = stops[step]; toast(s.msg); animateCamera(s.pos, s.target, s.dur, () => { setTimeout(() => { step++; nextStop(); }, 1000); });
-  } nextStop();
-}
+function startTour() { if (S.touring) return; S.touring = true; ctrl.enabled = false; ctrl.autoRotate = false; toast('Starting Cinematic Tour...'); const stops = [ { pos: new THREE.Vector3(7, 2.5, 7), target: new THREE.Vector3(0,0,0), dur: 3000, msg: "Welcome to Mercury" }, { pos: new THREE.Vector3(0, 0, 9), target: new THREE.Vector3(0,0,0), dur: 4000, msg: "The Scorched Day Side" }, { pos: new THREE.Vector3(0, 5, 0), target: new THREE.Vector3(0,0,0), dur: 4000, msg: "Polar Water Ice" }, { pos: new THREE.Vector3(0, 0, 0).add(getSatPos(PROBES[0], performance.now()/1000).multiplyScalar(2.0)), target: getSatPos(PROBES[0], performance.now()/1000), dur: 4000, msg: "MESSENGER Orbiter" }, { pos: new THREE.Vector3(10, 4, 10), target: new THREE.Vector3(0,0,0), dur: 3000, msg: "Tour Complete" } ]; let step = 0; function nextStop() { if (step >= stops.length) { S.touring = false; ctrl.enabled = true; ctrl.autoRotate = true; return; } const s = stops[step]; toast(s.msg); animateCamera(s.pos, s.target, s.dur, () => { setTimeout(() => { step++; nextStop(); }, 1000); }); } nextStop(); }
 
-/* ═══════════ CAMERA FOCUS ═══════════ */
-function focusOn(obj) {
-  S.focus = obj; const target = obj.position.clone(); const dist = (obj.geometry?.parameters?.radius || 0.5) * 8 + 4;
-  const offset = target.clone().normalize().multiplyScalar(dist).add(new THREE.Vector3(0, dist*0.3, 0));
-  const endPos = target.clone().add(offset); animateCamera(endPos, target, 1500);
-  document.getElementById('focusName').textContent = obj.userData.name || obj.userData.sat?.name || 'Object';
-  document.getElementById('focusHint').classList.add('show'); ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.5;
-}
-function releaseFocus() {
-  S.focus = null; document.getElementById('focusHint').classList.remove('show');
-  animateCamera(new THREE.Vector3(7, 2.5, 7), new THREE.Vector3(0, 0, 0), 1500); ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.15;
-}
-function animateCamera(endPos, endTarget, duration, callback) {
-  const startPos = cam.position.clone(), startTarget = ctrl.target.clone(); const startTime = performance.now();
-  camAnim = function(now) {
-    const t = Math.min((now - startTime) / duration, 1); const ease = 1 - Math.pow(1 - t, 3);
-    cam.position.lerpVectors(startPos, endPos, ease); ctrl.target.lerpVectors(startTarget, endTarget, ease);
-    if (t < 1) requestAnimationFrame(camAnim); else { camAnim = null; if (callback) callback(); }
-  }; requestAnimationFrame(camAnim);
-}
+function focusOn(obj) { S.focus = obj; const target = obj.position.clone(); const dist = (obj.geometry?.parameters?.radius || 0.5) * 8 + 4; const offset = target.clone().normalize().multiplyScalar(dist).add(new THREE.Vector3(0, dist*0.3, 0)); const endPos = target.clone().add(offset); animateCamera(endPos, target, 1500); document.getElementById('focusName').textContent = obj.userData.name || obj.userData.sat?.name || 'Object'; document.getElementById('focusHint').classList.add('show'); ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.5; }
+function releaseFocus() { S.focus = null; document.getElementById('focusHint').classList.remove('show'); animateCamera(new THREE.Vector3(7, 2.5, 7), new THREE.Vector3(0, 0, 0), 1500); ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.15; }
+function animateCamera(endPos, endTarget, duration, callback) { const startPos = cam.position.clone(), startTarget = ctrl.target.clone(); const startTime = performance.now(); camAnim = function(now) { const t = Math.min((now - startTime) / duration, 1); const ease = 1 - Math.pow(1 - t, 3); cam.position.lerpVectors(startPos, endPos, ease); ctrl.target.lerpVectors(startTarget, endTarget, ease); if (t < 1) requestAnimationFrame(camAnim); else { camAnim = null; if (callback) callback(); } }; requestAnimationFrame(camAnim); }
 
-/* ═══════════ EVENTS ═══════════ */
 function setupEvents() {
-  document.querySelectorAll('[data-m]').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('[data-m]').forEach(b => b.classList.remove('on')); btn.classList.add('on'); S.mode = btn.dataset.m;
-      if (S.mode === 'mercury') ['surf'].forEach(id => { if (S.layers[id]) toggleLayer(id, true); });
-      if (S.mode === 'magneto') ['mag'].forEach(id => toggleLayer(id, true));
-      if (S.mode === 'orbit') ['messenger', 'bepi', 'trails'].forEach(id => toggleLayer(id, true));
-    };
-  });
+  document.querySelectorAll('[data-m]').forEach(btn => { btn.onclick = () => { document.querySelectorAll('[data-m]').forEach(b => b.classList.remove('on')); btn.classList.add('on'); S.mode = btn.dataset.m; if (S.mode === 'mercury') ['surf'].forEach(id => { if (S.layers[id]) toggleLayer(id, true); }); if (S.mode === 'magneto') ['mag'].forEach(id => toggleLayer(id, true)); if (S.mode === 'orbit') ['messenger', 'bepi', 'trails'].forEach(id => toggleLayer(id, true)); }; });
   document.getElementById('tourBtn').onclick = startTour;
   document.getElementById('relBtn').onclick = () => { S.relVis = !S.relVis; document.getElementById('relPan').classList.toggle('vis', S.relVis); document.getElementById('relBtn').classList.toggle('on', S.relVis); };
   document.getElementById('mobBtn').onclick = () => { const p = document.getElementById('lpan'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; };
   document.getElementById('launchBtn').onclick = launchAnimation;
   ren.domElement.addEventListener('click', onCanvasClick);
-  ren.domElement.addEventListener('pointermove', e => {
-    mouse.x = (e.clientX / innerWidth) * 2 - 1; mouse.y = -(e.clientY / innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, cam);
-    const all = [...Object.values(satMeshes)]; const hit = raycaster.intersectObjects(all, false);
-    ren.domElement.style.cursor = hit.length ? 'pointer' : 'crosshair';
-  });
-  window.addEventListener('keydown', e => {
-    if (e.code === 'Space') { e.preventDefault(); ctrl.autoRotate = !ctrl.autoRotate; }
-    if (e.code === 'KeyL') launchAnimation();
-    if (e.code === 'Escape') { closeViewer(); if (S.focus) releaseFocus(); document.getElementById('dpan').classList.remove('vis'); }
-  });
+  ren.domElement.addEventListener('pointermove', e => { mouse.x = (e.clientX / innerWidth) * 2 - 1; mouse.y = -(e.clientY / innerHeight) * 2 + 1; raycaster.setFromCamera(mouse, cam); const all = [...Object.values(satMeshes)]; const hit = raycaster.intersectObjects(all, false); ren.domElement.style.cursor = hit.length ? 'pointer' : 'crosshair'; });
+  window.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); ctrl.autoRotate = !ctrl.autoRotate; } if (e.code === 'KeyL') launchAnimation(); if (e.code === 'Escape') { closeViewer(); if (S.focus) releaseFocus(); document.getElementById('dpan').classList.remove('vis'); } });
 }
 
 function onCanvasClick(e) {
@@ -939,15 +541,7 @@ function onCanvasClick(e) {
   const satArr = Object.values(satMeshes).filter(m => m.visible); let hits = raycaster.intersectObjects(satArr, false);
   if (hits.length > 0) { openViewer(hits[0].object.userData.sat); return; }
   hits = raycaster.intersectObject(merMesh);
-  if (hits.length > 0) {
-    showDetail('Mercury', 'Terrestrial Planet · 1st Planet',
-      'The smallest and innermost planet. Mercury has no atmosphere to retain heat, leading to the most extreme temperature swings in the solar system. It is a dense, heavily cratered world with a massive iron core.',
-      [['Mass', '3.301×10²³ kg (0.055× Earth)', 'var(--accent)'], ['Diameter', '4,880 km (0.38× Earth)', 'var(--accent)'],
-       ['Day Length', '176 Earth Days (Solar)', 'var(--gold)'], ['Year Length', '88 Earth days', 'var(--gold)'],
-       ['Distance from Sun', '57.9 million km', 'var(--ice)'], ['Moons', '0', 'var(--text)'],
-       ['Surface Temp', '-180 to 430°C', 'var(--err)'], ['Atm. Pressure', '~0 (Trace Exosphere)', 'var(--warn)']], 'https://science.nasa.gov/mercury/');
-    return;
-  }
+  if (hits.length > 0) { showDetail('Mercury', 'Terrestrial Planet · 1st Planet', 'The smallest and innermost planet. Mercury has no atmosphere to retain heat, leading to the most extreme temperature swings in the solar system. It is a dense, heavily cratered world with a massive iron core.', [['Mass', '3.301×10²³ kg (0.055× Earth)', 'var(--accent)'], ['Diameter', '4,880 km (0.38× Earth)', 'var(--accent)'], ['Day Length', '176 Earth Days (Solar)', 'var(--gold)'], ['Year Length', '88 Earth days', 'var(--gold)'], ['Distance from Sun', '57.9 million km', 'var(--ice)'], ['Moons', '0', 'var(--text)'], ['Surface Temp', '-180 to 430°C', 'var(--err)'], ['Atm. Pressure', '~0 (Trace Exosphere)', 'var(--warn)']], 'https://science.nasa.gov/mercury/'); return; }
   document.getElementById('dpan').classList.remove('vis');
 }
 
@@ -955,33 +549,21 @@ function launchAnimation() {
   if (S.launching) return; S.launching = true; ctrl.enabled = false; ctrl.autoRotate = false;
   const startPos = cam.position.clone(); const endPos = new THREE.Vector3(ER * 1.5, ER * 0.5, 0); const target = new THREE.Vector3(0,0,0);
   const duration = 6000, start = performance.now(); toast('Executing Solar Flyby Sequence...');
-  function anim(now) {
-    const elapsed = now - start, t = Math.min(elapsed / duration, 1); const ease = 1 - Math.pow(1 - t, 3);
-    cam.position.lerpVectors(startPos, endPos, ease); cam.lookAt(0,0,0);
-    if (t > .5) ren.toneMappingExposure = 1.0 + (t - .5) * 2.0; // Overexpose from heat
-    if (t < 1) requestAnimationFrame(anim);
-    else { ctrl.enabled = true; S.launching = false; toast('Flyby complete. Returning to safe orbit.'); setTimeout(() => { ren.toneMappingExposure = 1.0; cam.position.set(7, 2.5, 7); }, 2000); }
-  } requestAnimationFrame(anim);
+  function anim(now) { const elapsed = now - start, t = Math.min(elapsed / duration, 1); const ease = 1 - Math.pow(1 - t, 3); cam.position.lerpVectors(startPos, endPos, ease); cam.lookAt(0,0,0); if (t > .5) ren.toneMappingExposure = 1.0 + (t - .5) * 2.0; if (t < 1) requestAnimationFrame(anim); else { ctrl.enabled = true; S.launching = false; toast('Flyby complete. Returning to safe orbit.'); setTimeout(() => { ren.toneMappingExposure = 1.1; cam.position.set(7, 2.5, 7); }, 2000); } }
+  requestAnimationFrame(anim);
 }
 
-/* ═══════════ ANIMATE ═══════════ */
 function animate() {
   requestAnimationFrame(animate); const dt = clock.getDelta(), t = clock.getElapsedTime();
   if (S.playing && S.timeOffset === 0) S.simTime = new Date();
   const sunDir = getSunDir();
-  
   if (scene.userData.sunMesh) scene.userData.sunMesh.position.copy(sunDir.clone().multiplyScalar(100));
   if (merMesh) { merMesh.material.uniforms.uTime.value = t; merMesh.material.uniforms.uSunDir.value.copy(sunDir); }
-  
-  // 3:2 Spin-Orbit Resonance means it spins very slowly (58.6 Earth days per rotation)
   if (merGroup) merGroup.rotation.y += .0001; 
-  
   const now = performance.now() / 1000;
   Object.entries(satMeshes).forEach(([id, mesh]) => { const sat = mesh.userData.sat; if (!sat || !sat.period) return; mesh.position.copy(getSatPos(sat, now)); });
-  
   if (starMesh && starMesh.material.uniforms) starMesh.material.uniforms.uT.value = t;
   if (milkywayMesh) milkywayMesh.rotation.y += 0.00002;
-  
   if (S.focus && !camAnim && !S.launching && !S.touring) ctrl.target.lerp(S.focus.position, 0.1);
   if (S.introDone && !camAnim && !S.touring) ctrl.update();
   composer.render(); if (rvAnimating) animateViewer();
