@@ -13,24 +13,30 @@
 body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;cursor:grab}
 body.dragging{cursor:grabbing}
 canvas{display:block;position:fixed;inset:0;z-index:0}
+
+#letterbox-top, #letterbox-bottom { position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 45; transition: height 1.2s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+#letterbox-top { top: 0; border-bottom: 1px solid rgba(232,160,53,0.1); }
+#letterbox-bottom { bottom: 0; border-top: 1px solid rgba(232,160,53,0.1); }
+body.cinematic #letterbox-top, body.cinematic #letterbox-bottom { height: 60px; }
+
 .nav-tab{padding:5px 14px;border-radius:9999px;font-size:12px;font-weight:400;color:rgba(255,255,255,.35);transition:all .35s ease;border:none;background:none;cursor:pointer;letter-spacing:.03em;white-space:nowrap}
-.nav-tab:hover{color:rgba(255,255,255,.65)}
-.nav-tab.active{color:#fff;background:rgba(255,255,255,.08);font-weight:500}
+.nav-tab:hover{color:rgba(255,255,255,.85)}
+.nav-tab.active{color:#fff;background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04));font-weight:500;box-shadow:0 0 12px rgba(232,160,53,0.15)}
 .nav-tab.warping{pointer-events:none;opacity:.4}
 #detail-panel{transform:translateX(100%);transition:transform .7s cubic-bezier(.22,1,.36,1)}
 #detail-panel.open{transform:translateX(0)}
-.glass-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:12px 14px}
+.glass-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px 14px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .stat-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .stat-label{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.04em}
-.stat-value{font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(255,255,255,.75);text-align:right}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(255,255,255,.85);text-align:right}
 .stat-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.28);margin-top:2px}
-.section-title{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:10px;font-weight:500}
+.section-title{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;font-weight:500;border-left:2px solid var(--accent);padding-left:8px}
 #tooltip{transition:opacity .25s ease}
 #loading{transition:opacity 1.2s ease}
 @keyframes pulse-ring{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.5);opacity:0}}
 .pulse-ring{animation:pulse-ring 2s ease-out infinite}
 @keyframes scanline{0%{top:-4px}100%{top:100%}}
-#warp-hud .scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(232,160,53,.15),transparent);animation:scanline 2.5s linear infinite;pointer-events:none}
+#warp-hud .scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(232,160,53,.25),transparent);animation:scanline 2.5s linear infinite;pointer-events:none}
 #warp-hud .scanline:nth-child(2){animation-delay:.8s;opacity:.5}
 #warp-hud .scanline:nth-child(3){animation-delay:1.6s;opacity:.3}
 @keyframes warpPulse{0%,100%{opacity:.5}50%{opacity:1}}
@@ -39,7 +45,10 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 #bottom-stats.hidden-stat{opacity:0;transform:translateY(10px);pointer-events:none}
 #detail-panel::-webkit-scrollbar{width:3px}
 #detail-panel::-webkit-scrollbar-track{background:transparent}
-#detail-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+#detail-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+#audio-vis {display:flex;gap:3px;align-items:flex-end;height:18px;cursor:pointer;}
+#audio-vis span {width:3px;background:var(--accent);height:20%;transition:height .1s ease;opacity:.8;}
+
 @media(max-width:768px){
 .nav-tab{padding:4px 10px;font-size:11px}
 #bottom-stats .glass-card{min-width:180px!important;padding:10px 12px}
@@ -53,24 +62,33 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 </style>
 </head>
 <body>
+<div id="letterbox-top"></div>
+<div id="letterbox-bottom"></div>
 <div id="canvas-container"></div>
 
 <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3" role="navigation" aria-label="Black hole selection">
 <div class="flex items-center gap-2.5">
 <div class="relative w-2 h-2"><div class="absolute inset-0 rounded-full bg-amber-400"></div><div class="absolute inset-0 rounded-full border border-amber-400/60 pulse-ring"></div></div>
-<span class="text-xs font-light tracking-[.35em] uppercase text-white/50 hidden sm:inline">Singularity</span>
+<span class="text-xs font-light tracking-[.35em] uppercase text-white/50 hidden sm:inline">ASTROPHILE</span>
 </div>
 <div class="flex gap-0.5 bg-white/[.04] backdrop-blur-xl rounded-full p-1 border border-white/[.04]" role="tablist" id="tab-bar">
 <button class="nav-tab active" data-index="0" role="tab" aria-selected="true">Cygnus X-1</button>
 <button class="nav-tab" data-index="1" role="tab" aria-selected="false">Sagittarius A*</button>
 <button class="nav-tab" data-index="2" role="tab" aria-selected="false">M87*</button>
+<button class="nav-tab" data-index="3" role="tab" aria-selected="false">TON 618</button>
 </div>
+<div class="flex items-center gap-3">
+<div id="audio-vis" class="hidden sm:flex" title="Enable Ambient Audio"><span></span><span></span><span></span><span></span><span></span></div>
+<button id="cinematic-toggle" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/[.04] border border-white/[.06] text-white/40 hover:text-white/70 hover:bg-white/[.08] transition-all" aria-label="Toggle cinematic mode"><i class="fas fa-film text-xs"></i></button>
 <button id="info-toggle" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/[.04] border border-white/[.06] text-white/40 hover:text-white/70 hover:bg-white/[.08] transition-all" aria-label="Toggle info panel"><i class="fas fa-bars text-xs"></i></button>
+</div>
 </nav>
 
 <div id="bottom-stats" class="fixed bottom-5 left-5 z-50">
 <div class="glass-card backdrop-blur-2xl min-w-[230px]">
-<div class="text-[10px] tracking-[.2em] uppercase text-amber-400/70 mb-1.5 font-medium" id="stat-type">Stellar-Mass Black Hole</div>
+<div class="flex items-center gap-2 mb-1.5">
+<div class="text-[10px] tracking-[.2em] uppercase text-amber-400/70 font-medium" id="stat-type">Stellar-Mass Black Hole</div>
+</div>
 <h2 class="text-lg font-semibold mb-2.5 tracking-tight" id="stat-name">Cygnus X-1</h2>
 <div class="space-y-1.5">
 <div class="stat-row"><span class="stat-label">Mass</span><span class="stat-value" id="stat-mass">21.2 M☉</span></div>
@@ -80,15 +98,18 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 </div>
 </div>
 
-<div id="hint" class="fixed bottom-5 right-5 z-50 text-[10px] tracking-[.15em] uppercase text-white/20 transition-opacity duration-1000 hidden sm:block">
-<i class="fas fa-arrows-alt mr-1.5 text-[8px]"></i>Drag to orbit &nbsp; <i class="fas fa-search-plus mr-1.5 text-[8px]"></i>Scroll to zoom &nbsp; <i class="fas fa-hand-pointer mr-1.5 text-[8px]"></i>Click for details
+<div id="hint" class="fixed bottom-5 right-5 z-50 text-[10px] tracking-[.15em] uppercase text-white/30 transition-opacity duration-1000 hidden sm:flex items-center gap-4">
+<span><i class="fas fa-arrows-alt mr-1.5 text-[8px]"></i>Orbit</span>
+<span><i class="fas fa-search-plus mr-1.5 text-[8px]"></i>Zoom</span>
+<span><i class="fas fa-hand-pointer mr-1.5 text-[8px]"></i>Details</span>
 </div>
 
 <div id="detail-panel" class="fixed top-0 right-0 bottom-0 w-[400px] z-50" role="dialog" aria-label="Black hole details">
-<div class="h-full bg-black/75 backdrop-blur-3xl border-l border-white/[.04] p-6 sm:p-7 overflow-y-auto">
+<div class="h-full bg-black/80 backdrop-blur-3xl border-l border-white/[.06] p-6 sm:p-7 overflow-y-auto">
 <button id="close-panel" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/[.04] text-white/40 hover:text-white hover:bg-white/[.08] transition-all" aria-label="Close panel"><i class="fas fa-times text-sm"></i></button>
 <div class="text-[10px] tracking-[.2em] uppercase text-amber-400/70 mb-1.5 font-medium" id="panel-type"></div>
-<h2 class="text-2xl sm:text-3xl font-bold mb-5 tracking-tight" id="panel-name"></h2>
+<h2 class="text-2xl sm:text-3xl font-bold mb-1 tracking-tight" id="panel-name"></h2>
+<div class="text-xs text-white/30 mb-5 font-mono" id="panel-sector"></div>
 <div class="space-y-5">
 <div><div class="section-title">Physical Properties</div><div class="space-y-2.5">
 <div class="glass-card"><div class="stat-label mb-0.5">Mass</div><div class="stat-value text-base" id="panel-mass"></div><div class="stat-sub" id="panel-mass-kg"></div></div>
@@ -97,52 +118,47 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 <div class="glass-card"><div class="stat-label mb-0.5">Accretion Rate</div><div class="stat-value text-base" id="panel-accretion"></div></div>
 <div class="glass-card"><div class="stat-label mb-0.5">Spin Parameter</div><div class="stat-value text-base" id="panel-spin"></div></div>
 </div></div>
-<div><div class="section-title">Discovery History</div><p class="text-[13px] text-white/50 leading-relaxed" id="panel-discovery"></p></div>
-<div><div class="section-title">Formation Process</div><p class="text-[13px] text-white/50 leading-relaxed" id="panel-formation"></p></div>
+<div><div class="section-title">Discovery History</div><p class="text-[13px] text-white/55 leading-relaxed" id="panel-discovery"></p></div>
+<div><div class="section-title">Formation Process</div><p class="text-[13px] text-white/55 leading-relaxed" id="panel-formation"></p></div>
 </div></div>
 </div>
 
-<!-- WARP HUD -->
 <div id="warp-hud" class="fixed inset-0 z-40 pointer-events-none" style="opacity:0;transition:opacity .5s ease">
 <div class="scanline"></div><div class="scanline"></div><div class="scanline"></div>
-<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute inset-0 bg-black/30"></div>
 <div class="absolute inset-0 flex flex-col items-center justify-center">
 <div class="warp-ring-wrap relative w-36 h-36 sm:w-44 sm:h-44 mb-5">
 <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
 <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
 <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,.025)" stroke-width=".5" stroke-dasharray="3 6"/>
-<circle id="warp-ring" cx="60" cy="60" r="54" fill="none" stroke="rgba(232,160,53,.7)" stroke-width="1.5" stroke-dasharray="339.3" stroke-dashoffset="339.3" stroke-linecap="round"/>
-<circle id="warp-ring2" cx="60" cy="60" r="54" fill="none" stroke="rgba(100,160,255,.3)" stroke-width=".8" stroke-dasharray="339.3" stroke-dashoffset="339.3" stroke-linecap="round"/>
+<circle id="warp-ring" cx="60" cy="60" r="54" fill="none" stroke="rgba(232,160,53,.8)" stroke-width="1.5" stroke-dasharray="339.3" stroke-dashoffset="339.3" stroke-linecap="round" style="filter:drop-shadow(0 0 4px rgba(232,160,53,.6))"/>
+<circle id="warp-ring2" cx="60" cy="60" r="54" fill="none" stroke="rgba(100,160,255,.4)" stroke-width=".8" stroke-dasharray="339.3" stroke-dashoffset="339.3" stroke-linecap="round"/>
 </svg>
 <div class="absolute inset-0 flex flex-col items-center justify-center">
-<div class="text-[9px] tracking-[.3em] uppercase text-white/25 mb-0.5">Velocity</div>
+<div class="text-[9px] tracking-[.3em] uppercase text-white/30 mb-0.5">Velocity</div>
 <div class="text-xl sm:text-2xl font-mono text-white/90 tracking-tight" id="warp-speed">0.00c</div>
-<div class="text-[9px] font-mono text-amber-400/40 mt-0.5" id="warp-factor">Warp 0</div>
+<div class="text-[9px] font-mono text-amber-400/50 mt-0.5" id="warp-factor">Warp 0</div>
 </div>
 </div>
 <div class="text-center mb-3">
-<div class="text-[9px] tracking-[.25em] uppercase text-white/25 mb-1">Distance Traversed</div>
+<div class="text-[9px] tracking-[.25em] uppercase text-white/30 mb-1">Distance Traversed</div>
 <div class="text-base sm:text-lg font-mono text-amber-400/80 tracking-tight" id="warp-distance">0 ly</div>
 </div>
 <div class="text-center mb-4">
-<div class="text-[9px] tracking-[.25em] uppercase text-white/20 mb-1">Destination</div>
-<div class="text-sm font-light tracking-wider text-white/50" id="warp-dest">—</div>
+<div class="text-[9px] tracking-[.25em] uppercase text-white/25 mb-1">Destination</div>
+<div class="text-sm font-light tracking-wider text-white/60" id="warp-dest">—</div>
 </div>
 <div class="flex gap-6 text-center">
-<div><div class="text-[9px] tracking-[.2em] uppercase text-white/20 mb-0.5">ETA</div><div class="text-xs font-mono text-white/40" id="warp-eta">—</div></div>
-<div><div class="text-[9px] tracking-[.2em] uppercase text-white/20 mb-0.5">Sector</div><div class="text-xs font-mono text-white/40" id="warp-sector">—</div></div>
+<div><div class="text-[9px] tracking-[.2em] uppercase text-white/25 mb-0.5">ETA</div><div class="text-xs font-mono text-white/50" id="warp-eta">—</div></div>
+<div><div class="text-[9px] tracking-[.2em] uppercase text-white/25 mb-0.5">Sector</div><div class="text-xs font-mono text-white/50" id="warp-sector">—</div></div>
 </div>
 </div>
 <div class="absolute top-16 left-0 right-0 text-center">
-<div class="text-[10px] tracking-[.5em] uppercase text-amber-400/40 warp-pulse" id="warp-status">Standby</div>
+<div class="text-[10px] tracking-[.5em] uppercase text-amber-400/60 warp-pulse" id="warp-status">Standby</div>
 </div>
 <div class="absolute bottom-8 left-0 right-0 text-center">
-<div class="text-[9px] font-mono text-white/15 tracking-wider" id="warp-coord">X: 0.000 Y: 0.000 Z: 0.000</div>
+<div class="text-[9px] font-mono text-white/25 tracking-wider" id="warp-coord">X: 0.000 Y: 0.000 Z: 0.000</div>
 </div>
-</div>
-
-<div id="tooltip" class="fixed z-50 pointer-events-none opacity-0">
-<div class="glass-card backdrop-blur-xl px-3 py-2 text-[11px] text-white/60 max-w-[240px] leading-relaxed" id="tooltip-text"></div>
 </div>
 
 <div id="loading" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center">
@@ -151,7 +167,7 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 <div class="absolute inset-0 rounded-full border border-amber-400/50 border-t-transparent" style="animation:spin 1s linear infinite"></div>
 <div class="absolute inset-2 rounded-full border border-amber-400/25 border-b-transparent" style="animation:spin 1.6s linear infinite reverse"></div>
 </div>
-<div class="text-[10px] tracking-[.4em] uppercase text-white/30">Calibrating Warp Cores</div>
+<div class="text-[10px] tracking-[.4em] uppercase text-white/40">Calibrating Warp Cores</div>
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
@@ -166,173 +182,445 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-/* ============ DATA ============ */
+/* ============ BLACK HOLE DATA ============ */
 const BH_DATA = [
   { name:'Cygnus X-1', type:'Stellar-Mass Black Hole', sector:'CYG-7A',
     mass:'21.2 M☉', massKg:'4.2 × 10³¹ kg', radius:'62 km',
     eventHorizon:'Schwarzschild radius: 62.4 km', distance:'6,070 light-years',
-    discovery:'First identified in 1964 as a powerful X-ray source during a suborbital rocket flight. Confirmed as a black hole candidate in the 1970s when astronomers measured the orbital dynamics of its companion star HDE 226868, a blue supergiant. The mass of the compact object exceeded the maximum possible for a neutron star, making it the first widely accepted black hole.',
-    formation:'Formed approximately 5 million years ago from the core-collapse supernova of a massive star exceeding 25 solar masses. The iron core collapsed past the neutron degeneracy limit into a singularity. Surrounding material formed an accretion disk fed by stellar wind from the companion at ~10⁻⁹ solar masses per year.',
-    accretion:'~10⁻⁹ M☉/year', spin:'High (a* > 0.9)',
-    position:new THREE.Vector3(0,0,0), scale:1, diskInner:1.6, diskOuter:7, maxBeta:.45, cameraDist:18,
-    tip:'Cygnus X-1 strips material from its companion star at 500 km/s, heating the accretion disk to over 10 million Kelvin.'
+    discovery:'First identified in 1964 as a powerful X-ray source. Confirmed as a black hole candidate in the 1970s.',
+    formation:'Formed ~5 million years ago from the core-collapse supernova of a massive star.',
+    accretion:'~10⁻⁸ M☉/year', spin:'High (a* > 0.9)',
+    diskInner:2.0, diskOuter:6.5, doppler:0.95, jet:0.0, tempScale:0.85, turb:5.5, diskThickness:0.9,
+    colorTint:[1.0, 0.38, 0.08], jetWidth:0.0, jetLength:0.0, cameraDist:14.0, camHeight:1.6,
+    companionStar:1.0, companionPos:[9.5, 1.8, 1.0], orbitingStars:0.0,
+    hotSpotIntensity:1.8, spiralStrength:0.35, photonRingIntensity:0.8, frameDrag:0.9
   },
   { name:'Sagittarius A*', type:'Supermassive Black Hole', sector:'SGR-CORE',
     mass:'4.3 × 10⁶ M☉', massKg:'8.6 × 10³⁶ kg', radius:'12.7 million km',
-    eventHorizon:'Schwarzschild radius: 12.74 million km (0.085 AU)', distance:'26,000 light-years',
-    discovery:'Inferred from stellar dynamics near the Galactic Center in the 1970s–80s. Stars orbiting Sgr A* (especially S2, with a 16-year period) precisely constrained its mass. Directly imaged by the Event Horizon Telescope in May 2022. Reinhard Genzel and Andrea Ghez received the 2020 Nobel Prize for this work.',
-    formation:'Grew over billions of years through hierarchical accretion and mergers with smaller black holes during galactic collisions. The seed likely formed from direct collapse of a massive primordial gas cloud or a Population III star, then grew through sustained accretion.',
-    accretion:'~10⁻⁸ M☉/year (quiescent)', spin:'Moderate (a* ~ 0.5–0.9)',
-    position:new THREE.Vector3(180,25,-110), scale:5, diskInner:1.5, diskOuter:12, maxBeta:.55, cameraDist:70,
-    tip:'Sagittarius A*\'s event horizon is 12.7 million km wide — yet it sits 26,000 light-years away, smaller than a coin on the Moon.'
+    eventHorizon:'Schwarzschild radius: 12.74 million km', distance:'26,000 light-years',
+    discovery:'Inferred from stellar dynamics. Directly imaged by the EHT in May 2022.',
+    formation:'Grew over billions of years through hierarchical accretion.',
+    accretion:'~10⁻⁹ M☉/year (quiescent)', spin:'Moderate (a* ~ 0.5–0.9)',
+    diskInner:3.0, diskOuter:12.0, doppler:0.28, jet:0.0, tempScale:0.45, turb:0.7, diskThickness:0.1,
+    colorTint:[0.82, 0.6, 0.2], jetWidth:0.0, jetLength:0.0, cameraDist:26.0, camHeight:0.35,
+    companionStar:0.0, companionPos:[0,0,0], orbitingStars:1.0,
+    hotSpotIntensity:0.25, spiralStrength:0.06, photonRingIntensity:1.6, frameDrag:0.4
   },
   { name:'M87*', type:'Supermassive Black Hole', sector:'VIR-A',
     mass:'6.5 × 10⁹ M☉', massKg:'1.3 × 10⁴⁰ kg', radius:'19.2 billion km',
-    eventHorizon:'Schwarzschild radius: 19.2 billion km (128 AU)', distance:'53 million light-years',
-    discovery:'First black hole directly imaged by the EHT collaboration, announced April 10, 2019. The image revealed a bright asymmetric ring surrounding a dark central shadow, matching general relativity predictions in the strong-field regime. The asymmetry is consistent with relativistic beaming from a spinning black hole.',
-    formation:'Grew through billions of years of hierarchical merging and accretion. Host galaxy Messier 87 is a giant elliptical at the center of the Virgo Cluster, formed through numerous galactic mergers. Each merger delivered gas and smaller black holes.',
-    accretion:'~0.1–0.3 M☉/year', spin:'High (a* > 0.9)', hasJet:true,
-    position:new THREE.Vector3(-160,-20,130), scale:10, diskInner:1.5, diskOuter:14, maxBeta:.65, cameraDist:110,
-    tip:'M87*\'s relativistic jet extends 5,000 light-years into intergalactic space, ejecting matter at 99.5% the speed of light.'
+    eventHorizon:'Schwarzschild radius: 19.2 billion km', distance:'53 million light-years',
+    discovery:'First black hole directly imaged by the EHT, announced April 10, 2019.',
+    formation:'Grew through billions of years of hierarchical merging.',
+    accretion:'~0.1–0.3 M☉/year', spin:'High (a* > 0.9)',
+    diskInner:4.0, diskOuter:18.0, doppler:0.78, jet:1.8, tempScale:1.3, turb:1.6, diskThickness:0.35,
+    colorTint:[0.7, 0.82, 1.0], jetWidth:3.5, jetLength:70.0, cameraDist:42.0, camHeight:4.5,
+    companionStar:0.0, companionPos:[0,0,0], orbitingStars:0.0,
+    hotSpotIntensity:0.7, spiralStrength:0.25, photonRingIntensity:2.0, frameDrag:0.85
+  },
+  { name:'TON 618', type:'Ultramassive Black Hole', sector:'UMA-BOOTES',
+    mass:'6.6 × 10¹⁰ M☉', massKg:'1.3 × 10⁴¹ kg', radius:'1,300 AU',
+    eventHorizon:'Schwarzschild radius: ~195 billion km', distance:'10.4 billion light-years',
+    discovery:'Initially cataloged as a faint blue star. Revealed as a quasar in the 1970s.',
+    formation:'Formed via direct collapse of massive primordial gas clouds.',
+    accretion:'~500 M☉/year (quasar)', spin:'Extreme (a* ~ 0.9+)',
+    diskInner:5.0, diskOuter:38.0, doppler:1.0, jet:4.5, tempScale:2.0, turb:1.2, diskThickness:0.55,
+    colorTint:[0.3, 0.6, 1.0], jetWidth:9.0, jetLength:160.0, cameraDist:80.0, camHeight:12.0,
+    companionStar:0.0, companionPos:[0,0,0], orbitingStars:0.0,
+    hotSpotIntensity:2.2, spiralStrength:0.65, photonRingIntensity:2.8, frameDrag:0.95
   }
 ];
 
-/* Warp distances (light-years) between each pair */
-const WARP_DIST = { '0-1':19930, '1-0':19930, '0-2':53000000, '2-0':53000000, '1-2':53000000, '2-1':53000000 };
-
-/* ============ GLOBALS ============ */
-let scene, camera, renderer, composer, controls;
-let lensingPass, warpPass, bloomPass;
-let starField, blackHoles = [], hitboxes = [];
-let currentBH = 0;
-let targetCamPos = new THREE.Vector3(), targetLookAt = new THREE.Vector3();
-let isTransitioning = false, panelOpen = false;
-let mouseDown = {x:0,y:0}, wasDrag = false;
-let mouseNDC = new THREE.Vector2(-9,-9);
-let raycaster = new THREE.Raycaster();
-let clock = new THREE.Clock();
-let hoveredBH = -1;
-const defaultBloom = 1.4;
-
-/* Warp state */
-let warp = { active:false, from:0, to:0, start:0, dur:2.5, dist:0, speed:0, traveled:0, intensity:0 };
-let warpStartPos = new THREE.Vector3();
-let warpStartTarget = new THREE.Vector3();
-
-/* ============ SHADERS ============ */
-const diskVert = `varying vec3 vWP;void main(){vWP=(modelMatrix*vec4(position,1.0)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vWP,1.0);}`;
-
-const diskFrag = `precision highp float;
-uniform float uTime,uInner,uOuter,uMaxBeta,uScale,uHover;
-varying vec3 vWP;
-vec3 bbC(float t){t=clamp(t,0.,1.);vec3 c;if(t<.2)c=mix(vec3(.12,.02,.005),vec3(.6,.12,.03),t/.2);else if(t<.45)c=mix(vec3(.6,.12,.03),vec3(1.,.55,.12),(t-.2)/.25);else if(t<.7)c=mix(vec3(1.,.55,.12),vec3(1.,.88,.55),(t-.45)/.25);else c=mix(vec3(1.,.88,.55),vec3(.88,.94,1.),(t-.7)/.3);return c;}
-float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
-float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p*=2.1;a*=.48;}return v;}
-void main(){
-  float r=length(vWP.xz),a=atan(vWP.z,vWP.x);
-  float nr=clamp((r-uInner)/(uOuter-uInner),0.,1.);
-  float temp=pow(max(1.-nr,.005),.75);
-  float beta=uMaxBeta*pow(max(1.-nr,.005),.5);
-  float rotSpd=1./pow(max(r/uInner,1.),1.5);
-  float ra=a+uTime*rotSpd*.25;
-  float doppler=1./(1.-beta*sin(ra));doppler=clamp(doppler,.15,7.);
-  float eTemp=clamp(temp*sqrt(doppler),0.,1.);
-  vec3 col=bbC(eTemp);
-  float bright=pow(doppler,3.)*temp;
-  bright*=smoothstep(0.,.06,nr)*smoothstep(1.,.55,nr);
-  float n=fbm(vec2(a*5.,r*2.5+uTime*.4))*.6+.4;
-  bright*=.7+.3*n;
-  float spiral=sin(a*2.5-log(max(r,.1))*4.5+uTime*.15)*.5+.5;
-  bright*=.82+.18*spiral;
-  float hotSpot=exp(-pow((ra-uTime*.8)/(3.14159*.15),2.))*.3;
-  bright+=hotSpot*temp;
-  bright*=1.+uHover*.3;
-  float alpha=clamp(bright*1.8,0.,1.);
-  gl_FragColor=vec4(col*bright*2.8,alpha);
-}`;
-
-const photonVert = `varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
-const photonFrag = `precision highp float;uniform float uTime;varying vec3 vP;void main(){float a=atan(vP.z,vP.x);float b=.75+.25*sin(a*2.+uTime*.4);vec3 c=mix(vec3(1.,.85,.6),vec3(.9,.95,1.),b);gl_FragColor=vec4(c*b*3.5,b*.9);}`;
-
-const starVert = `attribute vec3 aCol;attribute float aSize;attribute float aPhase;uniform float uTime,uPR;varying vec3 vCol;varying float vA;
-void main(){vCol=aCol;vA=.7+.3*sin(uTime*(.8+aPhase*.5)+aPhase*12.);vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=max(.5,aSize*uPR*(180./-mv.z));}`;
-const starFrag = `varying vec3 vCol;varying float vA;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d))*vA;gl_FragColor=vec4(vCol,a);}`;
-
-const infallVert = `attribute float aPhase;attribute float aAngle;attribute float aRadOff;attribute float aSpd;
-uniform float uTime,uInner,uOuter,uScale;
-varying float vLife,vTemp;
-void main(){
-  float life=fract(uTime*aSpd*.12+aPhase);
-  vLife=life;
-  float r=mix(uOuter*(1.+aRadOff*.4),uInner, pow(life,.6));
-  float ang=aAngle+life*14.*(1.+(1.-life)*4.);
-  vec3 p=vec3(cos(ang)*r, sin(life*3.14)*.08*uScale, sin(ang)*r);
-  vTemp=1.-life;
-  vec4 mv=modelViewMatrix*vec4(p,1.);
-  gl_Position=projectionMatrix*mv;
-  gl_PointSize=max(.5,(1.8-life*1.2)*uScale*(140./-mv.z));
-}`;
-const infallFrag = `varying float vLife,vTemp;void main(){
-  float d=length(gl_PointCoord-.5)*2.;if(d>1.)discard;
-  float a=(1.-d*d)*(1.-vLife)*.5;
-  vec3 c;if(vTemp>.7)c=mix(vec3(1.,.8,.5),vec3(1.,1.,.9),(vTemp-.7)/.3);
-  else if(vTemp>.4)c=mix(vec3(1.,.4,.1),vec3(1.,.8,.5),(vTemp-.4)/.3);
-  else if(vTemp>.1)c=mix(vec3(.8,.1,.05),vec3(1.,.4,.1),(vTemp-.1)/.3);
-  else c=mix(vec3(.15,.01,.005),vec3(.8,.1,.05),vTemp/.1);
-  gl_FragColor=vec4(c*2.,a);
-}`;
-
-const jetVert = `attribute float aAlpha;attribute float aSpeed;attribute float aOffset;uniform float uTime,uScale;varying float vA;
-void main(){vA=aAlpha;vec3 p=position;float h=abs(p.y);float maxH=45.*uScale;p.y+=sign(p.y)*uTime*aSpeed*uScale*.6;p.y=sign(p.y)*mod(abs(p.y),maxH);
-vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=max(1.,(1.5+aAlpha*2.5)*uScale*(250./-mv.z));}`;
-const jetFrag = `varying float vA;void main(){float d=length(gl_PointCoord-.5)*2.;if(d>1.)discard;float a=(1.-d*d)*vA*.55;vec3 c=mix(vec3(.35,.45,1.),vec3(.75,.85,1.),vA);gl_FragColor=vec4(c*1.6,a);}`;
-
-/* Post-process: Gravitational Lensing + Wave Ripples */
-const LensingShader = {
-  uniforms:{tDiffuse:{value:null},uCenter:{value:new THREE.Vector2(.5,.5)},uER:{value:.1},uSR:{value:.03},uAspect:{value:1},uActive:{value:0},uTime:{value:0}},
-  vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-  fragmentShader:`precision highp float;
-    uniform sampler2D tDiffuse;uniform vec2 uCenter;uniform float uER,uSR,uAspect,uActive,uTime;varying vec2 vUv;
-    void main(){
-      vec2 uv=vUv;
-      if(uActive<.5){vec4 c=texture2D(tDiffuse,uv);float v=1.-smoothstep(.5,1.5,length(uv-.5)*1.8);c.rgb*=mix(.3,1.,v);gl_FragColor=c;return;}
-      vec2 delta=(uv-uCenter)*vec2(uAspect,1.);float dist=length(delta);
-      if(dist<uSR){gl_FragColor=vec4(0.,0.,0.,1.);return;}
-      vec2 dir=delta/max(dist,1e-5);float defl=0.;
-      if(dist<uER*5.){defl=uER*uER/dist;defl*=smoothstep(uER*5.,uER*1.5,dist);defl=min(defl,uER*4.);}
-      vec2 nd=delta-dir*defl;vec2 nuv=uCenter+nd/vec2(uAspect,1.);nuv=clamp(nuv,0.,1.);
-      vec4 c=texture2D(tDiffuse,nuv);
-      float ring=0.;if(dist>uSR&&dist<uER*3.5){ring=exp(-pow((dist-uER)/(uER*.35),2.))*.25;}
-      c.rgb+=vec3(ring*.7,ring*.5,ring*.3);
-      float waves=0.;
-      for(int i=0;i<3;i++){float ph=fract(uTime*.12+float(i)*.333);float wR=uER*(2.+ph*10.);float wW=uER*.2;waves+=exp(-pow((dist-wR)/wW,2.))*(1.-ph)*.055;}
-      c.rgb+=vec3(.3,.4,.8)*waves;
-      float v=1.-smoothstep(.5,1.5,length(uv-.5)*1.8);c.rgb*=mix(.3,1.,v);
-      gl_FragColor=c;
-    }`
+const WARP_DIST = {
+  '0-1':19930, '1-0':19930,
+  '0-2':53000000, '2-0':53000000,
+  '0-3':10400000000, '3-0':10400000000,
+  '1-2':53000000, '2-1':53000000,
+  '1-3':10400000000, '3-1':10400000000,
+  '2-3':10400000000, '3-2':10400000000
 };
 
-/* Post-process: Warp Drive Effect */
+let scene, camera, renderer, composer, controls;
+let raymarchPass, warpPass, bloomPass, filmPass;
+let clock = new THREE.Clock();
+let currentBH = 0;
+let panelOpen = false;
+let audioCtx, analyser, audioData, audioStarted = false;
+let lastInteraction = 0;
+
+let warp = { active:false, from:0, to:0, start:0, dur:2.5, dist:0, speed:0, traveled:0, intensity:0 };
+const defaultBloom = 0.85;
+
+/* ============ HIGHLY OPTIMIZED RAYMARCHING SHADER ============ */
+const RaymarchShader = {
+  uniforms: {
+    uTime: { value: 0 },
+    uCamPos: { value: new THREE.Vector3(0, 1.6, 14) },
+    uCamTarget: { value: new THREE.Vector3(0, 0, 0) },
+    uFov: { value: 55.0 },
+    uAspect: { value: window.innerWidth / window.innerHeight },
+    uDiskInner: { value: 2.0 },
+    uDiskOuter: { value: 6.5 },
+    uDoppler: { value: 0.95 },
+    uJet: { value: 0.0 },
+    uTempScale: { value: 0.85 },
+    uTurbulence: { value: 5.5 },
+    uDiskThickness: { value: 0.9 },
+    uColorTint: { value: new THREE.Vector3(1.0, 0.38, 0.08) },
+    uJetWidth: { value: 0.0 },
+    uJetLength: { value: 0.0 },
+    uWarp: { value: 0.0 },
+    uCompanionStar: { value: 1.0 },
+    uCompanionPos: { value: new THREE.Vector3(9.5, 1.8, 1.0) },
+    uOrbitingStars: { value: 0.0 },
+    uHotSpotIntensity: { value: 1.8 },
+    uSpiralStrength: { value: 0.35 },
+    uPhotonRingIntensity: { value: 0.8 },
+    uFrameDrag: { value: 0.9 }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv;
+
+    uniform float uTime;
+    uniform vec3 uCamPos;
+    uniform vec3 uCamTarget;
+    uniform float uFov;
+    uniform float uAspect;
+    uniform float uDiskInner;
+    uniform float uDiskOuter;
+    uniform float uDoppler;
+    uniform float uJet;
+    uniform float uTempScale;
+    uniform float uTurbulence;
+    uniform float uDiskThickness;
+    uniform vec3 uColorTint;
+    uniform float uJetWidth;
+    uniform float uJetLength;
+    uniform float uWarp;
+    uniform float uCompanionStar;
+    uniform vec3 uCompanionPos;
+    uniform float uOrbitingStars;
+    uniform float uHotSpotIntensity;
+    uniform float uSpiralStrength;
+    uniform float uPhotonRingIntensity;
+    uniform float uFrameDrag;
+
+    const float PI = 3.14159265;
+    const int MAX_STEPS = 90; // Reduced from 220 to 90 for massive performance gain
+
+    float hash(vec3 p) {
+        p = fract(p * 0.3183099 + .1);
+        p *= 17.0;
+        return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+    }
+
+    float noise(vec3 x) {
+        vec3 i = floor(x);
+        vec3 f = fract(x);
+        f = f*f*(3.0-2.0*f);
+        return mix(mix(mix(hash(i+vec3(0,0,0)), hash(i+vec3(1,0,0)),f.x),
+                       mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)),f.x),f.y),
+                   mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)),f.x),
+                       mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)),f.x),f.y),f.z);
+    }
+
+    // Reduced octaves from 5 to 3
+    float fbm(vec3 p) {
+        float v = 0.0;
+        float a = 0.5;
+        for(int i=0; i<3; i++) {
+            v += a * noise(p);
+            p *= 2.1;
+            a *= 0.5;
+        }
+        return v;
+    }
+
+    vec3 background(vec3 dir) {
+        vec3 col = vec3(0.0);
+
+        // Layer 1: bright stars
+        vec3 p1 = dir * 280.0;
+        vec3 id1 = floor(p1);
+        float h1 = hash(id1);
+        if(h1 > 0.992) {
+            float b = pow((h1 - 0.992) / 0.008, 4.0);
+            vec3 starCol = mix(vec3(0.8, 0.9, 1.0), vec3(1.0, 0.8, 0.5), hash(id1 + 7.3));
+            float twinkle = 0.7 + 0.3 * sin(uTime * 2.5 + h1 * 200.0);
+            col += starCol * b * 1.8 * twinkle;
+        }
+        // Layer 2: distant faint stars
+        vec3 p2 = dir * 550.0;
+        vec3 id2 = floor(p2);
+        float h2 = hash(id2 + 100.0);
+        if(h2 > 0.996) {
+            col += vec3(0.85, 0.9, 1.0) * pow((h2 - 0.996) / 0.004, 3.0) * 0.9;
+        }
+
+        // Nebula
+        float band1 = exp(-abs(dir.y - 0.08) * 3.5);
+        vec3 nebPos = dir * 4.5 + vec3(uTime * 0.008, 0.0, 0.0);
+        float n1 = fbm(nebPos);
+        float n2 = fbm(nebPos * 2.2 + 17.0);
+        vec3 nebColA = mix(vec3(0.04, 0.02, 0.12), vec3(0.35, 0.1, 0.08), n1);
+        vec3 nebColB = mix(vec3(0.02, 0.04, 0.1), vec3(0.08, 0.15, 0.35), n2);
+        col += (nebColA * n1 + nebColB * n2 * 0.6) * band1 * 0.35;
+
+        return col;
+    }
+
+    vec3 getDiskColor(float temp, float doppler, vec3 tint) {
+        vec3 col;
+        if(temp < 0.2) col = mix(vec3(0.12, 0.02, 0.005), vec3(0.45, 0.08, 0.02), temp / 0.2);
+        else if(temp < 0.4) col = mix(vec3(0.45, 0.08, 0.02), vec3(0.85, 0.25, 0.06), (temp - 0.2) / 0.2);
+        else if(temp < 0.6) col = mix(vec3(0.85, 0.25, 0.06), vec3(1.0, 0.55, 0.18), (temp - 0.4) / 0.2);
+        else if(temp < 0.8) col = mix(vec3(1.0, 0.55, 0.18), vec3(1.0, 0.82, 0.45), (temp - 0.6) / 0.2);
+        else col = mix(vec3(1.0, 0.82, 0.45), vec3(0.85, 0.92, 1.0), (temp - 0.8) / 0.2);
+
+        col = mix(col, col * tint, 0.65);
+        return col * pow(clamp(doppler, 0.12, 5.0), 2.5);
+    }
+
+    void main() {
+        vec3 forward = normalize(uCamTarget - uCamPos);
+        vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
+        vec3 up = cross(right, forward);
+
+        vec2 uv = vUv * 2.0 - 1.0;
+        float tanHalfFov = tan(uFov * 0.5 * PI / 180.0);
+        vec3 rayDir = normalize(forward + right * uv.x * tanHalfFov * uAspect + up * uv.y * tanHalfFov);
+
+        vec3 pos = uCamPos;
+        vec3 dir = rayDir;
+        vec3 color = vec3(0.0);
+        float transmittance = 1.0;
+        float minR = 9999.0;
+        bool hitHorizon = false;
+        float warpSpeedFactor = 1.0 + uWarp * 4.0;
+
+        for(int i = 0; i < MAX_STEPS; i++) {
+            // Early exit for opaque regions to save performance
+            if (transmittance < 0.02) break;
+
+            float r = length(pos);
+            minR = min(minR, r);
+            if(r < 1.0) { hitHorizon = true; break; }
+            if(r > 5000.0) break;
+
+            // Larger dynamic step size
+            float dt = clamp(r * 0.18, 0.08, 35.0);
+
+            // Gravitational lensing
+            vec3 gravity = -pos / (r * r * r) * 1.8;
+            vec3 frameDrag = vec3(-pos.z, 0.0, pos.x) / (r * r * r) * uFrameDrag * 0.3;
+            dir = normalize(dir + (gravity + frameDrag) * dt);
+            pos += dir * dt;
+
+            // ACCRETION DISK
+            if(abs(pos.y) < uDiskThickness * 1.8) {
+                float diskR = length(pos.xz);
+                if(diskR > uDiskInner && diskR < uDiskOuter) {
+                    float angle = atan(pos.z, pos.x);
+                    float orbSpeed = inversesqrt(max(diskR, 0.1));
+                    float rotAngle = angle + uTime * orbSpeed * 0.9 * warpSpeedFactor;
+
+                    float yDensity = exp(-abs(pos.y) * (3.5 / uDiskThickness));
+                    float rDensity = smoothstep(uDiskInner, uDiskInner + 0.4, diskR) * smoothstep(uDiskOuter, uDiskOuter - 2.5, diskR);
+
+                    float n = fbm(vec3(rotAngle * 3.0, log(diskR) * 4.5, uTime * 0.12 * warpSpeedFactor));
+                    n = 0.5 + (n - 0.5) * uTurbulence;
+
+                    float spiralPhase = angle + log(max(diskR / uDiskInner, 0.01)) * 2.8 - uTime * 0.25;
+                    float spiral = pow(0.5 + 0.5 * sin(spiralPhase * 2.0), 3.0) * uSpiralStrength;
+
+                    float hsAngle1 = uTime * 0.55 * warpSpeedFactor;
+                    float hsAngle2 = uTime * 0.38 * warpSpeedFactor + 2.5;
+                    vec2 hs1 = vec2(cos(hsAngle1), sin(hsAngle1)) * (uDiskInner + 0.4);
+                    vec2 hs2 = vec2(cos(hsAngle2), sin(hsAngle2)) * (uDiskInner + 1.2);
+                    float hotSpot1 = exp(-dot(pos.xz - hs1, pos.xz - hs1) * 8.0) * uHotSpotIntensity;
+                    float hotSpot2 = exp(-dot(pos.xz - hs2, pos.xz - hs2) * 5.0) * uHotSpotIntensity * 0.55;
+
+                    float innerBoost = smoothstep(uDiskInner + 1.5, uDiskInner, diskR) * 0.8;
+
+                    float density = yDensity * rDensity * (n + spiral + hotSpot1 + hotSpot2 + innerBoost);
+                    density = clamp(density, 0.0, 2.5);
+
+                    if(density > 0.005) {
+                        float temp = 1.0 - (diskR - uDiskInner) / max(uDiskOuter - uDiskInner, 0.01);
+                        temp = pow(temp, 1.4) * uTempScale;
+
+                        vec3 orbitVel = normalize(vec3(pos.z, 0.0, -pos.x));
+                        float orbitSpeed = 0.5 * orbSpeed * uDoppler;
+                        float doppler = 1.0 / (1.0 - orbitSpeed * dot(orbitVel, dir));
+                        doppler = clamp(doppler, 0.15, 5.0);
+
+                        vec3 diskCol = getDiskColor(temp, doppler, uColorTint);
+                        color += diskCol * density * dt * 0.55;
+                        transmittance *= exp(-density * dt * 0.13);
+                    }
+                }
+            }
+
+            // ACCRETION STREAM (Optimized math)
+            if(uCompanionStar > 0.02 && pos.x > uDiskInner * 0.3 && pos.x < uCompanionPos.x * 1.15) {
+                vec3 c0 = uCompanionPos;
+                vec3 c2 = vec3(uDiskInner * 0.85, 0.0, 0.0);
+                vec3 c1 = mix(c0, c2, 0.5) + vec3(-0.5, -c0.y * 0.35, 0.3);
+                
+                vec3 s1 = mix(c0, c1, 0.33);
+                vec3 s2 = mix(c1, c2, 0.66);
+                vec3 s3 = mix(s1, s2, 0.5);
+                
+                float d1 = length(pos - s1);
+                float d2 = length(pos - s2);
+                float d3 = length(pos - s3);
+                float minStreamD = min(min(d1, d2), d3);
+                
+                float streamRad = 0.2;
+                float streamDens = exp(-minStreamD * minStreamD / (streamRad * streamRad * 0.6));
+                streamDens *= 0.6 + 0.4 * noise(pos * 3.0 + vec3(uTime * 0.5, 0.0, 0.0));
+                vec3 streamCol = mix(vec3(0.5, 0.7, 1.0), vec3(0.9, 0.5, 0.15), minStreamD);
+                color += streamCol * streamDens * dt * 1.2 * uCompanionStar;
+                transmittance *= exp(-streamDens * dt * 0.2 * uCompanionStar);
+            }
+
+            // RELATIVISTIC JETS
+            if(uJet > 0.01 && abs(pos.y) > 1.5 && abs(pos.y) < uJetLength) {
+                float distFromAxis = length(pos.xz);
+                float yNorm = abs(pos.y) / uJetLength;
+                float widthAtY = uJetWidth * (0.25 + 0.75 * yNorm);
+
+                if(distFromAxis < widthAtY * 1.5) {
+                    float jetProfile = exp(-distFromAxis * distFromAxis * (2.5 / max(widthAtY, 0.05)));
+                    float yProfile = smoothstep(1.5, 6.0, abs(pos.y)) * smoothstep(uJetLength, uJetLength * 0.4, abs(pos.y));
+
+                    float angle = atan(pos.z, pos.x);
+                    float helix = 0.5 + 0.5 * sin(angle * 3.0 + pos.y * 0.25 - uTime * 1.8);
+                    float helix2 = 0.5 + 0.5 * sin(angle * 5.0 - pos.y * 0.4 + uTime * 1.2);
+
+                    float knotPhase = abs(pos.y) * 0.12 - uTime * 1.3 * warpSpeedFactor;
+                    float knots = pow(0.5 + 0.5 * sin(knotPhase * 3.14159), 5.0);
+
+                    float n = noise(pos * 1.4 + vec3(0.0, uTime * 1.8 * warpSpeedFactor, 0.0));
+                    float jetDens = jetProfile * yProfile * (0.3 + 0.25 * helix + 0.2 * helix2 + 0.3 * n + 0.6 * knots);
+
+                    vec3 jetColor = mix(vec3(0.08, 0.25, 0.85), vec3(0.65, 0.8, 1.0), n + knots * 0.4);
+                    color += jetColor * jetDens * dt * 1.6 * uJet;
+                    transmittance *= exp(-jetDens * dt * 0.09);
+                }
+            }
+        }
+
+        // PHOTON RING
+        if(!hitHorizon) {
+            float photonR = exp(-pow((minR - 1.5) * 7.0, 2.0)) * uPhotonRingIntensity;
+            vec3 photonCol = mix(vec3(1.0, 0.7, 0.3), vec3(0.8, 0.9, 1.0), uColorTint.b);
+            color += photonCol * photonR * transmittance * 0.7;
+        }
+
+        // BACKGROUND & STARS (Evaluated once per pixel)
+        if(!hitHorizon && transmittance > 0.01) {
+            vec3 bgCol = background(dir) * transmittance;
+            
+            // COMPANION STAR
+            if(uCompanionStar > 0.02) {
+                vec3 toStar = uCompanionPos - uCamPos;
+                float proj = dot(toStar, rayDir);
+                if(proj > 0.0) {
+                    vec3 closest = uCamPos + rayDir * proj;
+                    float d = length(closest - uCompanionPos);
+                    float core = exp(-d * d * 12.0);
+                    float corona = exp(-d * d * 1.8) * 0.35;
+                    float flare = exp(-d * d * 50.0) * 0.5;
+                    vec3 starCol = vec3(0.55, 0.72, 1.0) * (0.92 + 0.08 * sin(uTime * 1.5));
+                    bgCol += starCol * (core * 3.5 + corona + flare) * transmittance * uCompanionStar;
+                }
+            }
+
+            // ORBITING S-STARS
+            if(uOrbitingStars > 0.02) {
+                for(int i = 0; i < 6; i++) {
+                    float fi = float(i);
+                    float speed = 0.45 + fi * 0.13;
+                    float angle = uTime * speed + fi * 1.0472;
+                    float r = 4.0 + fi * 0.85;
+                    float incl = sin(fi * 2.1) * 0.55;
+                    // Proper inclined orbit
+                    vec3 starPos = vec3(r * cos(angle), r * sin(angle) * cos(incl), r * sin(angle) * sin(incl));
+                    
+                    vec3 toStar = starPos - uCamPos;
+                    float proj = dot(toStar, rayDir);
+                    if(proj > 0.0) {
+                        vec3 closest = uCamPos + rayDir * proj;
+                        float d = length(closest - starPos);
+                        float brightness = exp(-d * d * 50.0);
+                        float trail = exp(-d * d * 8.0) * 0.15;
+                        float colorVar = hash(vec3(fi, 0.0, 0.0));
+                        vec3 sCol = mix(vec3(1.0, 0.85, 0.6), vec3(0.7, 0.85, 1.0), colorVar);
+                        bgCol += sCol * (brightness * 4.0 + trail) * transmittance * uOrbitingStars;
+                    }
+                }
+            }
+            color += bgCol;
+        }
+
+        float vig = 1.0 - length(uv) * 0.32;
+        color *= vig;
+        gl_FragColor = vec4(color, 1.0);
+    }
+  `
+};
+
+/* Optimized Warp Shader */
 const WarpShader = {
-  uniforms:{tDiffuse:{value:null},uWarp:{value:0},uGlow:{value:0}},
+  uniforms:{tDiffuse:{value:null},uWarp:{value:0},uGlow:{value:0},uTime:{value:0}},
   vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
   fragmentShader:`precision highp float;
-    uniform sampler2D tDiffuse;uniform float uWarp,uGlow;varying vec2 vUv;
+    uniform sampler2D tDiffuse;uniform float uWarp,uGlow,uTime;varying vec2 vUv;
+    float rand(vec2 co){return fract(sin(dot(co.xy,vec2(12.9898,78.233)))*43758.5453);}
     void main(){
       if(uWarp<.005){gl_FragColor=texture2D(tDiffuse,vUv);return;}
       vec2 uv=vUv;vec2 center=vec2(.5);vec2 delta=uv-center;float dist=length(delta);vec2 dir=delta/max(dist,.001);
-      vec4 color=vec4(0.);float tw=0.;float sLen=uWarp*.14;
+      vec4 color=vec4(0.);float tw=0.;float sLen=uWarp*.2;
+      // Reduced loop from 14 to 8
       for(int i=0;i<8;i++){float t=float(i)/7.;vec2 sUV=clamp(uv-dir*sLen*t,0.,1.);float w=1.-t*.75;color+=texture2D(tDiffuse,sUV)*w;tw+=w;}
       color/=tw;
-      float ca=uWarp*.007;
+      float streak=rand(floor((uv+dir*uTime*0.1)*vec2(300.,3.)));
+      if(streak>0.97){
+        float sl=streak-0.97;
+        vec2 sUV2=clamp(uv+dir*sl*10.*uWarp,0.,1.);
+        color.rgb+=texture2D(tDiffuse,sUV2).rgb*sl*3.*uWarp;
+      }
+      float ca=uWarp*.012;
       color.r=texture2D(tDiffuse,clamp(uv+dir*ca,0.,1.)).r;
       color.b=texture2D(tDiffuse,clamp(uv-dir*ca,0.,1.)).b;
-      color.rgb=mix(color.rgb,vec3(color.r,color.g,color.b),uWarp*.5);
-      float g=exp(-dist*dist/max(.003,.035*uWarp))*uGlow;
-      color.rgb+=vec3(.5,.6,1.)*g;
-      float vig=1.-smoothstep(.15,.85,dist)*uWarp*.75;color.rgb*=vig;
+      float g=exp(-dist*dist/max(.003,.05*uWarp))*uGlow;
+      color.rgb+=vec3(.35,.5,1.)*g*0.6;
+      float vig=1.-smoothstep(.12,.88,dist)*uWarp*.85;color.rgb*=vig;
       gl_FragColor=color;
+    }`
+};
+
+const FilmShader = {
+  uniforms:{tDiffuse:{value:null},uTime:{value:0},uIntensity:{value:0.035}},
+  vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`precision highp float;
+    uniform sampler2D tDiffuse;uniform float uTime,uIntensity;varying vec2 vUv;
+    float rand(vec2 co){return fract(sin(dot(co.xy,vec2(12.9898,78.233)))*43758.5453);}
+    void main(){
+      vec4 c=texture2D(tDiffuse,vUv);
+      float grain=rand(vUv+uTime)*uIntensity;
+      c.rgb+=(grain-.5*uIntensity);
+      float vig=1.0-length(vUv-.5)*0.85;
+      c.rgb*=vig;
+      gl_FragColor=c;
     }`
 };
 
@@ -340,241 +628,71 @@ const WarpShader = {
 function init(){
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,5000);
-  camera.position.set(12,5,12);
+
+  const d = BH_DATA[0];
+  camera.position.set(0, d.camHeight, d.cameraDist);
+
   renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
   renderer.setSize(innerWidth,innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  // Cap pixel ratio to 1.0 for maximum performance on high-DPI displays
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.0)); 
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.0;
+  renderer.toneMappingExposure=0.9;
   document.getElementById('canvas-container').appendChild(renderer.domElement);
 
   controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.dampingFactor=.06;
-  controls.minDistance=3;controls.maxDistance=200;
-  controls.enablePan=false;controls.rotateSpeed=.6;controls.zoomSpeed=.8;
+  controls.minDistance = d.diskInner * 1.5;
+  controls.maxDistance = d.cameraDist * 5.0;
+  controls.enablePan=false;controls.rotateSpeed=.5;controls.zoomSpeed=.8;
+  controls.target.set(0, 0, 0);
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.15;
 
-  createStarField();createNebulae();createDistantGalaxies();createDustField();
-  BH_DATA.forEach((d,i)=>createBlackHole(d,i));
   setupPostProcessing();
-  setCameraForBH(0,false);
   setupUI();
+  initAudio();
   window.addEventListener('resize',onResize);
-  setTimeout(()=>{const ld=document.getElementById('loading');ld.style.opacity='0';setTimeout(()=>ld.style.display='none',1200);},2200);
+  renderer.domElement.addEventListener('pointerdown',()=>{controls.autoRotate=false;lastInteraction=clock.getElapsedTime();});
+
+  applyBHParams(0);
+
+  setTimeout(()=>{const ld=document.getElementById('loading');ld.style.opacity='0';setTimeout(()=>ld.style.display='none',1200);},2400);
   animate();
 }
 
-/* ============ STARS ============ */
-function createStarField(){
-  const N=140000,pos=new Float32Array(N*3),col=new Float32Array(N*3),sz=new Float32Array(N),ph=new Float32Array(N);
-  for(let i=0;i<N;i++){
-    const th=Math.random()*Math.PI*2,phi=Math.acos(2*Math.random()-1),r=600+Math.random()*900;
-    pos[i*3]=r*Math.sin(phi)*Math.cos(th);pos[i*3+1]=r*Math.sin(phi)*Math.sin(th);pos[i*3+2]=r*Math.cos(phi);
-    const t=Math.random();
-    if(t>.96){col[i*3]=.6;col[i*3+1]=.72;col[i*3+2]=1;sz[i]=1.5+Math.random()*2.5;}
-    else if(t>.86){col[i*3]=1;col[i*3+1]=1;col[i*3+2]=.93;sz[i]=1+Math.random()*1.8;}
-    else if(t>.64){col[i*3]=1;col[i*3+1]=.92;col[i*3+2]=.68;sz[i]=.7+Math.random()*1;}
-    else if(t>.38){col[i*3]=1;col[i*3+1]=.68;col[i*3+2]=.38;sz[i]=.4+Math.random()*.7;}
-    else{col[i*3]=1;col[i*3+1]=.48;col[i*3+2]=.28;sz[i]=.25+Math.random()*.4;}
-    ph[i]=Math.random()*Math.PI*2;
-  }
-  const g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  g.setAttribute('aCol',new THREE.BufferAttribute(col,3));
-  g.setAttribute('aSize',new THREE.BufferAttribute(sz,1));
-  g.setAttribute('aPhase',new THREE.BufferAttribute(ph,1));
-  starField=new THREE.Points(g,new THREE.ShaderMaterial({
-    uniforms:{uTime:{value:0},uPR:{value:renderer.getPixelRatio()}},
-    vertexShader:starVert,fragmentShader:starFrag,
-    transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
-  }));
-  scene.add(starField);
+function applyBHParams(idx){
+  const d = BH_DATA[idx];
+  const u = raymarchPass.uniforms;
+  u.uDiskInner.value = d.diskInner;
+  u.uDiskOuter.value = d.diskOuter;
+  u.uDoppler.value = d.doppler;
+  u.uJet.value = d.jet;
+  u.uTempScale.value = d.tempScale;
+  u.uTurbulence.value = d.turb;
+  u.uDiskThickness.value = d.diskThickness;
+  u.uColorTint.value.set(d.colorTint[0], d.colorTint[1], d.colorTint[2]);
+  u.uJetWidth.value = d.jetWidth;
+  u.uJetLength.value = d.jetLength;
+  u.uCompanionStar.value = d.companionStar;
+  u.uCompanionPos.value.set(d.companionPos[0], d.companionPos[1], d.companionPos[2]);
+  u.uOrbitingStars.value = d.orbitingStars;
+  u.uHotSpotIntensity.value = d.hotSpotIntensity;
+  u.uSpiralStrength.value = d.spiralStrength;
+  u.uPhotonRingIntensity.value = d.photonRingIntensity;
+  u.uFrameDrag.value = d.frameDrag;
+  controls.minDistance = d.diskInner * 1.5;
+  controls.maxDistance = d.cameraDist * 5.0;
 }
 
-/* ============ DUST FIELD ============ */
-function createDustField(){
-  const N=30000,pos=new Float32Array(N*3),col=new Float32Array(N*3),sz=new Float32Array(N),ph=new Float32Array(N);
-  for(let i=0;i<N;i++){
-    const th=Math.random()*Math.PI*2,phi=Math.acos(2*Math.random()-1),r=80+Math.random()*500;
-    pos[i*3]=r*Math.sin(phi)*Math.cos(th);pos[i*3+1]=r*Math.sin(phi)*Math.sin(th);pos[i*3+2]=r*Math.cos(phi);
-    const b=.08+Math.random()*.12;
-    col[i*3]=b*1.1;col[i*3+1]=b*.9;col[i*3+2]=b*.7;
-    sz[i]=.3+Math.random()*.6;ph[i]=Math.random()*Math.PI*2;
-  }
-  const g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  g.setAttribute('aCol',new THREE.BufferAttribute(col,3));
-  g.setAttribute('aSize',new THREE.BufferAttribute(sz,1));
-  g.setAttribute('aPhase',new THREE.BufferAttribute(ph,1));
-  scene.add(new THREE.Points(g,new THREE.ShaderMaterial({
-    uniforms:{uTime:{value:0},uPR:{value:renderer.getPixelRatio()}},
-    vertexShader:starVert,fragmentShader:starFrag,
-    transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
-  })));
-}
-
-/* ============ NEBULAE ============ */
-function createNebulae(){
-  [{p:[320,60,-250],s:280,c1:'rgba(160,50,20,0.04)',c2:'rgba(80,15,30,0.015)'},
-   {p:[-280,-90,180],s:350,c1:'rgba(20,40,100,0.035)',c2:'rgba(10,20,60,0.01)'},
-   {p:[120,130,350],s:260,c1:'rgba(60,30,80,0.03)',c2:'rgba(30,15,50,0.008)'},
-   {p:[-200,-40,-380],s:200,c1:'rgba(140,70,20,0.035)',c2:'rgba(70,35,10,0.01)'},
-   {p:[50,-120,200],s:300,c1:'rgba(20,60,80,0.025)',c2:'rgba(10,30,40,0.008)'},
-   {p:[0,0,0],s:400,c1:'rgba(120,60,15,0.02)',c2:'rgba(60,30,5,0.005)'}
-  ].forEach(d=>{
-    const cv=document.createElement('canvas');cv.width=cv.height=256;const cx=cv.getContext('2d');
-    const gr=cx.createRadialGradient(128,128,0,128,128,128);
-    gr.addColorStop(0,d.c1);gr.addColorStop(.6,d.c2);gr.addColorStop(1,'rgba(0,0,0,0)');
-    cx.fillStyle=gr;cx.fillRect(0,0,256,256);
-    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
-    sp.position.set(...d.p);sp.scale.set(d.s,d.s,1);scene.add(sp);
-  });
-}
-
-/* ============ GALAXIES ============ */
-function createDistantGalaxies(){
-  for(let i=0;i<30;i++){
-    const cv=document.createElement('canvas');cv.width=cv.height=64;const cx=cv.getContext('2d');
-    const b=.15+Math.random()*.35;
-    const gr=cx.createRadialGradient(32,32,0,32,32,32);
-    gr.addColorStop(0,`rgba(${190+Math.random()*65|0},${170+Math.random()*80|0},${140+Math.random()*100|0},${b})`);
-    gr.addColorStop(.4,`rgba(${140+Math.random()*60|0},${120+Math.random()*60|0},${90+Math.random()*80|0},${b*.4})`);
-    gr.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=gr;cx.fillRect(0,0,64,64);
-    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
-    const th=Math.random()*Math.PI*2,phi=Math.acos(2*Math.random()-1),r=700+Math.random()*500;
-    sp.position.set(r*Math.sin(phi)*Math.cos(th),r*Math.sin(phi)*Math.sin(th),r*Math.cos(phi));
-    const s=4+Math.random()*16;sp.scale.set(s,s*(.4+Math.random()*.6),1);scene.add(sp);
-  }
-}
-
-/* ============ BLACK HOLES ============ */
-function createBlackHole(data,idx){
-  const group=new THREE.Group();group.position.copy(data.position);const s=data.scale;
-
-  /* Event horizon */
-  group.add(new THREE.Mesh(new THREE.SphereGeometry(Math.max(.01,s),64,64),new THREE.MeshBasicMaterial({color:0x000000})));
-
-  /* Inner glow (fresnel rim) */
-  group.add(new THREE.Mesh(new THREE.SphereGeometry(Math.max(.01,s*1.15),48,48),new THREE.ShaderMaterial({
-    vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader:`varying vec3 vN;void main(){float f=pow(1.-abs(dot(vN,vec3(0,0,1))),3.);gl_FragColor=vec4(1.,.5,.15,f*.2);}`,
-    transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide
-  })));
-
-  /* Accretion disk */
-  const dM=new THREE.ShaderMaterial({
-    uniforms:{uTime:{value:0},uInner:{value:data.diskInner*s},uOuter:{value:data.diskOuter*s},uMaxBeta:{value:data.maxBeta},uScale:{value:s},uHover:{value:0}},
-    vertexShader:diskVert,fragmentShader:diskFrag,
-    transparent:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending
-  });
-  const dMesh=new THREE.Mesh(new THREE.RingGeometry(Math.max(.01,data.diskInner*s),Math.max(.02,data.diskOuter*s),256,64),dM);
-  dMesh.rotation.x=-Math.PI/2;group.add(dMesh);
-
-  /* Photon rings */
-  const prM=new THREE.ShaderMaterial({uniforms:{uTime:{value:0}},vertexShader:photonVert,fragmentShader:photonFrag,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
-  const pr1=new THREE.Mesh(new THREE.TorusGeometry(Math.max(.01,s*1.5),Math.max(.001,s*.025),16,256),prM.clone());pr1.rotation.x=Math.PI/2;group.add(pr1);
-  const pr2=new THREE.Mesh(new THREE.TorusGeometry(Math.max(.01,s*1.55),Math.max(.001,s*.012),12,256),prM.clone());pr2.rotation.x=Math.PI/2;group.add(pr2);
-  const pr3=new THREE.Mesh(new THREE.TorusGeometry(Math.max(.01,s*1.42),Math.max(.001,s*.008),10,256),prM.clone());pr3.rotation.x=Math.PI/2;group.add(pr3);
-
-  /* Ambient glow sprite */
-  const gc=document.createElement('canvas');gc.width=gc.height=256;const gx=gc.getContext('2d');
-  const gg=gx.createRadialGradient(128,128,0,128,128,128);
-  gg.addColorStop(0,'rgba(255,140,40,0.08)');gg.addColorStop(.4,'rgba(255,90,20,0.03)');gg.addColorStop(1,'rgba(0,0,0,0)');
-  gx.fillStyle=gg;gx.fillRect(0,0,256,256);
-  const gs=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(gc),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
-  gs.scale.set(30*s,30*s,1);group.add(gs);
-
-  /* Infalling matter particles */
-  const IN=4000;
-  const ipos=new Float32Array(IN*3),iPh=new Float32Array(IN),iAn=new Float32Array(IN),iRo=new Float32Array(IN),iSp=new Float32Array(IN);
-  for(let i=0;i<IN;i++){
-    ipos[i*3]=ipos[i*3+1]=ipos[i*3+2]=0;
-    iPh[i]=Math.random();iAn[i]=Math.random()*Math.PI*2;
-    iRo[i]=Math.random();iSp[i]=.3+Math.random()*1.2;
-  }
-  const iG=new THREE.BufferGeometry();
-  iG.setAttribute('position',new THREE.BufferAttribute(ipos,3));
-  iG.setAttribute('aPhase',new THREE.BufferAttribute(iPh,1));
-  iG.setAttribute('aAngle',new THREE.BufferAttribute(iAn,1));
-  iG.setAttribute('aRadOff',new THREE.BufferAttribute(iRo,1));
-  iG.setAttribute('aSpd',new THREE.BufferAttribute(iSp,1));
-  const iM=new THREE.ShaderMaterial({
-    uniforms:{uTime:{value:0},uInner:{value:s*1.2},uOuter:{value:data.diskOuter*s*1.3},uScale:{value:s}},
-    vertexShader:infallVert,fragmentShader:infallFrag,
-    transparent:true,blending:THREE.AdditiveBlending,depthWrite:false
-  });
-  group.add(new THREE.Points(iG,iM));
-
-  /* Jets (M87* only) */
-  let jetPts=null;
-  if(data.hasJet){
-    jetPts=createJets(s);group.add(jetPts);
-  }
-
-  /* Hitbox */
-  const hb=new THREE.Mesh(new THREE.SphereGeometry(Math.max(.01,s*3.5),12,12),new THREE.MeshBasicMaterial({visible:false}));
-  hb.userData={bhIndex:idx};group.add(hb);hitboxes.push(hb);
-
-  scene.add(group);
-  blackHoles.push({group,diskMat:dM,photonMats:[pr1.material,pr2.material,pr3.material],infallMat:iM,jetMat:jetPts?jetPts.material:null,data});
-}
-
-/* ============ JETS ============ */
-function createJets(s){
-  const N=12000,pos=new Float32Array(N*3),al=new Float32Array(N),sp=new Float32Array(N),of2=new Float32Array(N);
-  for(let i=0;i<N;i++){
-    const top=i<N/2,t=Math.random(),spread=t*t*2.5*s,a=Math.random()*Math.PI*2;
-    pos[i*3]=Math.cos(a)*spread;pos[i*3+1]=(top?1:-1)*t*50*s;pos[i*3+2]=Math.sin(a)*spread;
-    al[i]=(1-t)*(.2+.8*Math.random());sp[i]=.4+Math.random()*1.8;of2[i]=Math.random()*100;
-  }
-  const g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  g.setAttribute('aAlpha',new THREE.BufferAttribute(al,1));
-  g.setAttribute('aSpeed',new THREE.BufferAttribute(sp,1));
-  g.setAttribute('aOffset',new THREE.BufferAttribute(of2,1));
-  return new THREE.Points(g,new THREE.ShaderMaterial({
-    uniforms:{uTime:{value:0},uScale:{value:s}},
-    vertexShader:jetVert,fragmentShader:jetFrag,
-    transparent:true,blending:THREE.AdditiveBlending,depthWrite:false
-  }));
-}
-
-/* ============ POST-PROCESSING ============ */
 function setupPostProcessing(){
   composer=new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene,camera));
-  lensingPass=new ShaderPass(LensingShader);composer.addPass(lensingPass);
+  raymarchPass=new ShaderPass(RaymarchShader);composer.addPass(raymarchPass);
   warpPass=new ShaderPass(WarpShader);composer.addPass(warpPass);
-  bloomPass=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),defaultBloom,.5,.78);
+  bloomPass=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),defaultBloom,0.55,0.82);
   composer.addPass(bloomPass);
-}
-
-/* ============ LENSING UPDATE ============ */
-function updateLensing(t){
-  if(warp.active){lensingPass.uniforms.uActive.value=0;return;}
-  const bh=blackHoles[currentBH],wp=bh.group.position,s=bh.data.scale;
-  const camDir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-  const toBH=wp.clone().sub(camera.position);
-  if(toBH.dot(camDir)<0){lensingPass.uniforms.uActive.value=0;return;}
-  const dist=camera.position.distanceTo(wp);
-  const proj=wp.clone().project(camera);
-  const fovR=camera.fov*Math.PI/180,hft=Math.tan(fovR/2);
-  const angR=Math.atan(3.2*s/Math.max(dist,.1)),uvR=Math.tan(angR)/hft/2;
-  lensingPass.uniforms.uActive.value=1;
-  lensingPass.uniforms.uCenter.value.set((proj.x+1)/2,(proj.y+1)/2);
-  lensingPass.uniforms.uER.value=uvR;
-  lensingPass.uniforms.uSR.value=uvR*.32;
-  lensingPass.uniforms.uAspect.value=innerWidth/innerHeight;
-  lensingPass.uniforms.uTime.value=t;
-}
-
-/* ============ CAMERA ============ */
-function setCameraForBH(idx,animate=true){
-  const d=BH_DATA[idx],cd=d.cameraDist;
-  targetLookAt.copy(d.position);
-  targetCamPos.set(d.position.x+cd*.65,d.position.y+cd*.28,d.position.z+cd*.65);
-  if(!animate){camera.position.copy(targetCamPos);controls.target.copy(targetLookAt);}
-  isTransitioning=animate;
-  controls.minDistance=d.scale*2.8;controls.maxDistance=cd*3;
+  filmPass=new ShaderPass(FilmShader);composer.addPass(filmPass);
 }
 
 /* ============ WARP SYSTEM ============ */
@@ -589,29 +707,25 @@ function engageWarp(fromIdx,toIdx){
   warp.dur=1.8+(logD/7.7)*1.4;
   warp.traveled=0;warp.speed=0;warp.intensity=0;
 
-  warpStartPos.copy(camera.position);
-  warpStartTarget.copy(controls.target);
   controls.enabled=false;
-  isTransitioning=false;
+  controls.autoRotate=false;
 
-  /* Update tabs */
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.add('warping'));
   setTimeout(()=>document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('warping')),warp.dur*1000+200);
 
-  /* Show HUD */
   const hud=document.getElementById('warp-hud');hud.style.opacity='1';
   document.getElementById('warp-dest').textContent=BH_DATA[toIdx].name;
   document.getElementById('warp-sector').textContent=BH_DATA[toIdx].sector;
-
   document.getElementById('bottom-stats').classList.add('hidden-stat');
 }
+
+function lerp(a,b,t){return a+(b-a)*t;}
 
 function updateWarp(time){
   if(!warp.active)return;
   const elapsed=time-warp.start;
   const t=Math.min(elapsed/warp.dur,1);
 
-  /* Warp intensity curve */
   let wi;
   if(t<.12)wi=t/.12;
   else if(t<.65)wi=1;
@@ -619,40 +733,75 @@ function updateWarp(time){
   wi=Math.max(0,Math.min(1,wi));
   warp.intensity=wi;
 
-  /* Ease for position */
   const ease=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-
-  /* Speed */
   const maxSpd=warp.dist/warp.dur;
   warp.speed=maxSpd*wi;
   warp.traveled=warp.dist*ease;
 
-  /* Update shaders */
   warpPass.uniforms.uWarp.value=wi;
-  warpPass.uniforms.uGlow.value=wi*.85;
-  bloomPass.strength=defaultBloom+wi*1.0;
+  warpPass.uniforms.uGlow.value=wi*.45;
+  warpPass.uniforms.uTime.value=time;
+  raymarchPass.uniforms.uWarp.value=wi;
+  bloomPass.strength=defaultBloom+wi*0.5;
 
-  /* Move camera */
-  const toData=BH_DATA[warp.to],cd=toData.cameraDist;
-  const toPos=new THREE.Vector3(toData.position.x+cd*.65,toData.position.y+cd*.28,toData.position.z+cd*.65);
-  camera.position.lerpVectors(warpStartPos,toPos,ease);
-  controls.target.lerpVectors(warpStartTarget,toData.position,ease);
+  const from = BH_DATA[warp.from];
+  const to = BH_DATA[warp.to];
+  const u = raymarchPass.uniforms;
 
-  /* Camera shake */
-  if(t>.08&&t<.82){
-    const sh=wi*.04;
-    camera.position.x+=(Math.random()-.5)*sh;
-    camera.position.y+=(Math.random()-.5)*sh;
-    camera.position.z+=(Math.random()-.5)*sh;
+  u.uDiskInner.value = lerp(from.diskInner, to.diskInner, ease);
+  u.uDiskOuter.value = lerp(from.diskOuter, to.diskOuter, ease);
+  u.uDoppler.value = lerp(from.doppler, to.doppler, ease);
+  u.uJet.value = lerp(from.jet, to.jet, ease);
+  u.uTempScale.value = lerp(from.tempScale, to.tempScale, ease);
+  u.uTurbulence.value = lerp(from.turb, to.turb, ease);
+  u.uDiskThickness.value = lerp(from.diskThickness, to.diskThickness, ease);
+  u.uJetWidth.value = lerp(from.jetWidth, to.jetWidth, ease);
+  u.uJetLength.value = lerp(from.jetLength, to.jetLength, ease);
+  u.uCompanionStar.value = lerp(from.companionStar, to.companionStar, ease);
+  u.uOrbitingStars.value = lerp(from.orbitingStars, to.orbitingStars, ease);
+  u.uHotSpotIntensity.value = lerp(from.hotSpotIntensity, to.hotSpotIntensity, ease);
+  u.uSpiralStrength.value = lerp(from.spiralStrength, to.spiralStrength, ease);
+  u.uPhotonRingIntensity.value = lerp(from.photonRingIntensity, to.photonRingIntensity, ease);
+  u.uFrameDrag.value = lerp(from.frameDrag, to.frameDrag, ease);
+
+  u.uColorTint.value.set(
+    lerp(from.colorTint[0], to.colorTint[0], ease),
+    lerp(from.colorTint[1], to.colorTint[1], ease),
+    lerp(from.colorTint[2], to.colorTint[2], ease)
+  );
+  u.uCompanionPos.value.set(
+    lerp(from.companionPos[0], to.companionPos[0], ease),
+    lerp(from.companionPos[1], to.companionPos[1], ease),
+    lerp(from.companionPos[2], to.companionPos[2], ease)
+  );
+
+  const fromDist = from.cameraDist;
+  const toDist = to.cameraDist;
+  const targetDist = lerp(fromDist, toDist, ease);
+  const targetHeight = lerp(from.camHeight, to.camHeight, ease);
+  const zoomFactor = 1.0 + wi * 0.15;
+  const finalDist = targetDist * zoomFactor;
+
+  let camDir = camera.position.clone().sub(controls.target);
+  if(camDir.lengthSq() < 0.001) camDir.set(0, 0.2, 1);
+  camDir.normalize();
+  camDir.y = lerp(camDir.y, targetHeight / finalDist, 0.05 + wi * 0.1);
+  camDir.normalize();
+  camera.position.copy(controls.target).add(camDir.multiplyScalar(finalDist));
+
+  if(wi > 0.3){
+    const shake = wi * 0.04;
+    camera.position.x += (Math.random() - 0.5) * shake;
+    camera.position.y += (Math.random() - 0.5) * shake;
   }
 
-  /* Update HUD */
   const spd=warp.speed;
   let spdStr;
   if(spd<1)spdStr=spd.toFixed(2)+'c';
   else if(spd<1000)spdStr=spd.toFixed(0)+'c';
   else if(spd<1e6)spdStr=(spd/1000).toFixed(1)+'Kc';
-  else spdStr=(spd/1e6).toFixed(2)+'Mc';
+  else if(spd<1e9)spdStr=(spd/1e6).toFixed(2)+'Mc';
+  else spdStr=(spd/1e9).toFixed(2)+'Gc';
   document.getElementById('warp-speed').textContent=spdStr;
 
   const warpFactor=Math.max(0,Math.floor(Math.log10(Math.max(spd,1))));
@@ -661,42 +810,38 @@ function updateWarp(time){
   let distStr;
   if(warp.traveled<1000)distStr=Math.round(warp.traveled).toLocaleString()+' ly';
   else if(warp.traveled<1e6)distStr=(warp.traveled/1000).toFixed(1)+'K ly';
-  else distStr=(warp.traveled/1e6).toFixed(2)+'M ly';
+  else if(warp.traveled<1e9)distStr=(warp.traveled/1e6).toFixed(2)+'M ly';
+  else distStr=(warp.traveled/1e9).toFixed(2)+'B ly';
   document.getElementById('warp-distance').textContent=distStr;
 
   const eta=Math.max(0,(warp.dur-elapsed));
-  document.getElementById('warp-eta').textContent=eta<1?(eta*.001).toFixed(0)+'ms':eta.toFixed(1)+'s';
+  document.getElementById('warp-eta').textContent=eta<1?(eta*1000).toFixed(0)+'ms':eta.toFixed(1)+'s';
 
-  /* Status */
   const st=document.getElementById('warp-status');
   if(t<.12)st.textContent='Engaging Warp Drive';
-  else if(t<.65)st.textContent='Warp Cruise — '+toData.name;
+  else if(t<.65)st.textContent='Warp Cruise — '+to.name;
   else st.textContent='Decelerating';
 
-  /* Rings */
   const circ=339.3;
   document.getElementById('warp-ring').setAttribute('stroke-dashoffset',circ*(1-wi));
   document.getElementById('warp-ring2').setAttribute('stroke-dashoffset',circ*(1-Math.min(1,wi*1.3)));
 
-  /* Coordinates */
   const cp=camera.position;
   document.getElementById('warp-coord').textContent=`X: ${cp.x.toFixed(1)}  Y: ${cp.y.toFixed(1)}  Z: ${cp.z.toFixed(1)}`;
 
-  /* Complete */
   if(t>=1){
     warp.active=false;
     warpPass.uniforms.uWarp.value=0;
     warpPass.uniforms.uGlow.value=0;
+    raymarchPass.uniforms.uWarp.value=0;
     bloomPass.strength=defaultBloom;
     controls.enabled=true;
-    controls.target.copy(toData.position);
-    controls.minDistance=toData.scale*2.8;
-    controls.maxDistance=cd*3;
     document.getElementById('warp-hud').style.opacity='0';
     document.getElementById('bottom-stats').classList.remove('hidden-stat');
 
-    /* Update current BH */
     currentBH=warp.to;
+    applyBHParams(warp.to);
+
     document.querySelectorAll('.nav-tab').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
     document.querySelector(`.nav-tab[data-index="${warp.to}"]`).classList.add('active');
     document.querySelector(`.nav-tab[data-index="${warp.to}"]`).setAttribute('aria-selected','true');
@@ -715,44 +860,10 @@ function setupUI(){
   });
   document.getElementById('info-toggle').addEventListener('click',()=>{if(panelOpen)closePanel();else openPanel(currentBH);});
   document.getElementById('close-panel').addEventListener('click',closePanel);
-
-  renderer.domElement.addEventListener('mousedown',e=>{mouseDown={x:e.clientX,y:e.clientY};wasDrag=false;document.body.classList.add('dragging');});
-  renderer.domElement.addEventListener('mousemove',e=>{
-    const dx=e.clientX-mouseDown.x,dy=e.clientY-mouseDown.y;
-    if(Math.sqrt(dx*dx+dy*dy)>4)wasDrag=true;
-    mouseNDC.x=(e.clientX/innerWidth)*2-1;mouseNDC.y=-(e.clientY/innerHeight)*2+1;
-    checkHover(e.clientX,e.clientY);
-  });
-  renderer.domElement.addEventListener('mouseup',()=>{document.body.classList.remove('dragging');if(!wasDrag&&!warp.active)checkClick();});
-
-  renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1){mouseDown={x:e.touches[0].clientX,y:e.touches[0].clientY};wasDrag=false;}},{passive:true});
-  renderer.domElement.addEventListener('touchmove',e=>{if(e.touches.length===1){const dx=e.touches[0].clientX-mouseDown.x,dy=e.touches[0].clientY-mouseDown.y;if(Math.sqrt(dx*dx+dy*dy)>10)wasDrag=true;}},{passive:true});
-  renderer.domElement.addEventListener('touchend',()=>{if(!wasDrag&&!warp.active)checkClick();},{passive:true});
+  document.getElementById('cinematic-toggle').addEventListener('click',()=>document.body.classList.toggle('cinematic'));
 
   setTimeout(()=>{const h=document.getElementById('hint');if(h)h.style.opacity='0';},9000);
   updateBottomStats(0);
-}
-
-function checkHover(mx,my){
-  raycaster.setFromCamera(mouseNDC,camera);
-  const hits=raycaster.intersectObjects(hitboxes);
-  const tip=document.getElementById('tooltip');
-  if(hits.length>0){
-    const idx=hits[0].object.userData.bhIndex;
-    if(idx!==hoveredBH){hoveredBH=idx;document.getElementById('tooltip-text').textContent=BH_DATA[idx].tip;}
-    tip.style.left=(mx+16)+'px';tip.style.top=(my-10)+'px';tip.style.opacity='1';
-    if(!wasDrag)renderer.domElement.style.cursor='pointer';
-  } else {
-    tip.style.opacity='0';hoveredBH=-1;
-    if(!wasDrag)renderer.domElement.style.cursor='grab';
-  }
-}
-
-function checkClick(){
-  if(hoveredBH>=0){
-    if(hoveredBH!==currentBH)engageWarp(currentBH,hoveredBH);
-    else openPanel(currentBH);
-  }
 }
 
 function updateBottomStats(i){
@@ -768,6 +879,7 @@ function openPanel(i){
   const d=BH_DATA[i];
   document.getElementById('panel-type').textContent=d.type;
   document.getElementById('panel-name').textContent=d.name;
+  document.getElementById('panel-sector').textContent="Sector: "+d.sector;
   document.getElementById('panel-mass').textContent=d.mass;
   document.getElementById('panel-mass-kg').textContent=d.massKg;
   document.getElementById('panel-radius').textContent=d.radius;
@@ -781,45 +893,65 @@ function openPanel(i){
 }
 function closePanel(){document.getElementById('detail-panel').classList.remove('open');panelOpen=false;}
 
-/* ============ RESIZE ============ */
+function initAudio() {
+  const vis = document.getElementById('audio-vis');
+  vis.addEventListener('click', startAudio);
+}
+async function startAudio() {
+  if(audioStarted) return;
+  audioStarted = true;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc1 = audioCtx.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = 55;
+    const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 82;
+    const gain = audioCtx.createGain(); gain.gain.value = 0.04;
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 200;
+    osc1.connect(filter); osc2.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+    osc1.start(); osc2.start();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 32;
+    gain.connect(analyser);
+    audioData = new Uint8Array(analyser.frequencyBinCount);
+  } catch(e) { console.warn('Audio failed', e); }
+}
+
 function onResize(){
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
   bloomPass.resolution.set(innerWidth,innerHeight);
-  if(starField)starField.material.uniforms.uPR.value=renderer.getPixelRatio();
+  raymarchPass.uniforms.uAspect.value = innerWidth / innerHeight;
 }
 
-/* ============ ANIMATE ============ */
 function animate(){
   requestAnimationFrame(animate);
   const t=clock.getElapsedTime();
 
-  /* Warp takes priority */
   if(warp.active){updateWarp(t);}
-  else{
-    if(isTransitioning){
-      camera.position.lerp(targetCamPos,.028);
-      controls.target.lerp(targetLookAt,.028);
-      if(camera.position.distanceTo(targetCamPos)<.05)isTransitioning=false;
-    }
+  else {
     controls.update();
+    if(!controls.autoRotate && t - lastInteraction > 8.0){
+      controls.autoRotate = true;
+    }
   }
 
-  /* Shader uniforms */
-  if(starField)starField.material.uniforms.uTime.value=t;
-  blackHoles.forEach((bh,i)=>{
-    bh.diskMat.uniforms.uTime.value=t;
-    bh.diskMat.uniforms.uHover.value=THREE.MathUtils.lerp(bh.diskMat.uniforms.uHover.value,hoveredBH===i?.8:0,.06);
-    bh.photonMats.forEach(m=>{if(m.uniforms.uTime)m.uniforms.uTime.value=t;});
-    bh.infallMat.uniforms.uTime.value=t;
-    if(bh.jetMat)bh.jetMat.uniforms.uTime.value=t;
-  });
+  raymarchPass.uniforms.uTime.value = t;
+  raymarchPass.uniforms.uCamPos.value.copy(camera.position);
+  raymarchPass.uniforms.uCamTarget.value.copy(controls.target);
+  filmPass.uniforms.uTime.value = t;
 
-  updateLensing(t);
   composer.render();
+
+  if(analyser && audioStarted){
+    analyser.getByteFrequencyData(audioData);
+    const bars = document.querySelectorAll('#audio-vis span');
+    bars.forEach((bar, i) => {
+      const val = audioData[i] / 255.0;
+      bar.style.height = (20 + val * 80) + '%';
+    });
+  }
 }
 
 init();
 </script>
 </body>
-</html> make it 100 times better
+</html>

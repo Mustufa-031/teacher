@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Story of the Universe - Interactive Cosmic History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #000000;
+    --plasma: #ffffff;
+    --ember: #ff4500;
+    --gold: #ffd700;
+    --azure: #4169e1;
+    --fg: #e0e0e0;
+    --muted: rgba(224, 224, 224, 0.6);
+    --panel-bg: rgba(5, 10, 20, 0.75);
+    --border: rgba(255, 255, 255, 0.15);
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--void);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    cursor: default;
+  }
+  
+  #cinema { position: fixed; inset: 0; z-index: 1; }
+  canvas { display: block; }
+  
+  /* Cinematic Letterbox */
+  .letterbox {
+    position: fixed;
+    left: 0; right: 0;
+    height: 0px;
+    background: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
+    z-index: 10;
+    transition: height 2s cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  .letterbox.top { top: 0; }
+  .letterbox.bottom { bottom: 0; transform: rotate(180deg); }
+  .letterbox.active { height: 10vh; }
+  
+  /* Entry Screen */
+  .entry-screen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 1.5s ease;
+  }
+  .entry-screen.hidden { opacity: 0; pointer-events: none; }
+  
+  .entry-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 16px;
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+    opacity: 0;
+    animation: fadeUp 2s 0.5s ease forwards;
+  }
+  
+  .entry-sub {
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 2s 1s ease forwards;
+  }
+  
+  .entry-btn {
+    padding: 18px 48px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: transparent;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    opacity: 0;
+    animation: fadeUp 2s 1.5s ease forwards;
+    backdrop-filter: blur(5px);
+  }
+  
+  .entry-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.4em;
+  }
+  
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* Teacher Modal (Popups before every stage) */
+  .teacher-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  .teacher-modal.visible { opacity: 1; pointer-events: auto; }
+  
+  .modal-content {
+    max-width: 640px;
+    width: 90%;
+    padding: 56px 48px;
+    background: linear-gradient(135deg, rgba(15, 20, 30, 0.9), rgba(5, 10, 20, 0.95));
+    border: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 80px rgba(65, 105, 225, 0.15);
+  }
+  
+  .modal-epoch {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--azure);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 400;
+    color: #fff;
+    margin-bottom: 24px;
+    line-height: 1.1;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+  }
+  
+  .modal-body {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  
+  .modal-stats {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-bottom: 40px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .modal-stat-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  
+  .modal-stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    color: var(--gold);
+  }
+  
+  .modal-btn {
+    padding: 16px 42px;
+    background: transparent;
+    border: 1px solid var(--azure);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .modal-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--azure);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+    z-index: -1;
+  }
+  
+  .modal-btn:hover {
+    color: #fff;
+    border-color: #fff;
+    box-shadow: 0 0 40px rgba(65, 105, 225, 0.5);
+    letter-spacing: 0.4em;
+  }
+  
+  .modal-btn:hover::before { transform: scaleX(1); }
+  
+  /* Knowledge Panel */
+  .knowledge-panel {
+    position: fixed;
+    top: 12vh;
+    right: 4vw;
+    width: 320px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+    z-index: 20;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+    pointer-events: none;
+  }
+  .knowledge-panel.visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
+  
+  .kp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .kp-epoch {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--azure);
+    text-transform: uppercase;
+  }
+  
+  .kp-time {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+  }
+  
+  .kp-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: #fff;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+  
+  .kp-body {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  
+  .kp-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .kp-stat-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  
+  .kp-stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--gold);
+  }
+  
+  /* Interactive Timeline */
+  .timeline-ui {
+    position: fixed;
+    bottom: 12vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1000px;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .timeline-ui.visible { opacity: 1; }
+  
+  .timeline-track {
+    width: 100%;
+    height: 40px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .timeline-line {
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%);
+  }
+  
+  .timeline-progress {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--azure), var(--gold));
+    box-shadow: 0 0 15px var(--azure);
+    width: 0%;
+    transform: translateY(-50%);
+    transition: width 0.3s ease;
+  }
+  
+  .epoch-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px; height: 8px;
+    background: var(--void);
+    border: 1px solid var(--muted);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 2;
+  }
+  
+  .epoch-marker:hover {
+    background: var(--azure);
+    border-color: var(--azure);
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+  
+  .epoch-marker.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: 0 0 20px var(--gold);
+    width: 12px; height: 12px;
+  }
+  
+  .epoch-tooltip {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    padding: 4px 8px;
+    font-size: 9px;
+    white-space: nowrap;
+    color: #fff;
+    border: 1px solid var(--border);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .epoch-marker:hover .epoch-tooltip { opacity: 1; }
+  
+  /* Controls */
+  .controls {
+    position: fixed;
+    top: 12vh;
+    left: 4vw;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .controls.visible { opacity: 1; }
+  
+  .control-btn {
+    width: 44px; height: 44px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  .control-btn:hover { border-color: var(--azure); background: rgba(65, 105, 225, 0.2); }
+  .control-btn svg { width: 16px; height: 16px; fill: #fff; }
+  
+  /* Caption */
+  .caption-layer {
+    position: fixed;
+    bottom: 24vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 18;
+    text-align: center;
+    pointer-events: none;
+    width: 80%;
+    max-width: 800px;
+  }
+  
+  .caption {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(20px, 3vw, 36px);
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  
+  /* Website UI */
+  .website-ui {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px;
+    opacity: 0;
+    transition: opacity 2s ease;
+    pointer-events: none;
+  }
+  .website-ui.visible { opacity: 1; pointer-events: auto; }
+  
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  
+  .nav-links { display: flex; gap: 32px; }
+  .nav-link {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.3s;
+    cursor: pointer;
+  }
+  .nav-link:hover { color: #fff; }
+  
+  .hero-content {
+    text-align: center;
+    margin-bottom: 5vh;
+  }
+  
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(48px, 8vw, 120px);
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: #fff;
+    margin-bottom: 24px;
+    text-shadow: 0 0 60px rgba(255, 255, 255, 0.4);
+    line-height: 1;
+  }
+  
+  .hero-sub {
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 48px;
+  }
+  
+  .cta-btn {
+    padding: 18px 48px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+    z-index: -1;
+  }
+  
+  .cta-btn:hover {
+    color: #000;
+    border-color: #fff;
+    box-shadow: 0 0 60px rgba(255, 255, 255, 0.4);
+  }
+  
+  .cta-btn:hover::before { transform: scaleX(1); }
+  
+  .gl-loader {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: opacity 1s ease;
+  }
+  .gl-loader.hidden { opacity: 0; pointer-events: none; }
+  .gl-spinner {
+    width: 40px; height: 40px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .gl-text {
+    margin-top: 20px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  
+  /* ===== END SCREEN — PLAY AGAIN ===== */
+  .end-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 95;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.92) 75%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease;
+    backdrop-filter: blur(2px);
+  }
+  .end-screen.visible { opacity: 1; pointer-events: auto; }
+  
+  .end-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    color: #fff;
+    margin-bottom: 12px;
+    text-shadow: 0 0 50px rgba(255, 215, 0, 0.35);
+  }
+  .end-sub {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 56px;
+  }
+  .play-again-btn {
+    position: relative;
+    padding: 22px 64px;
+    background: transparent;
+    border: 1px solid rgba(255, 215, 0, 0.6);
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    overflow: hidden;
+  }
+  .play-again-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--ember), var(--gold));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+    z-index: -1;
+  }
+  .play-again-btn:hover {
+    color: #000;
+    border-color: var(--gold);
+    box-shadow: 0 0 80px rgba(255, 215, 0, 0.5);
+    letter-spacing: 0.45em;
+  }
+  .play-again-btn:hover::before { transform: scaleX(1); }
+</style>
+</head>
+<body>
+  
+  <div class="gl-loader" id="glLoader">
+    <div class="gl-spinner"></div>
+    <div class="gl-text" id="loaderText">Loading Cosmic Textures</div>
+  </div>
+
+  <div class="entry-screen" id="entryScreen">
+    <h1 class="entry-title">THE STORY OF THE UNIVERSE</h1>
+    <div class="entry-sub">An Interactive Cosmic History</div>
+    <button class="entry-btn" id="entryBtn">Begin the Journey</button>
+  </div>
+
+  <div id="cinema"></div>
+
+  <div class="letterbox top" id="letterTop"></div>
+  <div class="letterbox bottom" id="letterBottom"></div>
+
+  <div class="controls" id="controls">
+    <button class="control-btn" id="playBtn" title="Play/Pause">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button class="control-btn" id="audioToggle" title="Toggle Sound">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+    </button>
+  </div>
+
+  <div class="caption-layer">
+    <div class="caption" id="captionText"></div>
+  </div>
+
+  <div class="knowledge-panel" id="knowledgePanel">
+    <div class="kp-header">
+      <div class="kp-epoch" id="kpEpoch">EPOCH 01</div>
+      <div class="kp-time" id="kpTime">t = 0</div>
+    </div>
+    <div class="kp-title" id="kpTitle">Singularity</div>
+    <div class="kp-body" id="kpBody">
+      All matter, energy, and space itself is compressed into an infinitely dense, infinitely hot point. The known laws of physics do not apply.
+    </div>
+    <div class="kp-stats">
+      <div>
+        <div class="kp-stat-label">Temperature</div>
+        <div class="kp-stat-value" id="kpTemp">∞ K</div>
+      </div>
+      <div>
+        <div class="kp-stat-label">Scale</div>
+        <div class="kp-stat-value" id="kpScale">10⁻³⁵ m</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline-ui" id="timelineUI">
+    <div class="timeline-track" id="timelineTrack">
+      <div class="timeline-line"></div>
+      <div class="timeline-progress" id="timelineProgress"></div>
+    </div>
+  </div>
+
+  <div class="website-ui" id="websiteUI">
+    <nav class="nav">
+      <div class="logo">ASTRA</div>
+      <div class="nav-links">
+        <a class="nav-link">Origins</a>
+        <a class="nav-link">Galaxies</a>
+        <a class="nav-link">Earth</a>
+        <a class="nav-link">Mission</a>
+      </div>
+    </nav>
+    
+    <div class="hero-content">
+      <h1 class="hero-title">We Are Starstuff</h1>
+      <div class="hero-sub">Explore 13.8 Billion Years of Cosmic History</div>
+      <button class="cta-btn">Begin the Journey</button>
+    </div>
+    
+    <div></div>
+  </div>
+
+  <!-- TEACHER POPUP MODAL -->
+  <div class="teacher-modal" id="teacherModal">
+    <div class="modal-content">
+      <div class="modal-epoch" id="modalEpoch">EPOCH 01</div>
+      <h2 class="modal-title" id="modalTitle">Singularity</h2>
+      <p class="modal-body" id="modalBody">
+        All matter, energy, and space itself is compressed into an infinitely dense, infinitely hot point. The known laws of physics do not apply.
+      </p>
+      <div class="modal-stats">
+        <div>
+          <div class="modal-stat-label">Time</div>
+          <div class="modal-stat-value" id="modalTime">t = 0</div>
+        </div>
+        <div>
+          <div class="modal-stat-label">Temperature</div>
+          <div class="modal-stat-value" id="modalTemp">∞ K</div>
+        </div>
+        <div>
+          <div class="modal-stat-label">Scale</div>
+          <div class="modal-stat-value" id="modalScale">10⁻³⁵ m</div>
+        </div>
+      </div>
+      <button class="modal-btn" id="modalContinue">Continue to Next Stage</button>
+    </div>
+  </div>
+
+  <!-- END SCREEN with PLAY AGAIN -->
+  <div class="end-screen" id="endScreen">
+    <h2 class="end-title">The Story Continues</h2>
+    <div class="end-sub">13.8 Billion Years · 17 Epochs · One Universe</div>
+    <button class="play-again-btn" id="playAgainBtn">Play Again</button>
+  </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// =================================================================
+// SCENE SETUP
+// =================================================================
+const container = document.getElementById('cinema');
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 5000);
+camera.position.set(0, 0, 10);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.rotateSpeed = 0.4;
+controls.minDistance = 2;
+controls.maxDistance = 500;
+
+// Post-Processing
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+// Lowered initial bloom strength so the Earth doesn't wash out
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.4, 0.4, 0.85);
+composer.addPass(bloomPass);
+
+// Custom Cinematic Grade & Volumetric God Rays
+const cinematicPass = new ShaderPass({
+  uniforms: {
+    tDiffuse: { value: null },
+    uTime: { value: 0 },
+    uLightPos: { value: new THREE.Vector2(0.5, 0.5) },
+    uGodRayStrength: { value: 0.0 },
+    uAberration: { value: 0.0008 },
+    uVignette: { value: 0.9 }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float uTime;
+    uniform vec2 uLightPos;
+    uniform float uGodRayStrength;
+    uniform float uAberration;
+    uniform float uVignette;
+    varying vec2 vUv;
+    
+    float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
+    
+    void main() {
+      vec2 center = vUv - 0.5;
+      float dist = length(center);
+      vec2 dir = normalize(center + 0.0001);
+      
+      float aberration = uAberration * (1.0 + dist * 4.0);
+      float r = texture2D(tDiffuse, vUv + dir * aberration).r;
+      float g = texture2D(tDiffuse, vUv).g;
+      float b = texture2D(tDiffuse, vUv - dir * aberration).b;
+      vec3 color = vec3(r, g, b);
+      
+      if(uGodRayStrength > 0.01) {
+        vec2 lightDir = uLightPos - vUv;
+        float lightDist = length(lightDir);
+        float decay = exp(-lightDist * 3.0);
+        
+        vec3 godRays = vec3(0.0);
+        float totalWeight = 0.0;
+        const int SAMPLES = 80;
+        for(int i = 0; i < SAMPLES; i++) {
+          float t = float(i) / float(SAMPLES);
+          vec2 offset = vUv + lightDir * t * 0.2;
+          float weight = decay * (1.0 - t);
+          godRays += texture2D(tDiffuse, offset).rgb * weight;
+          totalWeight += weight;
+        }
+        godRays /= max(totalWeight, 0.001);
+        
+        float exposure = 1.0 / (1.0 + lightDist * 8.0);
+        color += godRays * uGodRayStrength * exposure * 1.5;
+      }
+      
+      float grain = (random(vUv + uTime * 0.01) - 0.5) * 0.05;
+      color += grain;
+      
+      float vignette = smoothstep(1.1, 0.2, dist * uVignette);
+      color *= vignette;
+      
+      color = pow(color, vec3(1.0));
+      float lum = dot(color, vec3(0.299, 0.587, 0.114));
+      color = mix(vec3(lum), color, 1.1);
+      
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `
+});
+composer.addPass(cinematicPass);
+composer.addPass(new OutputPass());
+
+// =================================================================
+// AUDIO ENGINE
+// =================================================================
+class CosmicAudio {
+  constructor() {
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.5;
+    this.master.connect(this.ctx.destination);
+    
+    this.reverb = this.ctx.createDelay(2.0);
+    this.reverb.delayTime.value = 0.5;
+    this.reverbGain = this.ctx.createGain();
+    this.reverbGain.gain.value = 0.4;
+    this.reverbFeedback = this.ctx.createGain();
+    this.reverbFeedback.gain.value = 0.4;
+    this.reverb.connect(this.reverbFeedback);
+    this.reverbFeedback.connect(this.reverb);
+    this.reverb.connect(this.master);
+  }
+  
+  playDrone(freq, duration, type='sine', vol=0.2) {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 1.0);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.master);
+    gain.connect(this.reverb);
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  }
+  
+  playBoom() {
+    const noise = this.ctx.createBufferSource();
+    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 4, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0; i<data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 2);
+    noise.buffer = buffer;
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 4);
+    
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 4);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.master);
+    gain.connect(this.reverb);
+    noise.start();
+  }
+  
+  playImpact() {
+    this.playBoom();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 2);
+    gain.gain.setValueAtTime(1.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 3);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 3);
+  }
+  
+  playShimmer() {
+    [600, 900, 1200].forEach((f, i) => {
+      setTimeout(() => this.playDrone(f, 2, 'sine', 0.08), i * 150);
+    });
+  }
+}
+let audio = null;
+
+// =================================================================
+// COSMIC PARTICLE FIELD (Morphing System)
+// =================================================================
+const PARTICLE_COUNT = 80000;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(PARTICLE_COUNT * 3);
+const pTarget = new Float32Array(PARTICLE_COUNT * 3);
+const pColor = new Float32Array(PARTICLE_COUNT * 3);
+const pSize = new Float32Array(PARTICLE_COUNT);
+const pSeed = new Float32Array(PARTICLE_COUNT);
+
+for(let i=0; i<PARTICLE_COUNT; i++) {
+  const i3 = i * 3;
+  pPos[i3] = 0; pPos[i3+1] = 0; pPos[i3+2] = 0;
+  pTarget[i3] = 0; pTarget[i3+1] = 0; pTarget[i3+2] = 0;
+  pColor[i3] = 0.4; pColor[i3+1] = 0.4; pColor[i3+2] = 0.4;
+  pSize[i] = Math.random() * 1.5 + 0.5;
+  pSeed[i] = Math.random();
+}
+
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+pGeo.setAttribute('aTarget', new THREE.BufferAttribute(pTarget, 3));
+pGeo.setAttribute('aColor', new THREE.BufferAttribute(pColor, 3));
+pGeo.setAttribute('aSize', new THREE.BufferAttribute(pSize, 1));
+pGeo.setAttribute('aSeed', new THREE.BufferAttribute(pSeed, 1));
+
+const pMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uPixelRatio: { value: renderer.getPixelRatio() },
+    uMorph: { value: 0.0 },
+    uExplosion: { value: 0.0 },
+    uSizeMult: { value: 1.0 }
+  },
+  vertexShader: `
+    attribute vec3 aTarget;
+    attribute vec3 aColor;
+    attribute float aSize;
+    attribute float aSeed;
+    
+    uniform float uTime;
+    uniform float uPixelRatio;
+    uniform float uMorph;
+    uniform float uExplosion;
+    uniform float uSizeMult;
+    
+    varying vec3 vColor;
+    varying float vAlpha;
+    
+    void main() {
+      vec3 pos = mix(position, aTarget, uMorph);
+      
+      vec3 dir = normalize(aTarget + vec3(0.001));
+      float speed = aSeed * 2.0 + 0.5;
+      pos += dir * uExplosion * speed * (1.0 + uExplosion * 5.0);
+      
+      float angle = uTime * 0.05 * (aSeed - 0.5);
+      mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+      pos.xz = rot * pos.xz;
+      
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      
+      gl_PointSize = aSize * uSizeMult * uPixelRatio * (200.0 / -mvPosition.z);
+      vColor = aColor;
+      vAlpha = 1.0 - smoothstep(200.0, 800.0, -mvPosition.z);
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+    varying float vAlpha;
+    
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float dist = length(uv);
+      if(dist > 0.5) discard;
+      
+      float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+      alpha = pow(alpha, 2.5);
+      
+      float core = 1.0 - smoothstep(0.0, 0.15, dist);
+      vec3 col = vColor + vec3(core * 0.4);
+      
+      gl_FragColor = vec4(col, alpha * vAlpha);
+    }
+  `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+
+const cosmicField = new THREE.Points(pGeo, pMat);
+scene.add(cosmicField);
+
+// =================================================================
+// HYPERREAL EARTH — REAL NASA BLUE MARBLE TEXTURES
+// =================================================================
+// Using jsdelivr GitHub CDN to ensure the textures always load properly
+const manager = new THREE.LoadingManager();
+manager.onLoad = () => {
+  document.getElementById('glLoader').classList.add('hidden');
+};
+manager.onError = (url) => {
+  console.error('Error loading', url);
+  document.getElementById('glLoader').classList.add('hidden'); // Hide loader even if error
+};
+const texLoader = new THREE.TextureLoader(manager);
+texLoader.crossOrigin = 'anonymous';
+
+const TEX_BASE = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/';
+
+const dayTexture     = texLoader.load(TEX_BASE + 'earth_atmos_2048.jpg');
+const nightTexture   = texLoader.load(TEX_BASE + 'earth_lights_2048.png');
+const cloudsTexture  = texLoader.load(TEX_BASE + 'earth_clouds_1024.png');
+const normalTexture  = texLoader.load(TEX_BASE + 'earth_normal_2048.jpg');
+const specTexture    = texLoader.load(TEX_BASE + 'earth_specular_2048.jpg');
+
+[dayTexture, nightTexture, cloudsTexture].forEach(t => {
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+});
+normalTexture.anisotropy = 8;
+specTexture.anisotropy = 8;
+
+const planetGeo = new THREE.SphereGeometry(2, 128, 128);
+
+const planetMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uLightDir: { value: new THREE.Vector3(5, 3, 5).normalize() },
+    uMolten: { value: 0.0 },
+    uClouds: { value: 0.0 },
+    uNightLights: { value: 0.0 },
+    uImpact: { value: 0.0 },
+    uImpactPoint: { value: new THREE.Vector3(0,0,1) },
+    uDayMap:     { value: dayTexture },
+    uNightMap:   { value: nightTexture },
+    uCloudsMap:  { value: cloudsTexture },
+    uNormalMap:  { value: normalTexture },
+    uSpecularMap:{ value: specTexture }
+  },
+  vertexShader: `
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPos;
+    varying vec3 vViewDir;
+    varying vec2 vUv;
+    
+    void main() {
+      vUv = uv;
+      vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPos = worldPos.xyz;
+      vViewDir = normalize(cameraPosition - worldPos.xyz);
+      gl_Position = projectionMatrix * viewMatrix * worldPos;
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform vec3 uLightDir;
+    uniform float uMolten;
+    uniform float uClouds;
+    uniform float uNightLights;
+    uniform float uImpact;
+    uniform vec3 uImpactPoint;
+    
+    uniform sampler2D uDayMap;
+    uniform sampler2D uNightMap;
+    uniform sampler2D uCloudsMap;
+    uniform sampler2D uNormalMap;
+    uniform sampler2D uSpecularMap;
+    
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPos;
+    varying vec3 vViewDir;
+    varying vec2 vUv;
+    
+    // 3D Simplex Noise (for molten lava)
+    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+    
+    float snoise(vec3 v) {
+      const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+      const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+      vec3 i = floor(v + dot(v, C.yyy));
+      vec3 x0 = v - i + dot(i, C.xxx);
+      vec3 g = step(x0.yzx, x0.xyz);
+      vec3 l = 1.0 - g;
+      vec3 i1 = min(g.xyz, l.zxy);
+      vec3 i2 = max(g.xyz, l.zxy);
+      vec3 x1 = x0 - i1 + C.xxx;
+      vec3 x2 = x0 - i2 + C.yyy;
+      vec3 x3 = x0 - D.yyy;
+      i = mod289(i);
+      vec4 p = permute(permute(permute(
+                i.z + vec4(0.0, i1.z, i2.z, 1.0))
+              + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+              + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+      float n_ = 0.142857142857;
+      vec3 ns = n_ * D.wyz - D.xzx;
+      vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+      vec4 x_ = floor(j * ns.z);
+      vec4 y_ = floor(j - 7.0 * x_);
+      vec4 x = x_ *ns.x + ns.yyyy;
+      vec4 y = y_ *ns.x + ns.yyyy;
+      vec4 h = 1.0 - abs(x) - abs(y);
+      vec4 b0 = vec4(x.xy, y.xy);
+      vec4 b1 = vec4(x.zw, y.zw);
+      vec4 s0 = floor(b0)*2.0 + 1.0;
+      vec4 s1 = floor(b1)*2.0 + 1.0;
+      vec4 sh = -step(h, vec4(0.0));
+      vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+      vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+      vec3 p0 = vec3(a0.xy,h.x);
+      vec3 p1 = vec3(a0.zw,h.y);
+      vec3 p2 = vec3(a1.xy,h.z);
+      vec3 p3 = vec3(a1.zw,h.w);
+      vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+      p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+      vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+      m = m * m;
+      return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+    }
+    
+    float fbm(vec3 p) {
+      float v = 0.0; float a = 0.5;
+      for(int i=0; i<5; i++) { v += a * snoise(p); p *= 2.0; a *= 0.5; }
+      return v;
+    }
+    
+    void main() {
+      vec3 p = normalize(vWorldPos);
+      
+      // Sample real Earth textures
+      vec3 dayTex   = texture2D(uDayMap, vUv).rgb;
+      vec3 nightTex = texture2D(uNightMap, vUv).rgb;
+      float specVal = texture2D(uSpecularMap, vUv).r;     // 1 = ocean, 0 = land
+      vec3 nmap     = texture2D(uNormalMap, vUv).rgb * 2.0 - 1.0;
+      
+      // Animated clouds
+      vec2 cloudUv = vUv + vec2(uTime * 0.003, 0.0);
+      float cloudTex = texture2D(uCloudsMap, cloudUv).r;
+      
+      // ============ LIGHTING ============
+      vec3 N = normalize(vWorldNormal + nmap * 0.15); // less normal perturbation for realism
+      float NdotL = dot(N, uLightDir);
+      float dayLight = smoothstep(-0.15, 0.45, NdotL);
+      
+      // ============ BASE EARTH COMPOSITE ============
+      vec3 earthColor = dayTex;
+      
+      // Ocean specular highlights (sun glint on water)
+      vec3 R = reflect(-uLightDir, N);
+      float specPower = pow(max(dot(R, vViewDir), 0.0), 32.0);
+      vec3 sunGlint = vec3(1.0, 0.95, 0.85) * specPower * specVal * 1.0; // toned down
+      
+      // Night side city lights
+      float nightMask = smoothstep(0.1, -0.2, NdotL);
+      vec3 cityGlow = nightTex * uNightLights * nightMask * 1.5; // toned down
+      
+      // Cloud layer lit by sun
+      vec3 cloudColor = vec3(cloudTex) * (dayLight * 0.9 + 0.1);
+      
+      // ============ MOLTEN STATE (Young Earth / Hadean) ============
+      float lavaNoise = fbm(p * 4.0 + uTime * 0.1);
+      float crustNoise = fbm(p * 6.0 - uTime * 0.05);
+      float lava = smoothstep(0.0, 0.45, lavaNoise + crustNoise * 0.4);
+      vec3 lavaColor = mix(vec3(0.35, 0.02, 0.0), vec3(1.0, 0.55, 0.08), lava);
+      lavaColor += vec3(1.0, 0.5, 0.1) * pow(lava, 3.0) * 1.0; // toned down hotspots
+      float cracks = smoothstep(0.55, 0.6, lavaNoise);
+      lavaColor += vec3(1.0, 0.4, 0.0) * cracks * 0.5;
+      
+      // ============ IMPACT CRATER ============
+      float distToImpact = distance(p, normalize(uImpactPoint));
+      float crater = smoothstep(0.55, 0.0, distToImpact) * uImpact;
+      vec3 craterGlow = mix(vec3(1.0, 0.3, 0.0), vec3(0.2, 0.05, 0.0), distToImpact * 2.0);
+      
+      // ============ COMPOSITE EVERYTHING ============
+      vec3 color = earthColor * (dayLight * 0.85 + 0.15);
+      color += sunGlint;
+      color += cityGlow;
+      
+      // Blend in clouds
+      color = mix(color, cloudColor, cloudTex * uClouds * 0.85);
+      
+      // Blend toward molten Earth
+      color = mix(color, lavaColor, uMolten);
+      cityGlow *= (1.0 - uMolten);
+      
+      // Apply impact glow on top
+      color = mix(color, craterGlow, crater * 0.85);
+      color += vec3(1.0, 0.5, 0.15) * crater * 0.4;
+      
+      // Subtle atmospheric fresnel on rim
+      float fresnel = pow(1.0 - max(dot(N, vViewDir), 0.0), 3.0);
+      color += vec3(0.3, 0.55, 1.0) * fresnel * dayLight * 0.25 * (1.0 - uMolten); // toned down
+      
+      color = pow(color, vec3(1.0));
+      
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `
+});
+
+const planet = new THREE.Mesh(planetGeo, planetMat);
+planet.visible = false;
+scene.add(planet);
+
+// Atmosphere Mesh (Rayleigh Scattering Approximation)
+const atmoGeo = new THREE.SphereGeometry(2.1, 64, 64);
+const atmoMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uLightDir: { value: new THREE.Vector3(5, 3, 5).normalize() }
+  },
+  vertexShader: `
+    varying vec3 vNormal;
+    varying vec3 vWorldNormal;
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+      vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uLightDir;
+    varying vec3 vNormal;
+    varying vec3 vWorldNormal;
+    
+    void main() {
+      float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+      float light = dot(vWorldNormal, uLightDir);
+      float dayLight = smoothstep(-0.2, 0.5, light);
+      vec3 color = mix(vec3(0.1, 0.2, 0.4), vec3(0.4, 0.6, 1.0), dayLight);
+      gl_FragColor = vec4(color, intensity * (0.3 + dayLight * 0.7));
+    }
+  `,
+  blending: THREE.AdditiveBlending,
+  side: THREE.BackSide,
+  transparent: true,
+  depthWrite: false
+});
+const atmosphere = new THREE.Mesh(atmoGeo, atmoMat);
+atmosphere.visible = false;
+scene.add(atmosphere);
+
+// Accretion Disk (Protoplanetary)
+const diskGeo = new THREE.RingGeometry(2.5, 12, 128, 8);
+const diskMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uOpacity: { value: 0 } },
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vPos;
+    void main() {
+      vUv = uv;
+      vPos = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime; uniform float uOpacity;
+    varying vec2 vUv;
+    varying vec3 vPos;
+    
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float noise(vec2 p) {
+      vec2 i = floor(p); vec2 f = fract(p);
+      f = f*f*(3.0-2.0*f);
+      return mix(mix(hash(i), hash(i+vec2(1.0,0.0)), f.x),
+                 mix(hash(i+vec2(0.0,1.0)), hash(i+vec2(1.0,1.0)), f.x), f.y);
+    }
+    
+    void main() {
+      float r = length(vUv - 0.5) * 2.0;
+      float angle = atan(vPos.x, vPos.z);
+      float swirl = sin(angle * 3.0 + r * 8.0 - uTime * 1.5);
+      float gap1 = smoothstep(0.4, 0.42, r) * smoothstep(0.46, 0.44, r);
+      float gap2 = smoothstep(0.6, 0.62, r) * smoothstep(0.68, 0.66, r);
+      float gaps = 1.0 - (gap1 + gap2);
+      float density = (0.6 + 0.4 * swirl) * gaps;
+      density *= smoothstep(0.0, 0.1, r) * smoothstep(1.0, 0.3, r);
+      vec3 col = mix(vec3(0.6, 0.3, 0.1), vec3(1.0, 0.9, 0.7), r);
+      gl_FragColor = vec4(col, density * uOpacity * 0.8);
+    }
+  `,
+  transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false
+});
+const disk = new THREE.Mesh(diskGeo, diskMat);
+disk.rotation.x = Math.PI / 2.1;
+disk.visible = false;
+scene.add(disk);
+
+// Sun
+const sunGeo = new THREE.SphereGeometry(1.5, 64, 64);
+const sunMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 } },
+  vertexShader: `
+    varying vec3 vPos;
+    void main() { vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    varying vec3 vPos;
+    float hash(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453); }
+    float noise(vec3 p) {
+      vec3 i = floor(p); vec3 f = fract(p);
+      f = f*f*(3.0-2.0*f);
+      return mix(mix(mix(hash(i), hash(i+vec3(1,0,0)), f.x), mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)), f.x), f.y),
+                 mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)), f.x), mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)), f.x), f.y), f.z);
+    }
+    void main() {
+      float n = noise(vPos * 3.0 + uTime * 0.5);
+      n += 0.5 * noise(vPos * 6.0 - uTime * 0.3);
+      vec3 col = mix(vec3(1.0, 0.4, 0.1), vec3(1.0, 0.9, 0.6), n);
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `
+});
+const sun = new THREE.Mesh(sunGeo, sunMat);
+sun.visible = false;
+scene.add(sun);
+
+// =================================================================
+// SCENE TIMELINE DIRECTOR & EDUCATIONAL DATA
+// =================================================================
+const SCENES = [
+  { id: 1, duration: 4, caption: "Before everything...", epoch: "EPOCH 01", time: "t = 0", title: "Singularity", temp: "∞ K", scale: "10⁻³⁵ m",
+    body: "All matter, energy, and space itself is compressed into an infinitely dense, infinitely hot point. The known laws of physics break down. Time, as we experience it, does not yet exist." },
+  { id: 2, duration: 5, caption: "The Big Bang", epoch: "EPOCH 02", time: "10⁻⁴³ s", title: "Planck Epoch", temp: "10³² K", scale: "10⁻³⁵ m",
+    body: "The universe begins not as an explosion in space, but as an expansion OF space. Gravity separates from the other fundamental forces. The universe is pure, opaque plasma." },
+  { id: 3, duration: 4, caption: "Inflation", epoch: "EPOCH 03", time: "10⁻³⁶ s", title: "Cosmic Inflation", temp: "10²⁷ K", scale: "10⁻²⁶ m",
+    body: "The universe undergoes exponential expansion, growing from subatomic to macroscopic size in a fraction of a second. Quantum fluctuations are stretched to cosmic scales, seeding future galaxies." },
+  { id: 4, duration: 4, caption: "Formation of Matter", epoch: "EPOCH 04", time: "10⁻⁶ s", title: "Quark Epoch", temp: "10¹³ K", scale: "10¹⁶ m",
+    body: "Quarks combine to form protons and neutrons. Matter and antimatter annihilate, but a tiny imbalance (1 in a billion) leaves behind the matter that forms everything we see today." },
+  { id: 5, duration: 4, caption: "Cosmic Darkness", epoch: "EPOCH 05", time: "380,000 yrs", title: "Recombination", temp: "3,000 K", scale: "80 Mly",
+    body: "The universe cools enough for electrons to bind to nuclei, forming neutral hydrogen. Light travels freely for the first time (the Cosmic Microwave Background). The universe enters a dark age with no stars." },
+  { id: 6, duration: 4, caption: "The First Stars", epoch: "EPOCH 06", time: "400 Myr", title: "Reionization", temp: "60 K", scale: "100 Mly",
+    body: "Gravity collapses dark matter and gas into the first stars (Population III). These massive, hot blue stars fuse hydrogen into helium and emit UV light, reionizing the hydrogen fog of the universe." },
+  { id: 7, duration: 4, caption: "Birth of Galaxies", epoch: "EPOCH 07", time: "1 Billion yrs", title: "Galaxy Formation", temp: "20 K", scale: "1 Bly",
+    body: "Dark matter halos pull in gas and stars. Gravity and angular momentum shape them into majestic spirals and ellipticals. Supermassive black holes form at their centers, powering quasars." },
+  { id: 8, duration: 4, caption: "Supernovas", epoch: "EPOCH 08", time: "2 Billion yrs", title: "Stellar Nucleosynthesis", temp: "10 K", scale: "5 Bly",
+    body: "Massive stars run out of fuel and die in brilliant supernovae. The intense heat and pressure forge heavy elements like carbon, oxygen, iron, and gold, seeding the universe with the building blocks of life." },
+  { id: 9, duration: 4, caption: "The Milky Way", epoch: "EPOCH 09", time: "8 Billion yrs", title: "Galactic Maturity", temp: "5 K", scale: "50 Bly",
+    body: "Our Milky Way galaxy forms. A barred spiral with a supermassive black hole (Sagittarius A*) at its center. Older stars populate the halo, while younger stars form in the rotating spiral arms." },
+  { id: 10, duration: 4, caption: "Birth of the Solar System", epoch: "EPOCH 10", time: "9.2 Byr (4.6 Bya)", title: "Protoplanetary Disk", temp: "100 K", scale: "100 AU",
+    body: "A molecular cloud collapses into a spinning disk of dust and gas. The center ignites into our Sun. Dust grains accrete into planetesimals, which collide and form planets." },
+  { id: 11, duration: 4, caption: "Young Earth", epoch: "EPOCH 11", time: "4.5 Bya", title: "Hadean Eon", temp: "1,000 K", scale: "6,000 km",
+    body: "Earth is a molten ball of magma constantly bombarded by asteroids. A Mars-sized object collides with Earth, ejecting debris that forms the Moon. Water is delivered via comets and asteroids." },
+  { id: 12, duration: 4, caption: "The First Life", epoch: "EPOCH 12", time: "3.8 Bya", title: "Abiogenesis", temp: "300 K", scale: "10⁻⁶ m",
+    body: "The first single-celled organisms (prokaryotes) emerge in the oceans. They utilize chemosynthesis and early photosynthesis, slowly transforming the atmosphere over billions of years." },
+  { id: 13, duration: 4, caption: "The Age of Dinosaurs", epoch: "EPOCH 13", time: "230 Mya", title: "Mesozoic Era", temp: "290 K", scale: "10 m",
+    body: "Reptiles dominate the Earth. The supercontinent Pangaea splits apart. High oxygen levels support the massive growth of sauropods and the evolution of flying pterosaurs." },
+  { id: 14, duration: 4, caption: "The Impact", epoch: "EPOCH 14", time: "66 Mya", title: "Cretaceous Extinction", temp: "1,500 K", scale: "10 km",
+    body: "A 10km asteroid strikes the Yucatan Peninsula. The Chicxulub impact triggers global tsunamis, wildfires, and a nuclear winter. 75% of all species, including non-avian dinosaurs, go extinct." },
+  { id: 15, duration: 4, caption: "Rise of Humans", epoch: "EPOCH 15", time: "6 Mya", title: "Hominid Evolution", temp: "288 K", scale: "1.7 m",
+    body: "Hominids diverge from chimpanzees. The genus Homo evolves, masters fire, develops stone tools, and migrates out of Africa. A cognitive revolution leads to language, art, and agriculture." },
+  { id: 16, duration: 4, caption: "Modern Earth", epoch: "EPOCH 16", time: "Today", title: "The Anthropocene", temp: "288 K", scale: "12,742 km",
+    body: "Humans alter the planet's geology and climate. Light pollution and thousands of satellites encircle Earth. We have become the fastest geological and evolutionary force on the planet." },
+  { id: 17, duration: 6, caption: "Our Story", epoch: "EPOCH 17", time: "The Future", title: "We Are Starstuff", temp: "2.7 K", scale: "∞",
+    body: "Every atom in your body was forged in the core of a dying star. The universe evolved for 13.8 billion years to experience itself through you. The journey continues." }
+];
+
+let currentSceneIdx = 0;
+let isPlaying = false;
+let awaitingContinue = false;
+let sceneStartTime = 0;
+let totalTime = 0;
+let cameraShake = 0;
+let experienceEnded = false;
+const clock = new THREE.Clock(false);
+
+// State Morphers
+function generateBigBang() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    pTarget[i3] = 0; pTarget[i3+1] = 0; pTarget[i3+2] = 0;
+    pColor[i3] = 0.8; pColor[i3+1] = 0.8; pColor[i3+2] = 0.8;
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateInflation() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 40 + Math.random() * 120;
+    pTarget[i3] = Math.sin(phi)*Math.cos(theta)*r;
+    pTarget[i3+1] = Math.sin(phi)*Math.sin(theta)*r;
+    pTarget[i3+2] = Math.cos(phi)*r;
+    pColor[i3] = 0.7; pColor[i3+1] = 0.5; pColor[i3+2] = 0.3;
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateMatter() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    const cluster = Math.floor(Math.random() * 30);
+    const cx = (Math.sin(cluster*5.3)*40);
+    const cy = (Math.cos(cluster*3.1)*40);
+    const cz = (Math.sin(cluster*7.2)*40);
+    pTarget[i3] = cx + (Math.random()-0.5)*8;
+    pTarget[i3+1] = cy + (Math.random()-0.5)*8;
+    pTarget[i3+2] = cz + (Math.random()-0.5)*8;
+    const t = Math.random();
+    if(t > 0.9) { pColor[i3]=0.6; pColor[i3+1]=0.2; pColor[i3+2]=0.6; }
+    else if(t > 0.7) { pColor[i3]=0.7; pColor[i3+1]=0.5; pColor[i3+2]=0.1; }
+    else if(t > 0.4) { pColor[i3]=0.2; pColor[i3+1]=0.3; pColor[i3+2]=0.6; }
+    else { pColor[i3]=0.6; pColor[i3+1]=0.6; pColor[i3+2]=0.6; }
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateDarkness() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    pTarget[i3] = (Math.random()-0.5)*150;
+    pTarget[i3+1] = (Math.random()-0.5)*150;
+    pTarget[i3+2] = (Math.random()-0.5)*150;
+    pColor[i3] = 0.05; pColor[i3+1] = 0.05; pColor[i3+2] = 0.05;
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateStars() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    const cluster = Math.floor(Math.random() * 80);
+    const cx = (Math.sin(cluster*1.3)*70);
+    const cy = (Math.cos(cluster*2.1)*70);
+    const cz = (Math.sin(cluster*3.2)*70);
+    pTarget[i3] = cx + (Math.random()-0.5)*4;
+    pTarget[i3+1] = cy + (Math.random()-0.5)*4;
+    pTarget[i3+2] = cz + (Math.random()-0.5)*4;
+    pColor[i3] = 0.5; pColor[i3+1]=0.6; pColor[i3+2]=0.7;
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateGalaxy() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    const arm = Math.floor(Math.random() * 4);
+    const angle = (arm * Math.PI / 2) + Math.random() * 1.5;
+    const r = 5 + Math.pow(Math.random(), 0.5) * 80;
+    const twist = r * 0.08;
+    if(Math.random() < 0.2) {
+      pTarget[i3] = (Math.random()-0.5) * 15;
+      pTarget[i3+1] = (Math.random()-0.5) * 10;
+      pTarget[i3+2] = (Math.random()-0.5) * 15;
+      pColor[i3] = 0.9; pColor[i3+1]=0.8; pColor[i3+2]=0.6;
+    } else {
+      pTarget[i3] = Math.cos(angle + twist) * r;
+      pTarget[i3+1] = (Math.random() - 0.5) * 4 * (1 - r/80);
+      pTarget[i3+2] = Math.sin(angle + twist) * r;
+      pColor[i3] = 0.7; pColor[i3+1]=0.6; pColor[i3+2]=0.8;
+    }
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateSupernova() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    const burst = Math.floor(Math.random() * 15);
+    const bx = (Math.sin(burst*2.3)*50);
+    const by = (Math.cos(burst*5.1)*50);
+    const bz = (Math.sin(burst*7.2)*50);
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = Math.random() * 20;
+    pTarget[i3] = bx + Math.sin(phi)*Math.cos(theta)*r;
+    pTarget[i3+1] = by + Math.sin(phi)*Math.sin(theta)*r;
+    pTarget[i3+2] = bz + Math.cos(phi)*r;
+    pColor[i3] = 0.8; pColor[i3+1]=0.3; pColor[i3+2]=0.1;
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+function generateMilkyWay() {
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    const arm = Math.floor(Math.random() * 4);
+    const angle = (arm * Math.PI / 2) + Math.random() * 1.2;
+    const r = 3 + Math.pow(Math.random(), 0.4) * 50;
+    const twist = r * 0.12;
+    if(Math.random() < 0.25) {
+      pTarget[i3] = (Math.random()-0.5) * 10;
+      pTarget[i3+1] = (Math.random()-0.5) * 6;
+      pTarget[i3+2] = (Math.random()-0.5) * 10;
+      pColor[i3] = 0.9; pColor[i3+1]=0.8; pColor[i3+2]=0.6;
+    } else {
+      pTarget[i3] = Math.cos(angle + twist) * r;
+      pTarget[i3+1] = (Math.random() - 0.5) * 2.5 * (1 - r/50);
+      pTarget[i3+2] = Math.sin(angle + twist) * r;
+      pColor[i3] = 0.7; pColor[i3+1]=0.7; pColor[i3+2]=0.9;
+    }
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+}
+
+function moveCamera(x, y, z, tx=0, ty=0, tz=0, lerp=0.05) {
+  camera.position.x += (x - camera.position.x) * lerp;
+  camera.position.y += (y - camera.position.y) * lerp;
+  camera.position.z += (z - camera.position.z) * lerp;
+  controls.target.x += (tx - controls.target.x) * lerp;
+  controls.target.y += (ty - controls.target.y) * lerp;
+  controls.target.z += (tz - controls.target.z) * lerp;
+}
+
+const triggers = {};
+
+function resetPlanetUniforms() {
+  planetMat.uniforms.uMolten.value = 0;
+  planetMat.uniforms.uClouds.value = 0;
+  planetMat.uniforms.uNightLights.value = 0;
+  planetMat.uniforms.uImpact.value = 0;
+}
+
+function updateScene(idx, p) {
+  switch(idx) {
+    case 0:
+      pMat.uniforms.uMorph.value = 0;
+      pMat.uniforms.uExplosion.value = 0;
+      pMat.uniforms.uSizeMult.value = 0;
+      bloomPass.strength = 0.0;
+      break;
+    case 1:
+      if(!triggers.bb) { generateBigBang(); triggers.bb = true; if(audio) audio.playBoom(); pMat.uniforms.uMorph.value = 0; }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uExplosion.value = p * 1.5;
+      pMat.uniforms.uSizeMult.value = 1.5 * (1 - p * 0.5);
+      bloomPass.strength = 0.8 + p * 0.5;
+      moveCamera(0, 0, 8 - p * 3, 0, 0, 0, 0.02);
+      break;
+    case 2:
+      if(!triggers.inf) { generateInflation(); triggers.inf = true; }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uExplosion.value = 1.0 - p;
+      pMat.uniforms.uSizeMult.value = 1.0;
+      bloomPass.strength = 1.2;
+      moveCamera(Math.sin(p*3)*3, Math.cos(p*2)*3, 18 - p*6, 0, 0, 0, 0.05);
+      break;
+    case 3:
+      if(!triggers.mat) { generateMatter(); triggers.mat = true; if(audio) audio.playDrone(110, 4, 'sine', 0.15); }
+      pMat.uniforms.uMorph.value = p;
+      bloomPass.strength = 0.6;
+      moveCamera(0, 5, 30, 0, 0, 0, 0.02);
+      break;
+    case 4:
+      if(!triggers.dark) { generateDarkness(); triggers.dark = true; }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uSizeMult.value = 0.5;
+      bloomPass.strength = 0.1;
+      moveCamera(0, 0, 40, 0, 0, 0, 0.01);
+      break;
+    case 5:
+      if(!triggers.star) { generateStars(); triggers.star = true; if(audio) audio.playShimmer(); }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uSizeMult.value = 2.0;
+      bloomPass.strength = 0.8;
+      moveCamera(10, 0, 20, 0, 0, 0, 0.03);
+      break;
+    case 6:
+      if(!triggers.gal) { generateGalaxy(); triggers.gal = true; }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uSizeMult.value = 1.2;
+      bloomPass.strength = 0.6;
+      moveCamera(0, 30, 80, 0, 0, 0, 0.02);
+      break;
+    case 7:
+      if(!triggers.sup) { generateSupernova(); triggers.sup = true; if(audio) audio.playImpact(); }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uExplosion.value = p * 2;
+      bloomPass.strength = 1.5;
+      moveCamera(0, 10, 40, 0, 0, 0, 0.05);
+      break;
+    case 8:
+      if(!triggers.mw) { generateMilkyWay(); triggers.mw = true; }
+      pMat.uniforms.uMorph.value = p;
+      pMat.uniforms.uExplosion.value = 0;
+      pMat.uniforms.uSizeMult.value = 1.0;
+      bloomPass.strength = 0.8;
+      moveCamera(0, 10, 55 - p*25, 0, 0, 0, 0.02);
+      break;
+    case 9:
+      if(!triggers.ss) {
+        disk.visible = true; sun.visible = true; planet.visible = false; atmosphere.visible = false;
+        triggers.ss = true;
+        if(audio) audio.playDrone(220, 4, 'triangle', 0.1);
+      }
+      diskMat.uniforms.uOpacity.value = p;
+      sun.scale.setScalar(p * 1.5);
+      bloomPass.strength = 0.6; // lowered from 1.5
+      moveCamera(0, 15, 25 - p*5, 0, 0, 0, 0.02);
+      break;
+    case 10:
+      if(!triggers.earth) {
+        sun.visible = false; disk.visible = false;
+        planet.visible = true; atmosphere.visible = true;
+        resetPlanetUniforms();
+        planetMat.uniforms.uMolten.value = 1.0;
+        triggers.earth = true;
+      }
+      planet.scale.setScalar(1 + p * 0.5);
+      atmosphere.scale.setScalar(1 + p * 0.5);
+      planet.rotation.y += 0.002;
+      bloomPass.strength = 0.3; // heavily lowered from 0.8 so lava details are visible
+      moveCamera(Math.sin(p*5)*2, 0, 7, 0, 0, 0, 0.05);
+      break;
+    case 11:
+      if(!triggers.life) {
+        triggers.life = true;
+        if(audio) audio.playDrone(440, 4, 'sine', 0.08);
+      }
+      planetMat.uniforms.uMolten.value = 1 - p;
+      planetMat.uniforms.uClouds.value = p * 0.4;
+      planet.rotation.y += 0.002;
+      bloomPass.strength = 0.15; // very low bloom for real earth
+      moveCamera(2, 1, 6, 0, 0, 0, 0.03);
+      break;
+    case 12:
+      if(!triggers.dino) {
+        planetMat.uniforms.uClouds.value = 0.5;
+        triggers.dino = true;
+      }
+      planet.rotation.y += 0.003;
+      bloomPass.strength = 0.15;
+      moveCamera(Math.sin(p*3)*1.5, Math.cos(p*2)*0.5, 5, 0, 0, 0, 0.05);
+      break;
+    case 13:
+      if(p > 0.3 && !triggers.impact) {
+        planetMat.uniforms.uImpact.value = 1.0;
+        planetMat.uniforms.uImpactPoint.value.set(1, 0.2, 0.5);
+        triggers.impact = true;
+        if(audio) audio.playImpact();
+        cameraShake = 1.0;
+      }
+      planetMat.uniforms.uImpact.value = 1.0 - p;
+      planetMat.uniforms.uClouds.value = 0.5 + p * 0.5;
+      planet.rotation.y += 0.001;
+      bloomPass.strength = 0.4; // slight bloom increase for impact flash
+      break;
+    case 14:
+      if(!triggers.human) {
+        planetMat.uniforms.uImpact.value = 0;
+        planetMat.uniforms.uClouds.value = 0.4;
+        triggers.human = true;
+      }
+      planetMat.uniforms.uNightLights.value = p;
+      planet.rotation.y += 0.005;
+      bloomPass.strength = 0.15;
+      moveCamera(0, 0.5, 5, 0, 0, 0, 0.02);
+      break;
+    case 15:
+      if(!triggers.modern) {
+        planetMat.uniforms.uNightLights.value = 1.0;
+        triggers.modern = true;
+      }
+      planet.rotation.y += 0.001;
+      bloomPass.strength = 0.15;
+      moveCamera(0, 0, 6 + p*2, 0, 0, 0, 0.02);
+      break;
+    case 16:
+      if(!triggers.reveal) {
+        document.getElementById('websiteUI').classList.add('visible');
+        triggers.reveal = true;
+      }
+      planet.rotation.y += 0.0005;
+      bloomPass.strength = 0.15;
+      moveCamera(3, 1, 8 + p*4, 0, 0, 0, 0.02);
+      break;
+  }
+}
+
+// =================================================================
+// ANIMATION LOOP
+// =================================================================
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.getElapsedTime();
+  
+  pMat.uniforms.uTime.value = t;
+  planetMat.uniforms.uTime.value = t;
+  diskMat.uniforms.uTime.value = t;
+  sunMat.uniforms.uTime.value = t;
+  cinematicPass.uniforms.uTime.value = t;
+  
+  if(sun.visible) {
+    const vec = sun.position.clone().project(camera);
+    cinematicPass.uniforms.uLightPos.value.set((vec.x + 1) / 2, (vec.y + 1) / 2);
+    cinematicPass.uniforms.uGodRayStrength.value = 0.6;
+  } else {
+    cinematicPass.uniforms.uGodRayStrength.value = 0.0;
+  }
+  
+  if(isPlaying) {
+    totalTime += dt;
+    const scene = SCENES[currentSceneIdx];
+    
+    if(totalTime - sceneStartTime > scene.duration) {
+      isPlaying = false;
+      currentSceneIdx++;
+      
+      if(currentSceneIdx >= SCENES.length) {
+        // ====== END OF JOURNEY → SHOW PLAY AGAIN ======
+        currentSceneIdx = SCENES.length - 1;
+        experienceEnded = true;
+        document.getElementById('playBtn').innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        setTimeout(() => {
+          document.getElementById('endScreen').classList.add('visible');
+        }, 800);
+      } else {
+        // Show teacher popup for the next stage
+        showTeacherPopup(currentSceneIdx);
+      }
+    } else {
+      const p = Math.min(1, (totalTime - sceneStartTime) / scene.duration);
+      updateScene(currentSceneIdx, p);
+      
+      const totalDuration = SCENES.reduce((a,b) => a+b.duration, 0);
+      const totalProgress = totalTime / totalDuration;
+      document.getElementById('timelineProgress').style.width = `${Math.min(100, totalProgress * 100)}%`;
+      document.querySelectorAll('.epoch-marker').forEach((m, i) => {
+        m.classList.toggle('active', i === currentSceneIdx);
+      });
+    }
+  }
+  
+  if(cameraShake > 0) {
+    camera.position.x += (Math.random() - 0.5) * cameraShake;
+    camera.position.y += (Math.random() - 0.5) * cameraShake;
+    cameraShake -= dt * 2;
+  }
+  
+  controls.update();
+  composer.render();
+}
+
+// =================================================================
+// UI & INTERACTION
+// =================================================================
+function updateUI(scene) {
+  const cap = document.getElementById('captionText');
+  cap.style.opacity = 0;
+  setTimeout(() => {
+    cap.textContent = scene.caption;
+    cap.style.opacity = 1;
+  }, 1000);
+
+  document.getElementById('kpEpoch').textContent = scene.epoch;
+  document.getElementById('kpTime').textContent = scene.time;
+  document.getElementById('kpTitle').textContent = scene.title;
+  document.getElementById('kpBody').textContent = scene.body;
+  document.getElementById('kpTemp').textContent = scene.temp;
+  document.getElementById('kpScale').textContent = scene.scale;
+  
+  document.getElementById('knowledgePanel').classList.add('visible');
+}
+
+// ===== TEACHER POPUP LOGIC =====
+function showTeacherPopup(idx) {
+  awaitingContinue = true;
+  isPlaying = false;
+  
+  const scene = SCENES[idx];
+  document.getElementById('modalEpoch').textContent = scene.epoch;
+  document.getElementById('modalTitle').textContent = scene.title;
+  document.getElementById('modalBody').textContent = scene.body;
+  document.getElementById('modalTime').textContent = scene.time;
+  document.getElementById('modalTemp').textContent = scene.temp;
+  document.getElementById('modalScale').textContent = scene.scale;
+  
+  // Update active marker
+  document.querySelectorAll('.epoch-marker').forEach((m, i) => {
+    m.classList.toggle('active', i === idx);
+  });
+  
+  document.getElementById('teacherModal').classList.add('visible');
+}
+
+function startStage(idx) {
+  document.getElementById('teacherModal').classList.remove('visible');
+  awaitingContinue = false;
+  
+  // Reset triggers for accurate visual morphing if jumping backwards/forwards
+  triggers.bb = triggers.inf = triggers.mat = triggers.dark = triggers.star = false;
+  triggers.gal = triggers.sup = triggers.mw = triggers.ss = triggers.earth = false;
+  triggers.life = triggers.dino = triggers.impact = triggers.human = triggers.modern = false;
+  triggers.reveal = false;
+  
+  resetPlanetUniforms();
+  disk.visible = false; sun.visible = false; planet.visible = false; atmosphere.visible = false;
+  document.getElementById('websiteUI').classList.remove('visible');
+  
+  // Fast-forward state logic so the scene is ready
+  if(idx >= 1) generateBigBang();
+  if(idx >= 2) generateInflation();
+  if(idx >= 3) generateMatter();
+  if(idx >= 4) generateDarkness();
+  if(idx >= 5) generateStars();
+  if(idx >= 6) generateGalaxy();
+  if(idx >= 7) generateSupernova();
+  if(idx >= 8) generateMilkyWay();
+  
+  if(idx >= 9)  { disk.visible = true; sun.visible = true; }
+  if(idx >= 10) { sun.visible = false; disk.visible = false; planet.visible = true; atmosphere.visible = true; planetMat.uniforms.uMolten.value = 1.0; }
+  if(idx >= 11) { planetMat.uniforms.uMolten.value = 0; planetMat.uniforms.uClouds.value = 0.4; }
+  if(idx >= 12) { planetMat.uniforms.uClouds.value = 0.5; }
+  if(idx >= 13) { planetMat.uniforms.uImpact.value = 0; }
+  if(idx >= 14) { planetMat.uniforms.uNightLights.value = 1.0; planetMat.uniforms.uClouds.value = 0.4; }
+  if(idx >= 16) { document.getElementById('websiteUI').classList.add('visible'); }
+  
+  pMat.uniforms.uMorph.value = 1.0;
+  pMat.uniforms.uExplosion.value = (idx === 1) ? 1.5 : (idx === 2 ? 0 : (idx === 7 ? 2 : 0));
+  
+  currentSceneIdx = idx;
+  sceneStartTime = totalTime;
+  
+  updateUI(SCENES[idx]);
+  document.getElementById('playBtn').innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+  
+  setTimeout(() => {
+    isPlaying = true;
+  }, 800);
+}
+
+const track = document.getElementById('timelineTrack');
+SCENES.forEach((scene, i) => {
+  const marker = document.createElement('div');
+  marker.className = 'epoch-marker';
+  marker.style.left = `${(i / (SCENES.length - 1)) * 100}%`;
+  const tooltip = document.createElement('div');
+  tooltip.className = 'epoch-tooltip';
+  tooltip.textContent = scene.title;
+  marker.appendChild(tooltip);
+  marker.addEventListener('click', () => showTeacherPopup(i));
+  track.appendChild(marker);
+});
+
+// ===== Full restart for PLAY AGAIN =====
+function restartExperience() {
+  document.getElementById('endScreen').classList.remove('visible');
+  experienceEnded = false;
+  
+  totalTime = 0;
+  for(const k in triggers) triggers[k] = false;
+  
+  resetPlanetUniforms();
+  planet.visible = false;
+  atmosphere.visible = false;
+  disk.visible = false;
+  sun.visible = false;
+  
+  document.getElementById('websiteUI').classList.remove('visible');
+  
+  for(let i=0; i<PARTICLE_COUNT; i++) {
+    const i3 = i*3;
+    pTarget[i3] = 0; pTarget[i3+1] = 0; pTarget[i3+2] = 0;
+    pPos[i3] = 0; pPos[i3+1] = 0; pPos[i3+2] = 0;
+    pColor[i3] = 0.4; pColor[i3+1] = 0.4; pColor[i3+2] = 0.4;
+  }
+  pGeo.attributes.aTarget.needsUpdate = true;
+  pGeo.attributes.aColor.needsUpdate = true;
+  pGeo.attributes.position.needsUpdate = true;
+  
+  pMat.uniforms.uMorph.value = 0;
+  pMat.uniforms.uExplosion.value = 0;
+  pMat.uniforms.uSizeMult.value = 0;
+  
+  camera.position.set(0, 0, 10);
+  controls.target.set(0, 0, 0);
+  
+  document.getElementById('timelineProgress').style.width = '0%';
+  
+  if(audio) audio.playDrone(55, 70, 'sine', 0.1);
+  
+  clock.start();
+  showTeacherPopup(0);
+}
+
+document.getElementById('entryBtn').addEventListener('click', () => {
+  audio = new CosmicAudio();
+  audio.playDrone(55, 70, 'sine', 0.1);
+  
+  document.getElementById('entryScreen').classList.add('hidden');
+  document.getElementById('letterTop').classList.add('active');
+  document.getElementById('letterBottom').classList.add('active');
+  document.getElementById('controls').classList.add('visible');
+  document.getElementById('timelineUI').classList.add('visible');
+  
+  clock.start();
+  
+  // Start with the first teacher popup
+  setTimeout(() => {
+    showTeacherPopup(0);
+  }, 1000);
+  
+  animate();
+});
+
+document.getElementById('modalContinue').addEventListener('click', () => {
+  startStage(currentSceneIdx);
+});
+
+document.getElementById('playBtn').addEventListener('click', (e) => {
+  if(experienceEnded) {
+    restartExperience();
+    return;
+  }
+  
+  if(awaitingContinue) {
+    // If waiting on a popup, continue acts as the start button
+    startStage(currentSceneIdx);
+  } else {
+    // Normal pause/play
+    isPlaying = !isPlaying;
+    if(isPlaying) {
+      e.currentTarget.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+    } else {
+      e.currentTarget.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+    }
+  }
+});
+
+document.getElementById('playAgainBtn').addEventListener('click', () => {
+  restartExperience();
+});
+
+document.getElementById('audioToggle').addEventListener('click', (e) => {
+  const btn = e.currentTarget;
+  btn.classList.toggle('muted');
+  if(audio) {
+    audio.master.gain.value = audio.master.gain.value > 0 ? 0 : 0.5;
+  }
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Fallback to hide loader
+setTimeout(() => {
+  document.getElementById('glLoader').classList.add('hidden');
+}, 3500);
+</script>
+</body>
+</html>

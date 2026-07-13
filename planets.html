@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astrophile — Planetary Database</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#000000; --bg-2:#020104;
+  --card:rgba(8,6,12,.78); --card-hover:rgba(16,12,20,.92);
+  --border:rgba(212,165,116,.22); --border-bright:rgba(212,165,116,.6);
+  --accent:#D4A574; --accent2:#B8651C; --gold:#FFB347;
+  --text:#F0E5D5; --muted:#b0a090; --dim:#7a6a5a;
+  --ok:#2ECC71; --warn:#E67E22; --err:#E74C3C;
+  --ice:#A8D8F0; --comms:#FFD700; --mag:#00e5ff; --aurora:#bb55ff;
+  --glow:0 0 12px rgba(212,165,116,.45);
+  --mono:'JetBrains Mono',monospace;
+  --display:'Syne',sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:auto}
+body{font-family:'Space Grotesk',sans-serif;background:#000;color:var(--text);overflow-x:hidden;cursor:none}
+::selection{background:var(--accent);color:#000}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#000}
+::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px}
+canvas#bg-canvas{display:block;position:fixed;inset:0;z-index:0}
+
+.letterbox{position:fixed;left:0;right:0;height:0;background:#000;z-index:9500;transition:height 1.2s var(--ease)}
+.letterbox.top{top:0;border-bottom:1px solid rgba(212,165,116,.15)}
+.letterbox.bottom{bottom:0;border-top:1px solid rgba(212,165,116,.15)}
+body.cinematic .letterbox{height:60px}
+
+.grain{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:.08;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.cursor-dot,.cursor-ring{position:fixed;top:0;left:0;border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform .15s ease-out,width .3s,height .3s,opacity .3s,border-color .3s,background .3s}
+.cursor-dot{width:6px;height:6px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.cursor-ring{width:32px;height:32px;border:1px solid var(--accent);opacity:.5}
+.cursor-ring.hover{width:60px;height:60px;border-color:var(--mag);background:rgba(0,229,255,.08);opacity:.8}
+.cursor-ring.click{width:20px;height:20px}
+
+#loader{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0a0612 0%,#000 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.2s,transform 1.2s}
+#loader.hidden{opacity:0;pointer-events:none;transform:scale(1.08)}
+#loaderRing{position:absolute;width:340px;height:340px;border-radius:50%;border:1px solid rgba(212,165,116,.15);animation:ringRot 20s linear infinite}
+#loaderRing::before,#loaderRing::after{content:'';position:absolute;inset:-1px;border-radius:50%;border:1px solid transparent}
+#loaderRing::before{border-top-color:var(--accent);border-right-color:var(--gold);animation:ringRot 4s linear infinite reverse}
+#loaderRing::after{inset:20px;border:1px dashed rgba(212,165,116,.2);animation:ringRot 12s linear infinite}
+@keyframes ringRot{to{transform:rotate(360deg)}}
+#loaderLogo{font-size:3.5rem;color:var(--accent);margin-bottom:1.5rem;text-shadow:var(--glow);animation:floatY 3s ease-in-out infinite;position:relative;z-index:2}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#loader h2{color:var(--accent);font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:12px;text-transform:uppercase;margin-bottom:6px;text-shadow:var(--glow);position:relative;z-index:2}
+#loader .tagline{font-family:var(--mono);font-size:.65rem;color:var(--muted);letter-spacing:6px;text-transform:uppercase;margin-bottom:30px;position:relative;z-index:2}
+
+#progressBar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--accent),var(--gold),var(--mag));box-shadow:0 0 12px var(--gold);z-index:300;transition:width .1s linear}
+.hud-grid{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(212,165,116,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,165,116,.025) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse at center,black 30%,transparent 100%)}
+.scanline{position:fixed;left:0;right:0;height:120px;z-index:2;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(212,165,116,.04) 50%,transparent);animation:scan 12s linear infinite}
+@keyframes scan{0%{top:-120px}100%{top:100%}}
+.vignette{position:fixed;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at center,transparent 25%,rgba(0,0,0,.9) 100%)}
+.glass{background:var(--card);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border:1px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.03)}
+
+/* NAVBAR */
+#navbar{position:fixed;top:0;left:0;right:0;z-index:9600;transition:all .4s var(--ease)}
+.nav-inner{max-width:1600px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;gap:30px}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex-shrink:0}
+.nav-brand .logo{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--gold),var(--accent2) 70%);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#000;box-shadow:0 0 20px rgba(255,179,71,.4);animation:logoSpin 12s linear infinite}
+@keyframes logoSpin{to{transform:rotate(360deg)}}
+.nav-brand .brand-text .name{font-family:var(--display);font-size:1.15rem;font-weight:700;color:var(--text);letter-spacing:2px}
+.nav-brand .brand-text .sub{font-family:var(--mono);font-size:.55rem;color:var(--accent);letter-spacing:3px;text-transform:uppercase}
+
+.nav-pill{display:flex;align-items:center;gap:4px;padding:5px;background:rgba(8,6,12,.7);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:100px}
+.nav-pill a{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;color:var(--muted);text-decoration:none;font-size:.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:all .35s}
+.nav-pill a i{font-size:.9rem}
+.nav-pill a:hover{color:var(--text);background:rgba(255,255,255,0.05)}
+.nav-pill a.active{color:#000;background:linear-gradient(135deg,var(--accent),var(--gold))}
+
+.nav-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;padding:11px 22px;border-radius:100px;font-family:inherit;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:none;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-btn:hover{box-shadow:0 8px 30px rgba(255,179,71,.5)}
+
+/* CONTENT */
+.content{position:relative;z-index:10;padding:140px 6vw 80px;max-width:1600px;margin:0 auto}
+.page-header{display:flex;align-items:center;gap:24px;margin-bottom:80px;border-bottom:1px solid var(--border);padding-bottom:24px;opacity:0;transform:translateY(40px);transition:all 1s var(--ease)}
+.page-header.visible{opacity:1;transform:translateY(0)}
+.page-header .ic{width:50px;height:50px;border-radius:50%;background:rgba(212,165,116,.08);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1.2rem}
+.page-header .num{font-family:var(--mono);color:var(--accent);font-size:.8rem;letter-spacing:3px;font-weight:600}
+.page-header h2{font-family:var(--display);font-size:clamp(2rem,4vw,3.2rem);font-weight:700;color:var(--text);letter-spacing:-1px}
+.page-header h2 em{font-style:normal;color:var(--accent)}
+.page-header .line{flex-grow:1;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+.page-header .meta{font-family:var(--mono);color:var(--muted);font-size:.7rem;letter-spacing:2px}
+
+/* ============ HORIZONTAL SCROLL GALLERY ============ */
+.planets-scroll-container{position:relative;width:100%;z-index:10}
+.planets-scroll-sticky{position:sticky;top:0;height:100vh;display:flex;align-items:center;overflow:hidden}
+.planets-track{display:flex;gap:40px;padding:0 10vw;will-change:transform;perspective:1200px}
+
+.h-scroll-item{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--card);flex-shrink:0;display:flex;flex-direction:column;transform-style:preserve-3d;transition:border-color .4s, box-shadow .4s, opacity .4s;height:580px}
+.h-scroll-item:hover{border-color:var(--atmo, var(--gold));box-shadow:0 30px 80px var(--atmo-glow, rgba(255,179,71,0.2))}
+.h-scroll-item::before{content:'';position:absolute;inset:-2px;border-radius:18px;background:radial-gradient(circle at 50% 50%,var(--atmo-glow,rgba(255,179,71,0.4)),transparent 70%);opacity:var(--glow-active, 0);transition:opacity .3s ease;pointer-events:none;z-index:-1}
+
+.planet-card{width:380px}
+.p-img-wrap{position:relative;width:100%;height:320px;overflow:hidden}
+.p-img{width:100%;height:100%;object-fit:cover;will-change:transform;filter:saturate(1.2) contrast(1.1)}
+.p-atmo-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,var(--atmo-glow,rgba(255,179,71,0.1)) 100%);mix-blend-mode:screen;pointer-events:none;opacity:.6;z-index:2}
+.p-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,transparent 40%,var(--bg) 100%);pointer-events:none;z-index:1}
+.p-scan{position:absolute;top:0;left:0;width:100%;height:40px;background:linear-gradient(180deg,transparent,var(--atmo,rgba(0,229,255,0.6)),transparent);opacity:0;transition:top 1.2s var(--ease),opacity .3s;pointer-events:none;z-index:3;mix-blend-mode:screen}
+.planet-card:hover .p-scan{opacity:.8;top:100%}
+.p-bg-text{position:absolute;top:50%;right:-30px;transform:translateY(-50%) rotate(90deg);transform-origin:center center;font-family:var(--display);font-size:3.5rem;font-weight:800;color:rgba(255,255,255,0.04);pointer-events:none;z-index:2;white-space:nowrap;text-transform:uppercase;mix-blend-mode:overlay}
+.p-num{position:absolute;top:18px;right:18px;font-family:var(--mono);font-size:.7rem;color:var(--atmo,var(--accent));background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:6px 12px;border-radius:4px;border:1px solid var(--border);letter-spacing:2px;z-index:4}
+.p-content{position:relative;padding:28px;flex-grow:1;display:flex;flex-direction:column;z-index:4}
+.p-type{font-family:var(--mono);color:var(--atmo,var(--gold));font-size:.75rem;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.p-type::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--atmo,var(--gold));box-shadow:0 0 8px var(--atmo,var(--gold))}
+.p-title{font-family:var(--display);font-size:1.8rem;font-weight:700;margin-bottom:14px;color:var(--text);letter-spacing:-.5px;transition:text-shadow .5s}
+.planet-card.focused .p-title{text-shadow:0 0 15px var(--atmo-glow)}
+.p-desc{font-size:.95rem;line-height:1.7;color:var(--muted);flex-grow:1;margin-bottom:20px}
+.p-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;border-top:1px solid var(--border);padding-top:16px}
+.p-stat .lbl{font-family:var(--mono);font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.p-stat .val{font-family:var(--mono);font-size:1rem;color:var(--text);font-weight:600;display:block;margin-top:4px}
+.p-explore-btn{width:100%;padding:14px;background:rgba(212,165,116,.08);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.8rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:none;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
+.p-explore-btn:hover{background:var(--atmo,var(--accent));color:#000;border-color:var(--atmo,var(--accent))}
+.p-explore-btn i{transition:transform .3s}
+.p-explore-btn:hover i{transform:translateX(4px)}
+
+.planet-details{width:480px;padding:32px;border-color:rgba(212,165,116,.15)}
+.planet-details:hover{border-color:var(--atmo, var(--gold))}
+.pd-header{display:flex;align-items:center;margin-bottom:24px}
+.pd-tag{font-family:var(--mono);font-size:.7rem;color:var(--atmo);letter-spacing:2px}
+.pd-line{flex-grow:1;height:1px;background:var(--border);margin-left:12px}
+.pd-title{font-family:var(--display);font-size:1.5rem;margin-bottom:16px;color:var(--text);transition:text-shadow .5s}
+.planet-details.focused .pd-title{text-shadow:0 0 15px var(--atmo-glow)}
+.pd-desc{font-size:.85rem;line-height:1.6;color:var(--muted);margin-bottom:24px;flex-grow:1}
+.pd-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.pd-stat{border-left:2px solid var(--border);padding-left:12px;transition:border-color .3s}
+.planet-details.focused .pd-stat{border-left-color:var(--atmo)}
+.pd-stat .lbl{font-family:var(--mono);font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px}
+.pd-stat .val{font-family:var(--mono);font-size:.9rem;color:var(--text);font-weight:600}
+.pd-bars{margin-bottom:24px}
+.pd-bar-label{font-family:var(--mono);font-size:.55rem;color:var(--dim);letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between}
+.pd-bar-track{width:100%;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.pd-bar-fill{height:100%;width:0;background:var(--atmo);transition:width 1.2s var(--ease);box-shadow:0 0 8px var(--atmo)}
+.planet-details.focused .pd-bar-fill{width:var(--w)}
+.pd-footer{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.6rem;color:var(--dim);border-top:1px solid var(--border);padding-top:16px}
+.pd-status{color:var(--atmo);display:flex;align-items:center;gap:6px}
+.pd-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--atmo);box-shadow:0 0 6px var(--atmo);animation:dotP 1.6s infinite}
+@keyframes dotP{0%,100%{opacity:1}50%{opacity:.4}}
+
+.h-progress-wrap{position:absolute;bottom:60px;left:10vw;right:10vw;z-index:20}
+.h-progress-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:2px;margin-bottom:8px}
+.h-progress-track{width:100%;height:2px;background:var(--border);position:relative}
+.h-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--gold));box-shadow:0 0 10px var(--gold);transition:width .1s linear}
+
+.footer{border-top:1px solid var(--border);padding:60px 6vw 30px;margin-top:120px;position:relative;z-index:10;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px)}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;max-width:1600px;margin-left:auto;margin-right:auto}
+.footer-brand .footer-logo{font-family:var(--display);font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:14px;text-shadow:var(--glow)}
+.footer-brand p{color:var(--muted);font-size:.9rem;line-height:1.7;max-width:380px}
+.footer-col h4{font-family:var(--mono);font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:2px;margin-bottom:18px}
+.footer-col a{display:block;color:var(--muted);text-decoration:none;font-size:.88rem;padding:6px 0;transition:color .3s,padding-left .3s}
+.footer-col a:hover{color:var(--accent);padding-left:6px}
+.footer-bottom{border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;max-width:1600px;margin-left:auto;margin-right:auto}
+.footer-bottom p{font-family:var(--mono);font-size:.7rem;color:var(--dim);letter-spacing:1.5px}
+.footer-bottom .social{display:flex;gap:12px}
+.footer-bottom .social a{width:36px;height:36px;border-radius:50%;background:rgba(15,10,5,.5);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .3s;text-decoration:none}
+.footer-bottom .social a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-3px);box-shadow:0 0 16px rgba(212,165,116,.3)}
+
+@media (max-width: 1100px) {
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .nav-pill a span { display: none; }
+  .nav-pill a { padding: 10px 14px; }
+}
+@media (max-width: 768px) {
+  body { cursor: auto; }
+  .cursor-dot, .cursor-ring { display: none; }
+  .nav-pill { display: none; }
+  .planets-scroll-container { height: auto !important; }
+  .planets-scroll-sticky { position: relative !important; height: auto !important; overflow-x: auto; overflow-y: hidden; padding-bottom: 30px; scrollbar-width: none; }
+  .planets-scroll-sticky::-webkit-scrollbar { display: none; }
+  .planets-track { transform: none !important; padding: 0 20px; gap: 20px; }
+  .h-scroll-item { width: 280px; height: auto; min-height: 480px; transform: none !important; filter: none !important; opacity: 1 !important; }
+  .planet-card .p-img-wrap { height: 240px; }
+  .planet-details { padding: 24px; }
+  .h-scroll-item::before { opacity: 1 !important; }
+  .planet-details.focused .pd-bar-fill { width: var(--w); }
+  .h-progress-wrap { display: none; }
+  .footer-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div id="loaderRing"></div>
+  <div id="loaderLogo"><i class="fas fa-globe"></i></div>
+  <h2>Database</h2>
+  <div class="tagline">Planetary Systems Archive</div>
+</div>
+
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
+<div id="progressBar"></div>
+<div class="hud-grid"></div>
+<div class="scanline"></div>
+<div class="vignette"></div>
+<div class="grain"></div>
+<canvas id="bg-canvas"></canvas>
+
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="solarsystem.html" class="nav-brand">
+      <div class="logo"><i class="fas fa-satellite"></i></div>
+      <div class="brand-text">
+        <div class="name">ASTROPHILE</div>
+        <div class="sub">Exploration Hub</div>
+      </div>
+    </a>
+    <div class="nav-pill">
+      <a href="solarsystem.html"><i class="fas fa-sun"></i><span>Solar System</span></a>
+      <a href="planets.html" class="active"><i class="fas fa-globe"></i><span>Planets</span></a>
+      <a href="black.html"><i class="fas fa-circle-notch"></i><span>Blackholes</span></a>
+      <a href="events.html"><i class="fas fa-bolt"></i><span>Events</span></a>
+      <a href="stars.html"><i class="fas fa-star"></i><span>Stars</span></a>
+    </div>
+    <a href="index.html#contact" class="nav-btn"><span>Mission Control</span><i class="fas fa-rocket"></i></a>
+  </div>
+</nav>
+
+<main class="content">
+  <div class="page-header">
+    <div class="ic"><i class="fas fa-globe"></i></div>
+    <div>
+      <div class="num">SOL SYSTEM</div>
+      <h2>Planetary <em>Exploration</em> Interface</h2>
+    </div>
+    <div class="line"></div>
+    <div class="meta">SCROLL TO ENGAGE</div>
+  </div>
+
+  <div class="planets-scroll-container" id="hScrollContainer">
+    <div class="planets-scroll-sticky">
+      <div class="planets-track" id="hScrollTrack">
+        <div class="h-scroll-item planet-card" style="--atmo: #8c7853; --atmo-glow: rgba(140, 120, 83, 0.4);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">MERCURY</div>
+            <img src="mercury.jpg" class="p-img" alt="Mercury">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 01</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Terrestrial Planet</div>
+            <h3 class="p-title">Mercury</h3>
+            <p class="p-desc">The smallest planet in our solar system and the closest to the Sun. Mercury's surface resembles that of Earth's Moon, scarred by countless impact craters.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">4,879 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">88 Days</span></div>
+            </div>
+            <a href="mercury.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #8c7853; --atmo-glow: rgba(140, 120, 83, 0.4);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // MERCURY</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Mercury has almost no atmosphere, meaning it experiences extreme temperature variations—from 430°C (800°F) during the day to -180°C (-290°F) at night. Its large iron core makes it the second densest planet in the solar system.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">3.7 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">0</span></div>
+            <div class="pd-stat"><span class="lbl">Surface Temp</span><span class="val">-180 to 430°C</span></div>
+            <div class="pd-stat"><span class="lbl">Core</span><span class="val">Iron (Massive)</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>0.5%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 1%"></div></div>
+            <div class="pd-bar-label"><span>SURFACE STABILITY</span><span>85%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 85%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-01</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #e8c547; --atmo-glow: rgba(232, 197, 71, 0.4);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">VENUS</div>
+            <img src="venus.jpg" class="p-img" alt="Venus">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 02</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Terrestrial Planet</div>
+            <h3 class="p-title">Venus</h3>
+            <p class="p-desc">Often called Earth's twin in size, Venus has a thick, toxic atmosphere of carbon dioxide that traps heat in a runaway greenhouse effect, making it the hottest planet.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">12,104 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">225 Days</span></div>
+            </div>
+            <a href="venus.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #e8c547; --atmo-glow: rgba(232, 197, 71, 0.4);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // VENUS</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Surface pressure on Venus is 92 times that of Earth, equivalent to being 900 meters underwater. It spins backwards compared to most planets, and a single day on Venus lasts longer than its year.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">8.87 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">0</span></div>
+            <div class="pd-stat"><span class="lbl">Surface Temp</span><span class="val">465°C</span></div>
+            <div class="pd-stat"><span class="lbl">Pressure</span><span class="val">92 bar</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>100%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 100%"></div></div>
+            <div class="pd-bar-label"><span>HABITABILITY INDEX</span><span>0%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 2%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-02</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #4a90e2; --atmo-glow: rgba(74, 144, 226, 0.5);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">EARTH</div>
+            <img src="earth.jpg" class="p-img" alt="Earth">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 03</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Terrestrial Planet // Home</div>
+            <h3 class="p-title">Earth</h3>
+            <p class="p-desc">The only place in the known universe confirmed to host life. Earth is the fifth-largest planet in the solar system and the only one known to possess liquid water.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">12,742 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">365 Days</span></div>
+            </div>
+            <a href="earth.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #4a90e2; --atmo-glow: rgba(74, 144, 226, 0.5);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // EARTH</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Earth's dynamic atmosphere protects life from harmful solar radiation while maintaining a stable average surface temperature of 15°C (59°F). Its powerful magnetic field deflects solar winds.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">9.807 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">1</span></div>
+            <div class="pd-stat"><span class="lbl">Surface Temp</span><span class="val">15°C (Avg)</span></div>
+            <div class="pd-stat"><span class="lbl">Water</span><span class="val">71% Surface</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>100%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 100%"></div></div>
+            <div class="pd-bar-label"><span>BIOSPHERE INTEGRITY</span><span>98%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 98%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-03</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #cd5c5c; --atmo-glow: rgba(205, 92, 92, 0.5);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">MARS</div>
+            <img src="mars.jpg" class="p-img" alt="Mars">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 04</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Terrestrial Planet</div>
+            <h3 class="p-title">Mars</h3>
+            <p class="p-desc">The Red Planet is a cold desert world. It is half the size of Earth, and has a thin atmosphere composed primarily of carbon dioxide. A primary target for human exploration.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">6,779 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">687 Days</span></div>
+            </div>
+            <a href="mars.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #cd5c5c; --atmo-glow: rgba(205, 92, 92, 0.5);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // MARS</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Home to Olympus Mons, the largest volcano in the solar system, and Valles Marineris, a canyon system stretching over 4,000 km. Evidence suggests ancient riverbeds and a past climate capable of supporting liquid water.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">3.711 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">2</span></div>
+            <div class="pd-stat"><span class="lbl">Surface Temp</span><span class="val">-63°C (Avg)</span></div>
+            <div class="pd-stat"><span class="lbl">Atmosphere</span><span class="val">95% CO₂</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>0.6%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 1%"></div></div>
+            <div class="pd-bar-label"><span>TERRAFORMING POTENTIAL</span><span>45%</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 45%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-04</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #d8ca9d; --atmo-glow: rgba(216, 202, 157, 0.4);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">JUPITER</div>
+            <img src="2237787-jupiter.webp" class="p-img" alt="Jupiter">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 05</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Gas Giant</div>
+            <h3 class="p-title">Jupiter</h3>
+            <p class="p-desc">The largest planet in the solar system, more massive than all other planets combined. Jupiter's iconic Great Red Spot is a giant storm that has been raging for centuries.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">139,820 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">11.8 Years</span></div>
+            </div>
+            <a href="jupiter.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #d8ca9d; --atmo-glow: rgba(216, 202, 157, 0.4);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // JUPITER</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Jupiter's magnetic field is 20,000 times stronger than Earth's. It lacks a solid surface, composed mostly of hydrogen and helium. It has 95 known moons, including the icy ocean world Europa.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">24.79 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">95</span></div>
+            <div class="pd-stat"><span class="lbl">Cloud Temp</span><span class="val">-145°C</span></div>
+            <div class="pd-stat"><span class="lbl">Day Length</span><span class="val">9h 56m</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>High</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 90%"></div></div>
+            <div class="pd-bar-label"><span>MAGNETIC FIELD STRENGTH</span><span>20,000x</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 100%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-05</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #fad5a5; --atmo-glow: rgba(250, 213, 165, 0.4);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">SATURN</div>
+            <img src="saturn.jpg" class="p-img" alt="Saturn">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 06</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Gas Giant</div>
+            <h3 class="p-title">Saturn</h3>
+            <p class="p-desc">Adorned with a spectacular ring system, Saturn is the second-largest planet. It is a gas giant composed mostly of hydrogen and helium, with the lowest density of any planet.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">116,460 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">29.4 Years</span></div>
+            </div>
+            <a href="saturn.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #fad5a5; --atmo-glow: rgba(250, 213, 165, 0.4);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // SATURN</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Saturn's rings are made mostly of billions of ice and rock particles. It is so light that it would float in water. Its moon Titan has a thick nitrogen atmosphere and liquid methane lakes.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">10.44 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">146</span></div>
+            <div class="pd-stat"><span class="lbl">Cloud Temp</span><span class="val">-178°C</span></div>
+            <div class="pd-stat"><span class="lbl">Ring Span</span><span class="val">282,000 km</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>High</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 85%"></div></div>
+            <div class="pd-bar-label"><span>RING SYSTEM DENSITY</span><span>Variable</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 70%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-06</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #4fd0e0; --atmo-glow: rgba(79, 208, 224, 0.5);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">URANUS</div>
+            <img src="uranus.avif" class="p-img" alt="Uranus">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 07</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Ice Giant</div>
+            <h3 class="p-title">Uranus</h3>
+            <p class="p-desc">A uniquely tilted planet that rotates on its side. Uranus is an ice giant, made of water, methane, and ammonia fluids above a small rocky core. A pale blue hue defines it.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">50,724 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">84 Years</span></div>
+            </div>
+            <a href="uranus.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #4fd0e0; --atmo-glow: rgba(79, 208, 224, 0.5);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // URANUS</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Uranus has an axial tilt of 98 degrees, meaning it essentially orbits the Sun on its side. Methane in its upper atmosphere absorbs red light, giving the planet its distinct cyan color.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">8.69 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">27</span></div>
+            <div class="pd-stat"><span class="lbl">Cloud Temp</span><span class="val">-224°C</span></div>
+            <div class="pd-stat"><span class="lbl">Axial Tilt</span><span class="val">97.77°</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>Medium</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 60%"></div></div>
+            <div class="pd-bar-label"><span>AXIAL ANOMALY</span><span>Extreme</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 98%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-07</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+
+        <div class="h-scroll-item planet-card" style="--atmo: #4166f5; --atmo-glow: rgba(65, 102, 245, 0.5);">
+          <div class="p-img-wrap">
+            <div class="p-bg-text">NEPTUNE</div>
+            <img src="nep.jpg" class="p-img" alt="Neptune">
+            <div class="p-atmo-overlay"></div><div class="p-overlay"></div><div class="p-scan"></div>
+            <div class="p-num">PLANET 08</div>
+          </div>
+          <div class="p-content">
+            <div class="p-type">Ice Giant</div>
+            <h3 class="p-title">Neptune</h3>
+            <p class="p-desc">The most distant planet from the Sun. Neptune is a dark, cold, and supersonic-wind battered ice giant. It was the first planet discovered through mathematical prediction.</p>
+            <div class="p-stats">
+              <div class="p-stat"><span class="lbl">Diameter</span><span class="val">49,244 km</span></div>
+              <div class="p-stat"><span class="lbl">Orbit</span><span class="val">165 Years</span></div>
+            </div>
+            <a href="neptune.html" class="p-explore-btn"><span>Initiate Exploration</span><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+        <div class="h-scroll-item planet-details" style="--atmo: #4166f5; --atmo-glow: rgba(65, 102, 245, 0.5);">
+          <div class="pd-header"><div class="pd-tag">DEEP SCAN // NEPTUNE</div><div class="pd-line"></div></div>
+          <h3 class="pd-title">Astrophysical Readout</h3>
+          <p class="pd-desc">Neptune has the fastest winds in the solar system, reaching speeds of 2,100 km/h (1,300 mph). Its deep blue color is intensified by an unknown compound in its atmosphere.</p>
+          <div class="pd-stats-grid">
+            <div class="pd-stat"><span class="lbl">Gravity</span><span class="val">11.15 m/s²</span></div>
+            <div class="pd-stat"><span class="lbl">Moons</span><span class="val">14</span></div>
+            <div class="pd-stat"><span class="lbl">Cloud Temp</span><span class="val">-214°C</span></div>
+            <div class="pd-stat"><span class="lbl">Wind Speed</span><span class="val">2,100 km/h</span></div>
+          </div>
+          <div class="pd-bars">
+            <div class="pd-bar-label"><span>ATMOSPHERIC DENSITY</span><span>Medium</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 65%"></div></div>
+            <div class="pd-bar-label"><span>WIND VELOCITY INDEX</span><span>Maximum</span></div>
+            <div class="pd-bar-track"><div class="pd-bar-fill" style="--w: 100%"></div></div>
+          </div>
+          <div class="pd-footer"><span class="pd-coord">COORD: SOL-08</span><span class="pd-status">SCAN COMPLETE</span></div>
+        </div>
+      </div>
+      
+      <div class="h-progress-wrap">
+        <div class="h-progress-meta">
+          <span>DATABASE PROGRESS</span>
+          <span id="hProgressText">00%</span>
+        </div>
+        <div class="h-progress-track">
+          <div class="h-progress-fill" id="hProgress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="footer-logo">ASTROPHILE</div>
+      <p>Deep Space Exploration Hub — an interactive gateway to the cosmos. Navigate planetary systems, witness astronomical events, and study deep space anomalies.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <a href="index.html#hero">Solar System</a>
+      <a href="planets.html">Planets</a>
+      <a href="index.html#anomalies">Blackholes</a>
+      <a href="events.html">Events</a>
+    </div>
+    <div class="footer-col">
+      <h4>Missions</h4>
+      <a href="index.html#missions">Voyager</a>
+      <a href="index.html#missions">JWST</a>
+      <a href="index.html#missions">Perseverance</a>
+      <a href="index.html#missions">Parker Probe</a>
+    </div>
+    <div class="footer-col">
+      <h4>Connect</h4>
+      <a href="index.html#contact">Contact</a>
+      <a href="#">Documentation</a>
+      <a href="#">API Access</a>
+      <a href="#">Press Kit</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>ASTROPHILE &copy; ALL RIGHTS RESERVED</p>
+    <div class="social">
+      <a href="#"><i class="fab fa-github"></i></a>
+      <a href="#"><i class="fab fa-twitter"></i></a>
+      <a href="#"><i class="fab fa-discord"></i></a>
+      <a href="#"><i class="fab fa-youtube"></i></a>
+    </div>
+  </div>
+</footer>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+let scene, cam, ren, clock;
+let starMesh, nebulaMesh;
+
+function initBg() {
+  clock = new THREE.Clock();
+  scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 3000);
+  cam.position.z = 18;
+  const canvas = document.getElementById('bg-canvas');
+  ren = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  ren.setSize(innerWidth, innerHeight);
+  ren.setPixelRatio(Math.min(devicePixelRatio, 2));
+  ren.setClearColor(0x000000, 1);
+  mkStars();
+  window.addEventListener('resize', onResize);
+  animate();
+}
+
+function mkStars() {
+  const N = 8000;
+  const p = new Float32Array(N * 3), s = new Float32Array(N), c = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const r = 350 + Math.random() * 650;
+    const t = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    p[i*3] = r * Math.sin(ph) * Math.cos(t);
+    p[i*3+1] = r * Math.sin(ph) * Math.sin(t);
+    p[i*3+2] = r * Math.cos(ph);
+    s[i] = 0.5 + Math.random() * 3;
+    const tp = Math.random();
+    if (tp < 0.72) { c[i*3]=1; c[i*3+1]=.97; c[i*3+2]=.93; }
+    else { c[i*3]=.75; c[i*3+1]=.88; c[i*3+2]=1; }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(s, 1));
+  g.setAttribute('aCol', new THREE.BufferAttribute(c, 3));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } },
+    vertexShader: `attribute float aSize; attribute vec3 aCol; varying float vS; varying vec3 vC; uniform float uT;
+      void main() {
+        vS = aSize; vC = aCol;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * (300.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying float vS; varying vec3 vC; uniform float uT;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        float a = smoothstep(0.5, 0.0, d);
+        float tw = 0.65 + 0.35 * sin(uT * (1.0 + vS * 0.5) + vS * 77.0);
+        gl_FragColor = vec4(vC, a * tw);
+      }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  starMesh = new THREE.Points(g, m);
+  scene.add(starMesh);
+}
+
+function onResize() {
+  cam.aspect = innerWidth / innerHeight;
+  cam.updateProjectionMatrix();
+  ren.setSize(innerWidth, innerHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  if (starMesh) {
+    starMesh.material.uniforms.uT.value = t;
+    starMesh.rotation.y = t * 0.01;
+  }
+  ren.render(scene, cam);
+}
+
+const dotEl = document.querySelector('.cursor-dot');
+const ringEl = document.querySelector('.cursor-ring');
+window.addEventListener('mousemove', (e) => {
+  dotEl.style.left = e.clientX + 'px';
+  dotEl.style.top = e.clientY + 'px';
+  ringEl.style.left = e.clientX + 'px';
+  ringEl.style.top = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .h-scroll-item').forEach(el => {
+  el.addEventListener('mouseenter', () => ringEl.classList.add('hover'));
+  el.addEventListener('mouseleave', () => ringEl.classList.remove('hover'));
+});
+window.addEventListener('mousedown', () => ringEl.classList.add('click'));
+window.addEventListener('mouseup', () => ringEl.classList.remove('click'));
+
+window.addEventListener('scroll', () => {
+  const wh = document.body.scrollHeight - window.innerHeight;
+  const p = (window.scrollY / wh) * 100;
+  document.getElementById('progressBar').style.width = `${p}%`;
+}, { passive: true });
+
+const headerObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.page-header').forEach(el => headerObserver.observe(el));
+
+const container = document.getElementById('hScrollContainer');
+const track = document.getElementById('hScrollTrack');
+const progressFill = document.getElementById('hProgress');
+const progressText = document.getElementById('hProgressText');
+const items = document.querySelectorAll('.h-scroll-item');
+
+function setScrollHeight() {
+  if (window.innerWidth > 768) {
+    const trackWidth = track.scrollWidth;
+    const requiredScroll = trackWidth - window.innerWidth + (window.innerWidth * 0.2);
+    container.style.height = `${window.innerHeight + requiredScroll}px`;
+  } else {
+    container.style.height = 'auto';
+  }
+}
+
+function updateHScroll() {
+  if (window.innerWidth <= 768) return;
+  const rect = container.getBoundingClientRect();
+  const scrollable = container.offsetHeight - window.innerHeight;
+  const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
+  const trackWidth = track.scrollWidth;
+  const viewportWidth = window.innerWidth;
+  const maxTranslate = trackWidth - viewportWidth + (window.innerWidth * 0.1); 
+  track.style.transform = `translateX(${-progress * maxTranslate}px)`;
+  if (progressFill) progressFill.style.width = `${progress * 100}%`;
+  if (progressText) progressText.textContent = `${String(Math.round(progress * 100)).padStart(2, '0')}%`;
+  const center = window.innerWidth / 2;
+  items.forEach(item => {
+    const itemRect = item.getBoundingClientRect();
+    const itemCenter = itemRect.left + itemRect.width / 2;
+    const dist = (itemCenter - center) / (window.innerWidth / 2); 
+    const clampedDist = Math.max(-1.5, Math.min(1.5, dist));
+    const rotY = clampedDist * -12; 
+    const scale = 1 - Math.abs(clampedDist) * 0.05;
+    const brightness = 1 - Math.abs(clampedDist) * 0.3;
+    item.style.transform = `perspective(1200px) rotateY(${rotY}deg) scale(${scale})`;
+    item.style.filter = `brightness(${brightness})`;
+    const glowOpacity = Math.max(0, 1 - Math.abs(clampedDist) * 1.5);
+    item.style.setProperty('--glow-active', glowOpacity);
+    if (Math.abs(clampedDist) < 0.2) {
+        item.classList.add('focused');
+    } else {
+        item.classList.remove('focused');
+    }
+  });
+}
+
+window.addEventListener('scroll', updateHScroll, { passive: true });
+window.addEventListener('resize', () => {
+  setScrollHeight();
+  updateHScroll();
+});
+
+window.addEventListener('load', () => {
+  initBg();
+  setScrollHeight();
+  updateHScroll();
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 1500);
+});
+</script>
+</body>
+</html>

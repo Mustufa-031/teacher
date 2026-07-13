@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astrophile — Anatomy of an Eclipse</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#000000;
+  --accent:#D4A574; --accent2:#B8651C; --gold:#FFB347;
+  --text:#F0E5D5; --muted:#b0a090; --dim:#7a6a5a;
+  --ok:#2ECC71; --err:#E74C3C;
+  --mono:'JetBrains Mono',monospace;
+  --display:'Syne',sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:auto}
+body{font-family:'Space Grotesk',sans-serif;background:#000;color:var(--text);overflow-x:hidden;cursor:none}
+::selection{background:var(--accent);color:#000}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#000}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+canvas#bg-canvas{display:block;position:fixed;inset:0;z-index:0}
+
+/* === CINEMATIC LETTERBOX === */
+.letterbox{position:fixed;left:0;right:0;height:60px;background:#000;z-index:9500;transition:height 1.2s var(--ease)}
+.letterbox.top{top:0;border-bottom:1px solid rgba(212,165,116,.15)}
+.letterbox.bottom{bottom:0;border-top:1px solid rgba(212,165,116,.15)}
+
+/* === CINEMATIC HUD === */
+.cine-hud{position:fixed;z-index:9400;font-family:var(--mono);font-size:.6rem;color:var(--accent);letter-spacing:2px;opacity:0;transition:opacity 1s .3s;pointer-events:none;text-shadow:0 0 6px rgba(212,165,116,.6)}
+body.loaded .cine-hud{opacity:.85}
+.cine-tl{top:78px;left:32px}
+.cine-tr{top:78px;right:32px;text-align:right}
+.cine-bl{bottom:84px;left:32px}
+.cine-br{bottom:84px;right:32px;text-align:right}
+.cine-rec{display:inline-flex;align-items:center;gap:8px;color:var(--err);font-weight:700}
+.cine-rec::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--err);box-shadow:0 0 8px var(--err);animation:recPulse 1.2s infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.3}}
+.cine-crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;z-index:9300;pointer-events:none;opacity:0;transition:opacity 1s .5s}
+body.loaded .cine-crosshair{opacity:.2}
+.cine-crosshair::before,.cine-crosshair::after{content:'';position:absolute;background:var(--accent)}
+.cine-crosshair::before{left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%)}
+.cine-crosshair::after{top:50%;left:0;right:0;height:1px;transform:translateY(-50%)}
+
+/* GRAIN & VIGNETTE */
+.grain{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:.1;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.vignette{position:fixed;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.95) 100%)}
+
+/* CURSOR */
+.cursor-dot,.cursor-ring{position:fixed;top:0;left:0;border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform .15s ease-out,width .3s,height .3s,opacity .3s,border-color .3s,background .3s}
+.cursor-dot{width:6px;height:6px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.cursor-ring{width:32px;height:32px;border:1px solid var(--accent);opacity:.5}
+.cursor-ring.hover{width:60px;height:60px;border-color:var(--gold);background:rgba(255,179,71,.1);opacity:.8}
+.cursor-ring.click{width:20px;height:20px}
+
+/* SCROLL CONTAINER */
+.scroll-container{position:relative;z-index:10;height:500vh;width:100%}
+.sticky-stage{position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* OVERLAY UI */
+.overlay-ui{position:absolute;inset:0;z-index:20;pointer-events:none}
+.nav-brand{position:absolute;top:32px;left:32px;display:flex;align-items:center;gap:12px;text-decoration:none;z-index:50;pointer-events:auto}
+.nav-brand .logo{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--gold),var(--accent2) 70%);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#000;box-shadow:0 0 20px rgba(255,179,71,.4);position:relative;animation:logoSpin 12s linear infinite}
+@keyframes logoSpin{to{transform:rotate(360deg)}}
+.nav-brand .brand-text .name{font-family:var(--display);font-size:1.15rem;font-weight:700;color:var(--text);letter-spacing:2px}
+.nav-brand .brand-text .sub{font-family:var(--mono);font-size:.55rem;color:var(--accent);letter-spacing:3px;text-transform:uppercase}
+
+.phase-indicator{position:absolute;top:32px;right:32px;font-family:var(--mono);font-size:.7rem;color:var(--accent);letter-spacing:2px;text-align:right;z-index:50}
+.phase-indicator .current{font-size:2rem;font-family:var(--display);font-weight:700;color:var(--text);text-shadow:0 0 10px rgba(212,165,116,.4)}
+.phase-indicator .total{font-size:.8rem;color:var(--muted)}
+
+.scroll-hint{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.65rem;color:var(--muted);letter-spacing:4px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:12px;z-index:50}
+.scroll-hint .mouse{width:24px;height:40px;border:1.5px solid var(--muted);border-radius:12px;position:relative}
+.scroll-hint .mouse::before{content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);width:3px;height:8px;background:var(--accent);border-radius:2px;animation:scrollDot 1.8s var(--ease) infinite}
+@keyframes scrollDot{0%{transform:translate(-50%,0);opacity:1}80%{transform:translate(-50%,14px);opacity:0}100%{transform:translate(-50%,0);opacity:0}}
+
+/* TEXT EXPLANATION PANELS */
+.text-panel{position:absolute;left:32px;bottom:84px;max-width:500px;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);border-left:2px solid var(--accent);padding:24px 32px;opacity:0;transform:translateX(-30px);transition:opacity .8s var(--ease), transform .8s var(--ease);z-index:30}
+.text-panel.active{opacity:1;transform:translateX(0)}
+.text-panel .num{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:3px;margin-bottom:8px}
+.text-panel h3{font-family:var(--display);font-size:1.8rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:-.5px}
+.text-panel p{font-size:.95rem;line-height:1.6;color:var(--muted)}
+.text-panel .highlight{color:var(--gold);font-weight:600}
+
+/* DATA PANEL (Right Side during Totality) */
+.data-panel{position:absolute;right:32px;top:50%;transform:translateY(-50%) translateX(30px);background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);border:1px solid var(--border);padding:20px 24px;border-radius:8px;opacity:0;transition:opacity .8s var(--ease), transform .8s var(--ease);z-index:30;font-family:var(--mono);width:220px}
+.data-panel.active{opacity:1;transform:translateY(-50%) translateX(0)}
+.data-panel h4{color:var(--accent);font-size:.65rem;letter-spacing:2px;margin-bottom:14px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:8px}
+.data-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:.7rem}
+.data-row .lbl{color:var(--muted)}
+.data-row .val{color:var(--text);font-weight:600}
+.data-row .val.gold{color:var(--gold)}
+
+/* PROGRESS LINE */
+.progress-line{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(212,165,116,.1);z-index:40}
+.progress-line i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));box-shadow:0 0 10px var(--gold);transition:width .1s linear}
+
+@media (max-width:768px){
+  .cine-tl,.cine-tr,.cine-bl,.cine-br{display:none}
+  .text-panel{max-width:calc(100% - 64px);padding:16px 20px}
+  .text-panel h3{font-size:1.3rem}
+  .data-panel{display:none}
+  .nav-brand .brand-text{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- CINEMATIC LETTERBOX -->
+<div class="letterbox top"></div>
+<div class="letterbox bottom"></div>
+
+<!-- CINEMATIC HUD -->
+<div class="cine-hud cine-tl"><span class="cine-rec">REC</span> &nbsp; ECLIPSE EVENT // SOL-001</div>
+<div class="cine-hud cine-tr" id="cineTimecode">T: 00:00:00:00<br>FPS: 60.00</div>
+<div class="cine-hud cine-bl">ISO 800 // f/8.0 // 400mm<br>FOCUS: ∞</div>
+<div class="cine-hud cine-br" id="cineCoord">UMBRA PATH<br>LAT 43.80° N</div>
+<div class="cine-crosshair"></div>
+
+<!-- CURSOR -->
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
+<!-- OVERLAYS -->
+<div class="grain"></div>
+<div class="vignette"></div>
+
+<!-- BG CANVAS -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- SCROLL CONTENT -->
+<div class="scroll-container">
+  <div class="sticky-stage">
+    <div class="overlay-ui">
+      <a href="index.html" class="nav-brand">
+        <div class="logo"><i class="fas fa-satellite"></i></div>
+        <div class="brand-text">
+          <div class="name">ASTROPHILE</div>
+          <div class="sub">Eclipse Sequence</div>
+        </div>
+      </a>
+
+      <div class="phase-indicator">
+        PHASE<br>
+        <span class="current" id="phaseCurrent">01</span>
+        <span class="total"> / 04</span>
+      </div>
+
+      <div class="scroll-hint">
+        <div class="mouse"></div>
+        <span>Scroll to Initiate</span>
+      </div>
+
+      <!-- Step 1: Orbital Alignment -->
+      <div class="text-panel active" id="step1">
+        <div class="num">PHASE 01 // ORBITAL ALIGNMENT</div>
+        <h3>The Cosmic Dance</h3>
+        <p>A solar eclipse occurs when the <span class="highlight">Moon passes between the Sun and Earth</span>, casting a shadow on Earth. This can only happen during a New Moon, when the Sun and Moon are conjunct in the sky.</p>
+      </div>
+
+      <!-- Step 2: The Shadow Cone -->
+      <div class="text-panel" id="step2">
+        <div class="num">PHASE 02 // UMBRA & PENUMBRA</div>
+        <h3>The Shadow Cone</h3>
+        <p>The Moon's shadow has two parts: the dark central <span class="highlight">umbra</span>, which causes total eclipses, and the lighter outer <span class="highlight">penumbra</span>, which causes partial eclipses. We are tracking the umbra.</p>
+      </div>
+
+      <!-- Step 3: The Diamond Ring -->
+      <div class="text-panel" id="step3">
+        <div class="num">PHASE 03 // SECOND CONTACT</div>
+        <h3>The Diamond Ring</h3>
+        <p>Just before totality, the last rays of sunlight stream through the lunar valleys, creating a brilliant burst of light. This is the <span class="highlight">Diamond Ring effect</span>, signaling that totality is imminent.</p>
+      </div>
+
+      <!-- Step 4: Totality -->
+      <div class="text-panel" id="step4">
+        <div class="num">PHASE 04 // TOTALITY</div>
+        <h3>The Corona Revealed</h3>
+        <p>The Sun is entirely obscured. The solar corona—normally invisible—blazes into view. The sky darkens to twilight, and the temperature drops. This phase lasts mere <span class="highlight">minutes</span>.</p>
+      </div>
+
+      <!-- Data Panel (Visible during Totality) -->
+      <div class="data-panel" id="dataPanel">
+        <h4>ECLIPSE METRICS</h4>
+        <div class="data-row"><span class="lbl">Magnitude</span><span class="val gold">1.046</span></div>
+        <div class="data-row"><span class="lbl">Duration</span><span class="val">2m 40s</span></div>
+        <div class="data-row"><span class="lbl">Sun Dist</span><span class="val">1.00 AU</span></div>
+        <div class="data-row"><span class="lbl">Moon Dist</span><span class="val">0.0024 AU</span></div>
+        <div class="data-row"><span class="lbl">Shadow Width</span><span class="val">180 km</span></div>
+      </div>
+
+      <div class="progress-line"><i id="progressBar"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- THREE.JS -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let scene, cam, ren, composer, clock;
+let sunMesh, sunGlow, moonMesh, earthMesh, shadowCone;
+let starMesh;
+let scrollProgress = 0;
+let smoothScroll = 0;
+
+const texLoader = new THREE.TextureLoader();
+texLoader.crossOrigin = 'anonymous';
+
+// SUN SHADER
+const sunVS = `
+  varying vec2 vUv; varying vec3 vNormal;
+  void main() {
+    vUv = uv; vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const sunFS = `
+  uniform float uT;
+  varying vec2 vUv; varying vec3 vNormal;
+
+  float hash(vec3 p) { p = fract(p*0.3183099+.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+  float noise(vec3 x) {
+    vec3 i = floor(x); vec3 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+    return mix(mix(mix(hash(i+vec3(0,0,0)), hash(i+vec3(1,0,0)),f.x),
+                   mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)),f.x),
+                   mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)),f.x),f.y),f.z);
+  }
+  float fbm(vec3 p) {
+    float v = 0.0; float a = 0.5;
+    for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.0; a *= 0.5; }
+    return v;
+  }
+
+  void main() {
+    vec3 p = vec3(vUv * 4.0, uT * 0.1);
+    float n = fbm(p);
+    float n2 = fbm(p * 2.0 + uT * 0.2);
+    
+    vec3 col1 = vec3(0.8, 0.2, 0.0); // Dark orange
+    vec3 col2 = vec3(1.0, 0.6, 0.1); // Bright orange
+    vec3 col3 = vec3(1.0, 0.9, 0.5); // White-yellow
+    
+    vec3 col = mix(col1, col2, n);
+    col = mix(col, col3, n2 * n);
+    
+    // Rim light
+    float rim = 1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0);
+    col += vec3(1.0, 0.5, 0.1) * pow(rim, 2.0) * 0.5;
+    
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+// MOON SHADER (Dark side with subtle earthshine)
+const moonFS = `
+  uniform float uT;
+  varying vec2 vUv; varying vec3 vNormal;
+  void main() {
+    // Very dark gray with subtle blue tint
+    vec3 baseCol = vec3(0.05, 0.05, 0.06);
+    // Faint earthshine glow on the dark side
+    float glow = pow(max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0), 2.0);
+    vec3 col = baseCol + vec3(0.02, 0.02, 0.04) * glow;
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+function initBg() {
+  clock = new THREE.Clock();
+  scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 3000);
+  cam.position.set(0, 20, 40);
+  cam.lookAt(0, 0, 0);
+
+  const canvas = document.getElementById('bg-canvas');
+  ren = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  ren.setSize(innerWidth, innerHeight);
+  ren.setPixelRatio(Math.min(devicePixelRatio, 2));
+  ren.toneMapping = THREE.ACESFilmicToneMapping;
+  ren.toneMappingExposure = 1.2;
+  ren.setClearColor(0x000000, 1);
+
+  composer = new EffectComposer(ren);
+  composer.addPass(new RenderPass(scene, cam));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.6, 0.1));
+  composer.addPass(new OutputPass());
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x222244, 0.2));
+  const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+  sunLight.position.set(0, 0, 0); // Light comes from sun center
+  scene.add(sunLight);
+
+  mkStars(); 
+  mkSun(); 
+  mkMoon(); 
+  mkEarth(); 
+  mkShadowCone();
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('scroll', () => {
+    scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+    document.getElementById('progressBar').style.width = (scrollProgress * 100) + '%';
+    
+    // Phase Indicator
+    let phase = 1;
+    if (scrollProgress > 0.75) phase = 4;
+    else if (scrollProgress > 0.50) phase = 3;
+    else if (scrollProgress > 0.25) phase = 2;
+    document.getElementById('phaseCurrent').textContent = String(phase).padStart(2, '0');
+
+    // Text Panels
+    document.querySelectorAll('.text-panel').forEach((p, i) => {
+      p.classList.toggle('active', i === phase - 1);
+    });
+
+    // Data Panel
+    document.getElementById('dataPanel').classList.toggle('active', phase === 4);
+  }, { passive: true });
+
+  animate();
+}
+
+function mkStars() {
+  const N = 5000;
+  const p = new Float32Array(N * 3), s = new Float32Array(N), c = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const r = 300 + Math.random() * 300;
+    const t = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    p[i*3] = r * Math.sin(ph) * Math.cos(t);
+    p[i*3+1] = r * Math.sin(ph) * Math.sin(t);
+    p[i*3+2] = r * Math.cos(ph);
+    s[i] = 0.5 + Math.random() * 2;
+    c[i*3] = 1; c[i*3+1] = 1; c[i*3+2] = 1;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(s, 1));
+  g.setAttribute('aCol', new THREE.BufferAttribute(c, 3));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } },
+    vertexShader: `attribute float aSize; attribute vec3 aCol; varying vec3 vC; void main(){vC=aCol;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=aSize*(200.0/-mv.z);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader: `varying vec3 vC; void main(){float d=length(gl_PointCoord-0.5);if(d>0.5)discard;float a=smoothstep(0.5,0.0,d);gl_FragColor=vec4(vC,a);}`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  starMesh = new THREE.Points(g, m);
+  scene.add(starMesh);
+}
+
+function mkSun() {
+  const geo = new THREE.SphereGeometry(5, 64, 64);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } },
+    vertexShader: sunVS,
+    fragmentShader: sunFS
+  });
+  sunMesh = new THREE.Mesh(geo, mat);
+  sunMesh.position.set(0, 0, 0);
+  scene.add(sunMesh);
+
+  // Corona / Glow
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 256;
+  const cx = cv.getContext('2d');
+  const g = cx.createRadialGradient(128, 128, 5, 128, 128, 128);
+  g.addColorStop(0, 'rgba(255,200,100,0.8)');
+  g.addColorStop(0.2, 'rgba(255,150,50,0.4)');
+  g.addColorStop(0.5, 'rgba(255,100,20,0.1)');
+  g.addColorStop(1, 'rgba(255,80,0,0)');
+  cx.fillStyle = g;
+  cx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(cv);
+  const sm = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+  sunGlow = new THREE.Sprite(sm);
+  sunGlow.scale.set(20, 20, 1);
+  sunGlow.position.copy(sunMesh.position);
+  scene.add(sunGlow);
+}
+
+function mkMoon() {
+  const geo = new THREE.SphereGeometry(1.3, 32, 32);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } },
+    vertexShader: sunVS,
+    fragmentShader: moonFS
+  });
+  moonMesh = new THREE.Mesh(geo, mat);
+  moonMesh.position.set(0, 5, 10); // Initial position
+  scene.add(moonMesh);
+}
+
+function mkEarth() {
+  const geo = new THREE.SphereGeometry(3, 48, 48);
+  const mat = new THREE.MeshPhongMaterial({ color: 0x111122, shininess: 5, emissive: 0x000011 });
+  earthMesh = new THREE.Mesh(geo, mat);
+  earthMesh.position.set(0, -3, 15);
+  scene.add(earthMesh);
+}
+
+function mkShadowCone() {
+  // A cone geometry from moon to earth
+  const geo = new THREE.ConeGeometry(1.3, 15, 32, 1, true);
+  geo.translate(0, -7.5, 0); // Move pivot to top
+  geo.rotateX(Math.PI / 2); // Point towards earth
+  const mat = new THREE.MeshBasicMaterial({ 
+    color: 0x000000, 
+    transparent: true, 
+    opacity: 0.0, 
+    side: THREE.DoubleSide,
+    blending: THREE.NormalBlending,
+    depthWrite: false
+  });
+  shadowCone = new THREE.Mesh(geo, mat);
+  scene.add(shadowCone);
+}
+
+function onResize() {
+  cam.aspect = innerWidth / innerHeight;
+  cam.updateProjectionMatrix();
+  ren.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.getElapsedTime();
+  
+  // Smooth scroll interpolation
+  smoothScroll += (scrollProgress - smoothScroll) * 0.05;
+
+  // Update Sun
+  if (sunMesh) sunMesh.material.uniforms.uT.value = t;
+  if (sunMesh) sunMesh.rotation.y += 0.001;
+
+  // Update Stars
+  if (starMesh) starMesh.material.uniforms.uT.value = t;
+
+  // SCENE LOGIC BASED ON SCROLL PROGRESS
+  // 0.0 - 0.25: Top-down view, Moon orbiting to align
+  // 0.25 - 0.50: Zoom in, shadow cone appears
+  // 0.50 - 0.75: Surface view, Diamond Ring (moon almost covering sun)
+  // 0.75 - 1.0: Totality (moon fully covering sun, corona visible)
+
+  let camPos = new THREE.Vector3(0, 20, 40);
+  let camLook = new THREE.Vector3(0, 0, 0);
+  
+  // Moon position
+  let moonPos = new THREE.Vector3(0, 5, 10);
+  let shadowOpacity = 0.0;
+
+  if (smoothScroll < 0.25) {
+    // Phase 1: Orbital Alignment
+    const p = smoothScroll / 0.25;
+    camPos.set(0, 30 - p*10, 40 - p*10);
+    camLook.set(0, 0, 0);
+    
+    // Moon moves from side to center
+    moonPos.set((1-p) * 10, 5 - p*8, 10 - p*2);
+    
+  } else if (smoothScroll < 0.50) {
+    // Phase 2: Shadow Cone
+    const p = (smoothScroll - 0.25) / 0.25;
+    camPos.set(0, 20 - p*15, 30 - p*10);
+    camLook.set(0, -2, 10);
+    
+    // Moon aligns perfectly
+    moonPos.set(0, -3, 10);
+    shadowOpacity = p * 0.6;
+    
+  } else if (smoothScroll < 0.75) {
+    // Phase 3: Diamond Ring (Camera dives to Earth surface)
+    const p = (smoothScroll - 0.50) / 0.25;
+    // Move camera to Earth surface looking up
+    camPos.set(0, -3 + p*2, 15 - p*5); // Y goes up slightly, Z moves back towards moon/sun
+    camLook.set(0, 0, -10); // Looking up at the sun
+    
+    // Moon moves to cover 99% of sun
+    moonPos.set(0, -1 - p*1, 10 - p*5);
+    shadowOpacity = 0.6;
+    
+  } else {
+    // Phase 4: Totality
+    const p = (smoothScroll - 0.75) / 0.25;
+    camPos.set(0, -1, 10);
+    camLook.set(0, 0, -10);
+    
+    // Moon perfectly aligned
+    moonPos.set(0, -2, 5);
+    shadowOpacity = 0.0; // We are in the shadow, no need to render the cone
+  }
+
+  // Apply Transforms
+  if (moonMesh) moonMesh.position.copy(moonPos);
+  if (shadowCone) {
+    shadowCone.position.copy(moonPos);
+    shadowCone.material.opacity = shadowOpacity;
+  }
+
+  // Camera smoothing
+  cam.position.lerp(camPos, 0.05);
+  cam.lookAt(camLook);
+
+  // Corona scale based on totality
+  if (sunGlow) {
+    let scale = 20;
+    if (smoothScroll > 0.75) {
+      scale = 20 + (smoothScroll - 0.75) * 4 * 20; // Expand corona during totality
+    }
+    sunGlow.scale.set(scale, scale, 1);
+  }
+
+  // FPS Counter
+  if (t % 1 < 0.1) {
+    const tc = document.getElementById('cineTimecode');
+    if (tc) {
+      const fps = Math.round(1 / dt);
+      const hh = String(Math.floor(t / 3600)).padStart(2, '0');
+      const mm = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
+      const ss = String(Math.floor(t % 60)).padStart(2, '0');
+      const ff = String(Math.floor((t % 1) * 24)).padStart(2, '0');
+      tc.innerHTML = `T: ${hh}:${mm}:${ss}:${ff}<br>FPS: ${fps.toFixed(2)}`;
+    }
+  }
+
+  composer.render();
+}
+
+// CURSOR
+const dotEl = document.querySelector('.cursor-dot');
+const ringEl = document.querySelector('.cursor-ring');
+window.addEventListener('mousemove', (e) => {
+  dotEl.style.left = e.clientX + 'px';
+  dotEl.style.top = e.clientY + 'px';
+  ringEl.style.left = e.clientX + 'px';
+  ringEl.style.top = e.clientY + 'px';
+});
+window.addEventListener('mousedown', () => ringEl.classList.add('click'));
+window.addEventListener('mouseup', () => ringEl.classList.remove('click'));
+
+// INIT
+window.addEventListener('load', () => {
+  initBg();
+  setTimeout(() => {
+    document.body.classList.add('loaded');
+  }, 200);
+});
+</script>
+</body>
+</html>

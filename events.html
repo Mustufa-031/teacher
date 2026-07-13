@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astrophile — Cosmic Events Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#000000; --bg-2:#020104;
+  --card:rgba(8,6,12,.78); --card-hover:rgba(16,12,20,.92);
+  --border:rgba(212,165,116,.22); --border-bright:rgba(212,165,116,.6);
+  --accent:#D4A574; --accent2:#B8651C; --gold:#FFB347;
+  --text:#F0E5D5; --muted:#b0a090; --dim:#7a6a5a;
+  --ok:#2ECC71; --warn:#E67E22; --err:#E74C3C;
+  --ice:#A8D8F0; --comms:#FFD700; --mag:#00e5ff; --aurora:#bb55ff;
+  --glow:0 0 12px rgba(212,165,116,.45);
+  --mono:'JetBrains Mono',monospace;
+  --display:'Syne',sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Space Grotesk',sans-serif;background:#000;color:var(--text);overflow-x:hidden;cursor:none}
+::selection{background:var(--accent);color:#000}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#000}
+::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px}
+canvas#bg-canvas{display:block;position:fixed;inset:0;z-index:0}
+
+.grain{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:.08;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.cursor-dot,.cursor-ring{position:fixed;top:0;left:0;border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform .15s ease-out,width .3s,height .3s,opacity .3s,border-color .3s,background .3s}
+.cursor-dot{width:6px;height:6px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.cursor-ring{width:32px;height:32px;border:1px solid var(--accent);opacity:.5}
+.cursor-ring.hover{width:60px;height:60px;border-color:var(--mag);background:rgba(0,229,255,.08);opacity:.8}
+.cursor-ring.click{width:20px;height:20px}
+
+#loader{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0a0612 0%,#000 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.2s,transform 1.2s}
+#loader.hidden{opacity:0;pointer-events:none;transform:scale(1.08)}
+#loaderRing{position:absolute;width:340px;height:340px;border-radius:50%;border:1px solid rgba(212,165,116,.15);animation:ringRot 20s linear infinite}
+#loaderRing::before,#loaderRing::after{content:'';position:absolute;inset:-1px;border-radius:50%;border:1px solid transparent}
+#loaderRing::before{border-top-color:var(--accent);border-right-color:var(--gold);animation:ringRot 4s linear infinite reverse}
+#loaderRing::after{inset:20px;border:1px dashed rgba(212,165,116,.2);animation:ringRot 12s linear infinite}
+@keyframes ringRot{to{transform:rotate(360deg)}}
+#loaderLogo{font-size:3.5rem;color:var(--accent);margin-bottom:1.5rem;text-shadow:var(--glow);animation:floatY 3s ease-in-out infinite;position:relative;z-index:2}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#loader h2{color:var(--accent);font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:12px;text-transform:uppercase;margin-bottom:6px;text-shadow:var(--glow);position:relative;z-index:2}
+#loader .tagline{font-family:var(--mono);font-size:.65rem;color:var(--muted);letter-spacing:6px;text-transform:uppercase;margin-bottom:30px;position:relative;z-index:2}
+
+#progressBar{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--accent),var(--gold),var(--mag));box-shadow:0 0 12px var(--gold);z-index:300;transition:width .1s linear}
+.hud-grid{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(212,165,116,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,165,116,.025) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse at center,black 30%,transparent 100%)}
+.scanline{position:fixed;left:0;right:0;height:120px;z-index:2;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(212,165,116,.04) 50%,transparent);animation:scan 12s linear infinite}
+@keyframes scan{0%{top:-120px}100%{top:100%}}
+.vignette{position:fixed;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at center,transparent 25%,rgba(0,0,0,.9) 100%)}
+
+/* NAVBAR */
+#navbar{position:fixed;top:0;left:0;right:0;z-index:9600;transition:all .4s var(--ease)}
+.nav-inner{max-width:1600px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;gap:30px}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex-shrink:0}
+.nav-brand .logo{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--gold),var(--accent2) 70%);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#000;box-shadow:0 0 20px rgba(255,179,71,.4);animation:logoSpin 12s linear infinite}
+@keyframes logoSpin{to{transform:rotate(360deg)}}
+.nav-brand .brand-text .name{font-family:var(--display);font-size:1.15rem;font-weight:700;color:var(--text);letter-spacing:2px}
+.nav-brand .brand-text .sub{font-family:var(--mono);font-size:.55rem;color:var(--accent);letter-spacing:3px;text-transform:uppercase}
+
+.nav-pill{display:flex;align-items:center;gap:4px;padding:5px;background:rgba(8,6,12,.7);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:100px}
+.nav-pill a{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;color:var(--muted);text-decoration:none;font-size:.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:all .35s}
+.nav-pill a i{font-size:.9rem}
+.nav-pill a:hover{color:var(--text);background:rgba(255,255,255,0.05)}
+.nav-pill a.active{color:#000;background:linear-gradient(135deg,var(--accent),var(--gold))}
+
+.nav-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;padding:11px 22px;border-radius:100px;font-family:inherit;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:none;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-btn:hover{box-shadow:0 8px 30px rgba(255,179,71,.5)}
+
+/* CONTENT */
+.content{position:relative;z-index:10;padding:140px 6vw 80px;max-width:1200px;margin:0 auto}
+.page-header{display:flex;align-items:center;gap:24px;margin-bottom:80px;border-bottom:1px solid var(--border);padding-bottom:24px;opacity:0;transform:translateY(40px);transition:all 1s var(--ease)}
+.page-header.visible{opacity:1;transform:translateY(0)}
+.page-header .ic{width:50px;height:50px;border-radius:50%;background:rgba(212,165,116,.08);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1.2rem}
+.page-header .num{font-family:var(--mono);color:var(--accent);font-size:.8rem;letter-spacing:3px;font-weight:600}
+.page-header h2{font-family:var(--display);font-size:clamp(2rem,4vw,3.2rem);font-weight:700;color:var(--text);letter-spacing:-1px}
+.page-header h2 em{font-style:normal;color:var(--accent)}
+.page-header .line{flex-grow:1;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+.page-header .meta{font-family:var(--mono);color:var(--muted);font-size:.7rem;letter-spacing:2px}
+
+/* VERTICAL TIMELINE */
+.timeline{position:relative;padding-left:40px}
+.timeline-line{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--border);overflow:hidden}
+.timeline-line::before{content:'';position:absolute;top:0;left:0;width:100%;height:0%;background:linear-gradient(180deg,var(--accent),var(--gold),var(--mag));box-shadow:0 0 15px var(--gold);transition:height .2s linear}
+
+.event-node{position:relative;margin-bottom:80px;padding-left:40px;opacity:0;transform:translateY(40px);transition:all .8s var(--ease)}
+.event-node.visible{opacity:1;transform:translateY(0)}
+
+.node-dot{position:absolute;left:-9px;top:20px;width:16px;height:16px;background:#000;border:2px solid var(--atmo, var(--accent));border-radius:50%;box-shadow:0 0 15px var(--atmo, var(--accent));z-index:2;transition:all .3s}
+.node-dot::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--atmo, var(--accent));opacity:0;animation:nodePulse 2s infinite}
+.event-node.visible .node-dot::after{opacity:1}
+@keyframes nodePulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.5);opacity:0}}
+
+.event-card{position:relative;border:1px solid var(--border);background:var(--card);border-radius:16px;overflow:hidden;backdrop-filter:blur(20px);transition:border-color .3s, box-shadow .3s}
+.event-card:hover{border-color:var(--atmo, var(--gold));box-shadow:0 20px 60px var(--atmo-glow, rgba(212,165,116,0.2))}
+
+.e-header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.3)}
+.e-type{font-family:var(--mono);font-size:.65rem;color:var(--atmo, var(--gold));letter-spacing:2px;text-transform:uppercase;font-weight:600}
+.e-time{font-family:var(--mono);font-size:.65rem;color:var(--muted);letter-spacing:1px}
+
+.e-body{padding:24px}
+.e-title{font-family:var(--display);font-size:1.6rem;font-weight:700;color:var(--text);margin-bottom:12px}
+.e-desc{font-size:.9rem;line-height:1.6;color:var(--muted);margin-bottom:20px}
+.e-link{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:rgba(212,165,116,.08);border:1px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-family:var(--mono);font-size:.7rem;letter-spacing:1px;text-transform:uppercase;transition:all .3s}
+.e-link:hover{background:var(--atmo, var(--accent));color:#000;border-color:var(--atmo, var(--accent))}
+.e-link i{transition:transform .3s}
+.e-link:hover i{transform:translateX(4px)}
+
+/* SOLAR SYSTEM CTA */
+.solar-cta{margin-top:120px;border-radius:24px;overflow:hidden;border:1px solid var(--border);position:relative;height:500px;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+.solar-cta::before{content:'';position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.9)), url('sol.jpg') center/cover no-repeat;z-index:-2;transition:transform 8s linear}
+.solar-cta:hover::before{transform:scale(1.1)}
+.solar-cta::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 100%);z-index:-1;pointer-events:none}
+.solar-cta-content{padding:40px;z-index:2}
+.solar-cta h3{font-family:var(--display);font-size:2.5rem;font-weight:700;margin-bottom:16px;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,0.8)}
+.solar-cta p{color:rgba(255,255,255,0.8);margin-bottom:32px;max-width:600px;margin-left:auto;margin-right:auto}
+.solar-cta-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;padding:16px 32px;border-radius:8px;text-decoration:none;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:2px;text-transform:uppercase;display:inline-flex;align-items:center;gap:12px;transition:transform .3s, box-shadow .3s}
+.solar-cta-btn:hover{transform:translateY(-3px);box-shadow:0 15px 40px rgba(212,165,116,0.5)}
+
+/* FOOTER */
+.footer{border-top:1px solid var(--border);padding:60px 6vw 30px;margin-top:120px;position:relative;z-index:10;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px)}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;max-width:1600px;margin-left:auto;margin-right:auto}
+.footer-brand .footer-logo{font-family:var(--display);font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:14px;text-shadow:var(--glow)}
+.footer-brand p{color:var(--muted);font-size:.9rem;line-height:1.7;max-width:380px}
+.footer-col h4{font-family:var(--mono);font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:2px;margin-bottom:18px}
+.footer-col a{display:block;color:var(--muted);text-decoration:none;font-size:.88rem;padding:6px 0;transition:color .3s,padding-left .3s}
+.footer-col a:hover{color:var(--accent);padding-left:6px}
+.footer-bottom{border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;max-width:1600px;margin-left:auto;margin-right:auto}
+.footer-bottom p{font-family:var(--mono);font-size:.7rem;color:var(--dim);letter-spacing:1.5px}
+.footer-bottom .social{display:flex;gap:12px}
+.footer-bottom .social a{width:36px;height:36px;border-radius:50%;background:rgba(15,10,5,.5);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .3s;text-decoration:none}
+.footer-bottom .social a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-3px);box-shadow:0 0 16px rgba(212,165,116,.3)}
+
+@media (max-width: 1100px) {
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .nav-pill a span { display: none; }
+  .nav-pill a { padding: 10px 14px; }
+}
+@media (max-width: 768px) {
+  body { cursor: auto; }
+  .cursor-dot, .cursor-ring { display: none; }
+  .nav-pill { display: none; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .solar-cta { height: 400px; }
+  .solar-cta h3 { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div id="loaderRing"></div>
+  <div id="loaderLogo"><i class="fas fa-bolt"></i></div>
+  <h2>Events</h2>
+  <div class="tagline">Cosmic Archive & Timeline</div>
+</div>
+
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
+<div id="progressBar"></div>
+<div class="hud-grid"></div>
+<div class="scanline"></div>
+<div class="vignette"></div>
+<div class="grain"></div>
+<canvas id="bg-canvas"></canvas>
+
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <div class="logo"><i class="fas fa-satellite"></i></div>
+      <div class="brand-text">
+        <div class="name">ASTROPHILE</div>
+        <div class="sub">Exploration Hub</div>
+      </div>
+    </a>
+    <div class="nav-pill">
+      <a href="solarsystem.html"><i class="fas fa-sun"></i><span>Solar System</span></a>
+      <a href="planets.html"><i class="fas fa-globe"></i><span>Planets</span></a>
+      <a href="black.html"><i class="fas fa-circle-notch"></i><span>Blackholes</span></a>
+      <a href="events.html" class="active"><i class="fas fa-bolt"></i><span>Events</span></a>
+      <a href="stars.html"><i class="fas fa-star"></i><span>Stars</span></a>
+    </div>
+    <a href="index.html#contact" class="nav-btn"><span>Mission Control</span><i class="fas fa-rocket"></i></a>
+  </div>
+</nav>
+
+<main class="content">
+  <div class="page-header">
+    <div class="ic"><i class="fas fa-bolt"></i></div>
+    <div>
+      <div class="num">ARCHIVE 02 // TEMPORAL LOG</div>
+      <h2>Cosmic <em>Events</em> Timeline</h2>
+    </div>
+    <div class="line"></div>
+    <div class="meta">4 RECORDS // SCROLL TO TRAVERSE</div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-line" id="timelineLine"></div>
+
+    <div class="event-node" style="--atmo: #ffd700; --atmo-glow: rgba(255, 215, 0, 0.4);">
+      <div class="node-dot"></div>
+      <div class="event-card">
+        <div class="e-header">
+          <span class="e-type">Event Type // Orbital Alignment</span>
+          <span class="e-time">Earth-Moon-Sun</span>
+        </div>
+        <div class="e-body">
+          <h3 class="e-title">Solar Eclipse</h3>
+          <p class="e-desc">A solar eclipse occurs when the Moon passes between Earth and the Sun, thereby totally or partly obscuring the Sun's image for a viewer on Earth. This alignment can only happen during a new moon, when the Sun and Moon are in conjunction as seen from Earth.</p>
+          <a href="secs.html" class="e-link"><span>View Eclipse Archive</span><i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="event-node" style="--atmo: #c0c0c0; --atmo-glow: rgba(192, 192, 192, 0.4);">
+      <div class="node-dot"></div>
+      <div class="event-card">
+        <div class="e-header">
+          <span class="e-type">Event Type // Shadow Projection</span>
+          <span class="e-time">Earth-Moon-Sun</span>
+        </div>
+        <div class="e-body">
+          <h3 class="e-title">Lunar Eclipse</h3>
+          <p class="e-desc">A lunar eclipse occurs when the Moon moves into the Earth's shadow, causing the Moon to be darkened. This alignment can only occur during a full moon. Unlike a solar eclipse, a lunar eclipse can be viewed from anywhere on the night side of Earth, often casting the Moon a haunting reddish hue.</p>
+          <a href="lunar.html" class="e-link"><span>View Eclipse Archive</span><i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="event-node" style="--atmo: #bb55ff; --atmo-glow: rgba(187, 85, 255, 0.4);">
+      <div class="node-dot"></div>
+      <div class="event-card">
+        <div class="e-header">
+          <span class="e-type">Event Type // Cosmological Origin</span>
+          <span class="e-time">13.8 Billion Years Ago</span>
+        </div>
+        <div class="e-body">
+          <h3 class="e-title">The Big Bang</h3>
+          <p class="e-desc">The leading explanation about how the universe began. At its simplest, it says the universe as we know it started with an infinitely hot, infinitely dense singularity, then inflated over the next 13.8 billion years to the vast, expanding cosmos we observe today. It is the event that started everything.</p>
+          <a href="bigbang.html" class="e-link"><span>View Origin Archive</span><i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="event-node" style="--atmo: #ff4500; --atmo-glow: rgba(255, 69, 0, 0.4);">
+      <div class="node-dot"></div>
+      <div class="event-card">
+        <div class="e-header">
+          <span class="e-type">Event Type // Stellar Evolution (Future)</span>
+          <span class="e-time">~5 Billion Years Ahead</span>
+        </div>
+        <div class="e-body">
+          <h3 class="e-title">Solar Giant Expansion</h3>
+          <p class="e-desc">In approximately 5 billion years, the Sun will exhaust the hydrogen fuel in its core and begin to expand into a red giant. It will grow so massive that it will likely engulf the inner planets, including Earth. Eventually, it will shed its outer layers, leaving behind a glowing white dwarf core and a planetary nebula.</p>
+          <a href="solargiant.html" class="e-link"><span>View Future Archive</span><i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <a href="index.html" class="solar-cta">
+    <div class="solar-cta-content">
+      <h3>Explore the Solar System</h3>
+      <p>Journey back to the hub and navigate the planetary bodies that make up our home system in real-time orbital mechanics.</p>
+      <div class="solar-cta-btn"><span>Launch System Map</span><i class="fas fa-rocket"></i></div>
+    </div>
+  </a>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="footer-logo">ASTROPHILE</div>
+      <p>Deep Space Exploration Hub — an interactive gateway to the cosmos. Navigate planetary systems, witness astronomical events, and study deep space anomalies.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <a href="index.html#hero">Solar System</a>
+      <a href="planets.html">Planets</a>
+      <a href="index.html#anomalies">Blackholes</a>
+      <a href="events.html">Events</a>
+    </div>
+    <div class="footer-col">
+      <h4>Missions</h4>
+      <a href="index.html#missions">Voyager</a>
+      <a href="index.html#missions">JWST</a>
+      <a href="index.html#missions">Perseverance</a>
+      <a href="index.html#missions">Parker Probe</a>
+    </div>
+    <div class="footer-col">
+      <h4>Connect</h4>
+      <a href="index.html#contact">Contact</a>
+      <a href="#">Documentation</a>
+      <a href="#">API Access</a>
+      <a href="#">Press Kit</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>ASTROPHILE &copy; ALL RIGHTS RESERVED</p>
+    <div class="social">
+      <a href="#"><i class="fab fa-github"></i></a>
+      <a href="#"><i class="fab fa-twitter"></i></a>
+      <a href="#"><i class="fab fa-discord"></i></a>
+      <a href="#"><i class="fab fa-youtube"></i></a>
+    </div>
+  </div>
+</footer>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+let scene, cam, ren, clock;
+let starMesh;
+
+function initBg() {
+  clock = new THREE.Clock();
+  scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 3000);
+  cam.position.z = 18;
+  const canvas = document.getElementById('bg-canvas');
+  ren = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  ren.setSize(innerWidth, innerHeight);
+  ren.setPixelRatio(Math.min(devicePixelRatio, 2));
+  ren.setClearColor(0x000000, 1);
+  mkStars();
+  window.addEventListener('resize', onResize);
+  animate();
+}
+
+function mkStars() {
+  const N = 8000;
+  const p = new Float32Array(N * 3), s = new Float32Array(N), c = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const r = 350 + Math.random() * 650;
+    const t = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    p[i*3] = r * Math.sin(ph) * Math.cos(t);
+    p[i*3+1] = r * Math.sin(ph) * Math.sin(t);
+    p[i*3+2] = r * Math.cos(ph);
+    s[i] = 0.5 + Math.random() * 3;
+    const tp = Math.random();
+    if (tp < 0.72) { c[i*3]=1; c[i*3+1]=.97; c[i*3+2]=.93; }
+    else { c[i*3]=.75; c[i*3+1]=.88; c[i*3+2]=1; }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(s, 1));
+  g.setAttribute('aCol', new THREE.BufferAttribute(c, 3));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uT: { value: 0 } },
+    vertexShader: `attribute float aSize; attribute vec3 aCol; varying float vS; varying vec3 vC; uniform float uT;
+      void main() {
+        vS = aSize; vC = aCol;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * (300.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying float vS; varying vec3 vC; uniform float uT;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        float a = smoothstep(0.5, 0.0, d);
+        float tw = 0.65 + 0.35 * sin(uT * (1.0 + vS * 0.5) + vS * 77.0);
+        gl_FragColor = vec4(vC, a * tw);
+      }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  starMesh = new THREE.Points(g, m);
+  scene.add(starMesh);
+}
+
+function onResize() {
+  cam.aspect = innerWidth / innerHeight;
+  cam.updateProjectionMatrix();
+  ren.setSize(innerWidth, innerHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  if (starMesh) {
+    starMesh.material.uniforms.uT.value = t;
+    starMesh.rotation.y = t * 0.01;
+  }
+  ren.render(scene, cam);
+}
+
+const dotEl = document.querySelector('.cursor-dot');
+const ringEl = document.querySelector('.cursor-ring');
+window.addEventListener('mousemove', (e) => {
+  dotEl.style.left = e.clientX + 'px';
+  dotEl.style.top = e.clientY + 'px';
+  ringEl.style.left = e.clientX + 'px';
+  ringEl.style.top = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .event-card, .solar-cta').forEach(el => {
+  el.addEventListener('mouseenter', () => ringEl.classList.add('hover'));
+  el.addEventListener('mouseleave', () => ringEl.classList.remove('hover'));
+});
+window.addEventListener('mousedown', () => ringEl.classList.add('click'));
+window.addEventListener('mouseup', () => ringEl.classList.remove('click'));
+
+const timeline = document.querySelector('.timeline');
+const timelineLine = document.getElementById('timelineLine');
+
+window.addEventListener('scroll', () => {
+  const wh = document.body.scrollHeight - window.innerHeight;
+  const p = (window.scrollY / wh) * 100;
+  document.getElementById('progressBar').style.width = `${p}%`;
+  
+  if (timeline && timelineLine) {
+    const rect = timeline.getBoundingClientRect();
+    const viewportCenter = window.innerHeight / 2;
+    if (rect.bottom < viewportCenter) {
+      timelineLine.style.height = '100%';
+    } else if (rect.top > viewportCenter) {
+      timelineLine.style.height = '0%';
+    } else {
+      const total = rect.height;
+      const passed = viewportCenter - rect.top;
+      const lineProgress = Math.max(0, Math.min(100, (passed / total) * 100));
+      timelineLine.style.height = lineProgress + '%';
+    }
+  }
+}, { passive: true });
+
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.2 });
+
+document.querySelectorAll('.page-header, .event-node').forEach(el => revealObserver.observe(el));
+
+window.addEventListener('load', () => {
+  initBg();
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 1500);
+});
+</script>
+</body>
+</html>

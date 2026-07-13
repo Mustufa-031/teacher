@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UMBRA — Total Lunar Eclipse Observatory</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020305;
+    --accent: #8FA9C4; /* Moonlight Blue */
+    --accent-hot: #FF3333; /* Blood Moon Red */
+    --accent-cold: #4FC3F7;
+    --text: #F0EDE5;
+    --text-dim: #6a655d;
+    --glass: rgba(8, 10, 14, 0.65);
+    --glass-light: rgba(8, 10, 14, 0.45);
+    --border: rgba(143, 169, 196, 0.25);
+    --border-bright: rgba(143, 169, 196, 0.7);
+    --safe: #4CFF4C;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #000; color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden; width: 100vw; height: 100vh;
+    cursor: grab; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body:active { cursor: grabbing; }
+  
+  #darken-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    background: radial-gradient(ellipse at center, rgba(0,0,15,0) 0%, rgba(0,5,20,0.4) 100%);
+    opacity: 0; transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #darken-overlay.active { opacity: 1; }
+
+  #canvas-container { position: fixed; inset: 0; z-index: 0; }
+  
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 5;
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.75) 100%);
+  }
+  
+  #grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 6;
+    opacity: 0.06; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/></svg>");
+  }
+
+  .ui-overlay { position: fixed; z-index: 10; pointer-events: none; }
+  
+  /* TOP HUD */
+  #top-hud {
+    top: 0; left: 0; right: 0; padding: 20px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(180deg, rgba(2,3,5,0.95) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { 
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; 
+    letter-spacing: 8px; color: var(--text); display: flex; align-items: center; gap: 12px;
+  }
+  .brand span { color: var(--accent); font-size: 24px; line-height: 0; }
+  .hud-stats { display: flex; gap: 40px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+  .hud-stat { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .hud-stat .label { color: var(--text-dim); font-size: 9px; }
+  .hud-stat .value { color: var(--accent); font-weight: 600; font-size: 14px; transition: color 0.5s; }
+  .hud-stat.totality .value { color: var(--accent-hot); text-shadow: 0 0 10px var(--accent-hot); }
+
+  /* SAFETY ALERT */
+  #safety-alert {
+    position: fixed; top: 110px; left: 50%; transform: translateX(-50%); z-index: 20;
+    padding: 8px 24px; border-radius: 3px; font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+    background: rgba(76, 255, 76, 0.15); border: 1px solid var(--safe); color: var(--safe);
+    backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(76, 255, 76, 0.3);
+  }
+
+  /* TICKER */
+  #ticker {
+    top: 68px; left: 0; right: 0; height: 32px; overflow: hidden; white-space: nowrap;
+    border-bottom: 1px solid rgba(143,169,196,0.1); background: rgba(2,3,5,0.6);
+  }
+  .ticker-content {
+    display: flex; gap: 60px; animation: scroll-ticker 60s linear infinite;
+    padding-left: 100%; height: 100%; align-items: center;
+  }
+  @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+  .ticker-item { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 10px; }
+  .ticker-item .val { color: var(--accent); font-weight: 600; }
+  .ticker-item::before { content: '◆'; color: var(--accent); font-size: 8px; }
+
+  /* PANELS */
+  .panel {
+    background: var(--glass); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--border); border-radius: 4px; padding: 24px; pointer-events: auto;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.6);
+  }
+
+  #timeline-panel { top: 140px; left: 32px; width: 320px; max-height: 70vh; overflow-y: auto; }
+  .panel-title {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 4px; margin-bottom: 20px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel-title::after {
+    content: ''; width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent); animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+  
+  .phase-list { list-style: none; }
+  .phase-item {
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex; align-items: center; gap: 16px; opacity: 0.3;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative;
+  }
+  .phase-item:last-child { border-bottom: none; }
+  .phase-item.active { opacity: 1; transform: translateX(10px); }
+  .phase-item.passed { opacity: 0.6; }
+  .phase-item.passed .phase-dot { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+  .phase-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.5s ease; flex-shrink: 0; border: 1px solid transparent; }
+  .phase-item.active .phase-dot {
+    background: transparent; border-color: var(--accent); box-shadow: 0 0 15px var(--accent), inset 0 0 5px var(--accent);
+    transform: scale(1.5);
+  }
+  .phase-text { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500; }
+  .phase-time { margin-left: auto; font-size: 10px; color: var(--text-dim); letter-spacing: 1px; font-weight: 600; }
+  .phase-item.active .phase-time { color: var(--accent); }
+
+  /* SCIENCE CONTEXT BLOCK */
+  .context-block { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .focus-label {
+    font-size: 10px; color: var(--accent-cold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .focus-label::before { content: '◎'; font-size: 12px; }
+  #focus-text { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+  #science-text { font-size: 11px; line-height: 1.7; color: var(--text-dim); text-align: justify; }
+
+  #data-panel { top: 140px; right: 32px; width: 380px; display: flex; flex-direction: column; gap: 16px; max-height: 70vh; overflow-y: auto; }
+  .data-header { display: flex; justify-content: space-between; align-items: baseline; }
+  #data-phase-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 26px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; line-height: 1; }
+  #data-phase-num { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; font-weight: 600; }
+  .data-divider { height: 1px; background: linear-gradient(90deg, var(--accent) 0%, transparent 100%); }
+  #data-description { font-size: 12px; line-height: 1.8; color: #b0aaa0; text-align: justify; }
+  
+  .data-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .metric { 
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 14px; border-radius: 3px;
+    transition: all 0.3s; position: relative; cursor: help;
+  }
+  .metric:hover { background: rgba(143,169,196,0.05); border-color: var(--border); }
+  .metric-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 6px; }
+  .metric-value { font-size: 16px; color: var(--text); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  .metric-value .unit { font-size: 10px; color: var(--text-dim); margin-left: 4px; font-weight: 400; }
+  
+  /* TOOLTIP */
+  .metric .tooltip {
+    position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%);
+    background: #000; color: var(--text); border: 1px solid var(--accent);
+    padding: 8px 12px; border-radius: 3px; font-size: 10px; line-height: 1.4; width: 220px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  }
+  .metric:hover .tooltip { opacity: 1; }
+
+  /* SVG GRAPH */
+  .graph-container {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 3px;
+    padding: 12px; height: 80px; position: relative; overflow: hidden;
+  }
+  .graph-label { position: absolute; top: 8px; left: 12px; font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; z-index: 2; }
+  .danjon-scale { position: absolute; top: 8px; right: 12px; font-size: 9px; color: var(--accent); z-index: 2; font-weight: 600; }
+  #flux-graph { width: 100%; height: 100%; }
+
+  /* CONTROLS */
+  #control-bar {
+    position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%); z-index: 20;
+    display: flex; align-items: center; gap: 24px;
+    background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border); border-radius: 4px; padding: 14px 24px; pointer-events: auto;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.6);
+  }
+  .ctrl-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--accent);
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;
+    padding: 12px 24px; cursor: pointer; transition: all 0.3s ease; border-radius: 3px;
+  }
+  .ctrl-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 25px rgba(143,169,196,0.4); }
+  .ctrl-btn.primary { background: var(--accent); color: var(--bg); padding: 12px 40px; border-color: var(--accent); }
+  .ctrl-btn.primary:hover { background: transparent; color: var(--accent); }
+  
+  .speed-control { display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+  .speed-btn {
+    background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim);
+    padding: 6px 12px; font-size: 11px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    border-radius: 3px; transition: all 0.2s; font-weight: 600;
+  }
+  .speed-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(143,169,196,0.1); }
+  .speed-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+  /* TIMELINE */
+  #timeline-scrubber {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 32px; z-index: 15;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.8));
+    pointer-events: auto; cursor: pointer;
+  }
+  #scrubber-track { position: absolute; bottom: 14px; left: 0; right: 0; height: 4px; background: rgba(255,255,255,0.08); }
+  #scrubber-fill {
+    height: 100%; width: 0%; position: relative;
+    background: linear-gradient(90deg, var(--accent-cold), var(--accent-hot));
+    box-shadow: 0 0 15px var(--accent); transition: width 0.1s linear;
+  }
+  #scrubber-handle {
+    position: absolute; right: -6px; top: -4px; width: 12px; height: 12px; 
+    background: #fff; border-radius: 50%; box-shadow: 0 0 15px #fff;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #timeline-scrubber:hover #scrubber-handle { opacity: 1; }
+
+  /* LOADER & HINT */
+  #loader {
+    position: fixed; inset: 0; background: var(--bg); z-index: 100;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 1.5s ease;
+  }
+  .loader-ring {
+    width: 80px; height: 80px; border: 2px solid rgba(143,169,196,0.15); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 1.2s linear infinite; margin-bottom: 30px;
+    box-shadow: 0 0 30px rgba(143,169,196,0.2);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loader-text { font-family: 'Syne', sans-serif; letter-spacing: 8px; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+  #loader-subtext { font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; font-size: 10px; color: var(--text-dim); margin-top: 12px; }
+  
+  #hint {
+    position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase;
+    z-index: 15; pointer-events: none; opacity: 0; transition: opacity 1s ease; text-align: center;
+  }
+  #hint.show { opacity: 0.6; }
+  #hint span { color: var(--accent); font-weight: 600; }
+  
+  .corner { position: fixed; width: 30px; height: 30px; border: 1px solid var(--border-bright); z-index: 8; pointer-events: none; }
+  .corner.tl { top: 100px; left: 16px; border-right: none; border-bottom: none; }
+  .corner.tr { top: 100px; right: 16px; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 100px; left: 16px; border-right: none; border-top: none; }
+  .corner.br { bottom: 100px; right: 16px; border-left: none; border-top: none; }
+
+  #audio-toggle {
+    position: fixed; top: 120px; left: 50%; transform: translateX(-50%); z-index: 20;
+    background: var(--glass); border: 1px solid var(--border); color: var(--accent);
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s; backdrop-filter: blur(10px);
+  }
+  #audio-toggle:hover { background: var(--accent); color: var(--bg); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  @media (max-width: 1100px) {
+    #timeline-panel, #data-panel { width: 280px; padding: 20px; }
+    #data-phase-title { font-size: 22px; }
+    .hud-stats { gap: 24px; }
+  }
+
+  @media (max-width: 860px) {
+    .corner { display: none; }
+    #top-hud { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .brand { font-size: 16px; letter-spacing: 4px; }
+    .hud-stats { gap: 12px; width: 100%; justify-content: space-between; }
+    .hud-stat .value { font-size: 11px; }
+    .hud-stat .label { font-size: 8px; }
+    
+    #timeline-panel, #data-panel {
+      top: auto; bottom: 130px; left: 16px; right: 16px; width: auto;
+      max-height: 260px; overflow-y: auto; display: none;
+    }
+    #timeline-panel.active, #data-panel.active { display: block; }
+    
+    #ticker { top: 90px; }
+    #safety-alert { top: 80px; font-size: 10px; padding: 6px 16px; }
+    
+    #control-bar {
+      bottom: 40px; width: calc(100% - 32px); left: 16px; transform: none;
+      padding: 10px 12px; gap: 8px; flex-wrap: wrap; justify-content: center;
+    }
+    .ctrl-btn { padding: 8px 12px; font-size: 10px; letter-spacing: 1px; }
+    .ctrl-btn.primary { padding: 8px 16px; }
+    .speed-control { width: 100%; justify-content: center; order: 3; }
+    .speed-btn { padding: 4px 8px; font-size: 10px; }
+    
+    #hint { bottom: 160px; font-size: 9px; }
+    
+    .mobile-panel-btn {
+      display: block; position: fixed; top: 80px; z-index: 11;
+      background: var(--glass); border: 1px solid var(--border); color: var(--accent);
+      padding: 6px 10px; font-size: 10px; font-family: 'Syne', sans-serif; font-weight: 700;
+      letter-spacing: 1px; border-radius: 3px; pointer-events: auto;
+    }
+    #left-panel-btn { left: 16px; }
+    #right-panel-btn { right: 16px; }
+    #audio-toggle { top: 80px; }
+  }
+  @media (min-width: 861px) {
+    .mobile-panel-btn { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div id="loader-text">Calibrating Lunar Orbital Mechanics</div>
+  <div id="loader-subtext">Synchronizing Rayleigh scattering algorithms...</div>
+</div>
+
+<div id="canvas-container"></div>
+<div id="darken-overlay"></div>
+<div id="vignette"></div>
+<div id="grain"></div>
+
+<div class="corner tl"></div><div class="corner tr"></div>
+<div class="corner bl"></div><div class="corner br"></div>
+
+<button class="mobile-panel-btn" id="left-panel-btn">SEQ</button>
+<button class="mobile-panel-btn" id="right-panel-btn">DATA</button>
+<button id="audio-toggle" title="Toggle Audio">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+</button>
+
+<div id="safety-alert">SAFE — NAKED EYE OBSERVATION</div>
+
+<div class="ui-overlay" id="top-hud">
+  <div class="brand">LUNA<span>·</span>ECLIPSIA</div>
+  <div class="hud-stats">
+    <div class="hud-stat"><span class="label">Mission Time</span><span class="value" id="t-utc">00:00:00Z</span></div>
+    <div class="hud-stat"><span class="label">Phase</span><span class="value" id="t-phase">STANDBY</span></div>
+    <div class="hud-stat" id="stat-obs"><span class="label">Umbral Magnitude</span><span class="value" id="t-obs">0.000</span></div>
+    <div class="hud-stat"><span class="label">Danjon Scale</span><span class="value" id="t-mag">L=—</span></div>
+  </div>
+</div>
+
+<div class="ui-overlay" id="ticker">
+  <div class="ticker-content">
+    <div class="ticker-item">LUNAR ALBEDO <span class="val" id="t-lum">100.0%</span></div>
+    <div class="ticker-item">SHADOW VELOCITY <span class="val" id="t-vel">1.02 km/s</span></div>
+    <div class="ticker-item">UMBRA RADIUS <span class="val" id="t-umbra">0.0 km</span></div>
+    <div class="ticker-item">SURFACE TEMP <span class="val" id="t-corona">250 K</span></div>
+    <div class="ticker-item">EARTH REFRACTION <span class="val" id="t-photo">0.0°</span></div>
+    <div class="ticker-item">SUN-EARTH DIST <span class="val" id="t-delta">1.000 AU</span></div>
+    <div class="ticker-item">BLOOD MOON INDEX <span class="val" id="t-beads">INACTIVE</span></div>
+    <div class="ticker-item">PENUMBRAL PHASE <span class="val" id="t-chromo">INACTIVE</span></div>
+  </div>
+</div>
+
+<div class="ui-overlay panel" id="timeline-panel">
+  <div class="panel-title">Eclipse Sequence</div>
+  <ul class="phase-list" id="phase-list">
+    <li class="phase-item" data-phase="1"><div class="phase-dot"></div><div class="phase-text">Penumbral Begin</div><div class="phase-time">T-30:00</div></li>
+    <li class="phase-item" data-phase="2"><div class="phase-dot"></div><div class="phase-text">Partial Umbral</div><div class="phase-time">T-20:00</div></li>
+    <li class="phase-item" data-phase="3"><div class="phase-dot"></div><div class="phase-text">Totality Begins</div><div class="phase-time">T-00:02</div></li>
+    <li class="phase-item" data-phase="4"><div class="phase-dot"></div><div class="phase-text">Maximum Eclipse</div><div class="phase-time">T+00:00</div></li>
+    <li class="phase-item" data-phase="5"><div class="phase-dot"></div><div class="phase-text">Totality Ends</div><div class="phase-time">T+00:02</div></li>
+    <li class="phase-item" data-phase="6"><div class="phase-dot"></div><div class="phase-text">Partial Exit</div><div class="phase-time">T+30:00</div></li>
+  </ul>
+  
+  <div class="context-block">
+    <div class="focus-label">Optical Focus Guide</div>
+    <div id="focus-text">Awaiting Sequence</div>
+    <div class="focus-label" style="color: var(--accent); margin-top: 16px;">Scientific Context</div>
+    <div id="science-text">Initiate the simulation to begin receiving live lunar telemetry and optical focus directives. Unlike a solar eclipse, a lunar eclipse is completely safe to view with the naked eye.</div>
+  </div>
+</div>
+
+<div class="ui-overlay panel" id="data-panel">
+  <div class="data-header">
+    <div id="data-phase-title">System Standby</div>
+    <div id="data-phase-num">00 / 06</div>
+  </div>
+  <div class="data-divider"></div>
+  <div id="data-description">Awaiting sequence initiation. The Moon holds position outside Earth's orbital shadow plane. All telemetry is nominal. Engage the sequence to begin the lunar eclipse simulation.</div>
+  <div class="data-metrics">
+    <div class="metric">
+      <div class="metric-label">Shadow Depth</div>
+      <div class="metric-value" id="m-irr">0.0<span class="unit">%</span></div>
+      <div class="tooltip">Percentage of the lunar disk covered by Earth's dark umbra.</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Surface Lumen</div>
+      <div class="metric-value" id="m-vel">0.25<span class="unit">lux</span></div>
+      <div class="tooltip">Illuminance reaching the lunar surface from the Sun.</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Refraction Angle</div>
+      <div class="metric-value" id="m-x">0.000<span class="unit">°</span></div>
+      <div class="tooltip">Angular bending of sunlight through Earth's atmosphere.</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Color Index</div>
+      <div class="metric-value" id="m-y">1.00</div>
+      <div class="tooltip">B-V index of the Moon's color (higher = redder).</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Umbral Magnitude</div>
+      <div class="metric-value" id="m-shadow">0.000</div>
+      <div class="tooltip">Fraction of the Moon's diameter immersed in the umbra.</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Temp Δ</div>
+      <div class="metric-value" id="m-temp">0.0<span class="unit">°C</span></div>
+      <div class="tooltip">Rapid temperature drop on the lunar surface during totality.</div>
+    </div>
+  </div>
+  <div class="graph-container">
+    <div class="graph-label">LUNAR BRIGHTNESS TELEMETRY</div>
+    <div class="danjon-scale" id="danjon-val">L=—</div>
+    <svg id="flux-graph" viewBox="0 0 100 30" preserveAspectRatio="none">
+      <path id="flux-path" d="M0,15 L100,15" fill="none" stroke="var(--accent)" stroke-width="0.5" />
+      <path id="flux-area" d="M0,15 L100,15 L100,30 L0,30 Z" fill="url(#flux-gradient)" opacity="0.3" />
+      <defs>
+        <linearGradient id="flux-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:var(--accent);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+</div>
+
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM · <span>SPACE</span> TO PLAY/PAUSE</div>
+
+<div id="control-bar">
+  <button class="ctrl-btn primary" id="control-btn">Start Sequence</button>
+  <div class="speed-control">
+    <span>Speed</span>
+    <button class="speed-btn" data-speed="0.5">0.5×</button>
+    <button class="speed-btn active" data-speed="1">1×</button>
+    <button class="speed-btn" data-speed="3">3×</button>
+    <button class="speed-btn" data-speed="8">8×</button>
+  </div>
+  <div class="speed-control">
+    <span>View</span>
+    <button class="speed-btn active" data-view="orbital">Orbital</button>
+    <button class="speed-btn" data-view="lunar">Lunar Closeup</button>
+  </div>
+  <button class="ctrl-btn" id="reset-btn">Reset</button>
+</div>
+
+<div id="timeline-scrubber">
+  <div id="scrubber-track">
+    <div id="scrubber-fill"><div id="scrubber-handle"></div></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+// === GLOBALS ===
+let scene, camera, renderer, composer, controls;
+let sunMesh, sunMaterial;
+let earthMesh, earthClouds, atmosphere, earthMaterial;
+let moonMesh, moonMaterial;
+let sunLight, fillLight, ambientLight;
+let umbraCone, penumbraCone;
+let starField;
+let clock = new THREE.Clock();
+
+let eclipseProgress = 0;
+let isPlaying = false;
+let isFinished = false;
+let speedMultiplier = 1;
+let currentView = 'orbital';
+
+// Audio Engine
+let audioCtx = null;
+let droneOsc, noiseSource, masterGain;
+let audioEnabled = false;
+
+// === LUNAR ECLIPSE GEOMETRY ===
+const SUN_RADIUS = 60;
+const EARTH_RADIUS = 12;
+const MOON_RADIUS = 5;
+const SUN_Z = -1500;
+const EARTH_Z = -50;
+const MOON_Z = 50;
+
+// Educational Data Payload
+const PHASES = {
+  1: {
+    name: "Penumbral Begin",
+    desc: "The Moon begins to enter the Earth's penumbra, the faint outer shadow. A subtle darkening on the lunar surface begins, though it is often imperceptible to the naked eye at this stage.",
+    science: "The penumbra is the region where Earth blocks only part of the Sun's light. The decrease in surface illumination is gradual, requiring photographic equipment to detect clearly.",
+    focus: "Lunar Edge Darkening",
+    safety: "SAFE — NAKED EYE OBSERVATION"
+  },
+  2: {
+    name: "Partial Umbral",
+    desc: "The Moon intersects the Earth's umbra, the dark inner shadow. A distinct, curved 'bite' appears to be taken out of the Moon. The contrast between the dark umbra and the bright penumbra becomes striking.",
+    science: "The curvature of the Earth's shadow on the Moon was historically used by Aristotle to prove the Earth is round. The edge is always perfectly circular due to Earth's spherical shape.",
+    focus: "Umbral Boundary",
+    safety: "SAFE — NAKED EYE OBSERVATION"
+  },
+  3: {
+    name: "Totality Begins",
+    desc: "The entire lunar disk is now immersed within the Earth's umbra. The Moon begins to glow with an eerie, deep red or orange hue, often referred to as a 'Blood Moon'.",
+    science: "During totality, the Moon is illuminated solely by sunlight refracted through Earth's atmosphere. Rayleigh scattering scatters out blue light, allowing only the longer red and orange wavelengths to reach the Moon.",
+    focus: "Color Shift & Streamers",
+    safety: "SAFE — NAKED EYE OBSERVATION"
+  },
+  4: {
+    name: "Maximum Eclipse",
+    desc: "The Moon reaches the deepest point of Earth's umbral shadow. The red coloration is typically at its most intense, and the sky darkens dramatically, allowing faint stars to be seen near the Moon.",
+    science: "The exact hue of the Blood Moon depends on atmospheric conditions on Earth. Volcanic eruptions can inject aerosols into the stratosphere, resulting in unusually dark, nearly invisible lunar eclipses (Danjon L=0).",
+    focus: "Maximum Reddening",
+    safety: "SAFE — NAKED EYE OBSERVATION"
+  },
+  5: {
+    name: "Totality Ends",
+    desc: "The Moon begins to exit the Earth's umbra. The first sliver of brilliant, unshadowed lunar surface reappears, creating a dramatic contrast against the remaining blood-red disk.",
+    science: "The exit of the Moon from the umbra reverses the optical effects of ingress. The sudden return of direct photospheric illumination from the lunar surface is visually striking.",
+    focus: "Lunar Limb Re-emergence",
+    safety: "SAFE — NAKED EYE OBSERVATION"
+  },
+  6: {
+    name: "Partial Exit",
+    desc: "The Moon continues its orbital path, progressively exiting the umbra and penumbra. Normal lunar brightness is restored as the eclipse sequence concludes.",
+    science: "As the orbital vectors diverge, the penumbra sweeps past the observer. The environment undergoes a rapid reversal of the lighting effects experienced during ingress.",
+    focus: "Shadow Recession",
+    safety: "SAFE — NAKED EYE OBSERVATION"
+  }
+};
+
+const texLoader = new THREE.TextureLoader();
+texLoader.crossOrigin = 'anonymous';
+
+init();
+animate();
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+  camera.position.set(0, 15, 120);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', stencil: false });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 10;
+  controls.maxDistance = 300;
+  controls.target.set(0, 0, 20);
+
+  ambientLight = new THREE.AmbientLight(0x101020, 0.15);
+  scene.add(ambientLight);
+
+  sunLight = new THREE.DirectionalLight(0xffeedd, 3.5);
+  sunLight.position.set(0, 0, SUN_Z);
+  scene.add(sunLight);
+  scene.add(sunLight.target);
+
+  // Subtle Earth-shine on the moon
+  fillLight = new THREE.PointLight(0x3355aa, 0.2, 200);
+  fillLight.position.set(0, 0, EARTH_Z);
+  scene.add(fillLight);
+
+  createStarfield();
+  createSun();
+  createEarth();
+  createMoon();
+  createShadowCones();
+
+  // Post-processing
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  
+  const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.8, 0.4, 0.85
+  );
+  composer.addPass(bloomPass);
+
+  const filmShader = {
+    uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+    `,
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform float uTime;
+      varying vec2 vUv;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main() {
+        vec2 uv = vUv;
+        vec2 center = vec2(0.5);
+        vec2 dir = uv - center;
+        float dist = length(dir);
+        float ca = 0.0035 * dist;
+        vec4 color;
+        color.r = texture2D(tDiffuse, uv + dir * ca).r;
+        color.g = texture2D(tDiffuse, uv).g;
+        color.b = texture2D(tDiffuse, uv - dir * ca).b;
+        color.a = 1.0;
+        float noise = hash(uv * 1000.0 + uTime) * 0.05;
+        color.rgb += noise - 0.025;
+        color.rgb = pow(color.rgb, vec3(0.97));
+        gl_FragColor = color;
+      }
+    `
+  };
+  composer.addPass(new ShaderPass(filmShader));
+  composer.addPass(new OutputPass());
+
+  // Events
+  window.addEventListener('resize', onWindowResize);
+  document.getElementById('control-btn').addEventListener('click', () => { initAudio(); toggleSequence(); });
+  document.getElementById('reset-btn').addEventListener('click', resetSequence);
+  
+  document.querySelectorAll('[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentView = btn.dataset.view;
+      switchView(currentView);
+    });
+  });
+
+  document.getElementById('audio-toggle').addEventListener('click', toggleAudio);
+
+  document.getElementById('left-panel-btn').addEventListener('click', () => {
+    document.getElementById('timeline-panel').classList.toggle('active');
+    document.getElementById('data-panel').classList.remove('active');
+  });
+  document.getElementById('right-panel-btn').addEventListener('click', () => {
+    document.getElementById('data-panel').classList.toggle('active');
+    document.getElementById('timeline-panel').classList.remove('active');
+  });
+
+  const scrubber = document.getElementById('timeline-scrubber');
+  let isScrubbing = false;
+  const handleScrub = (e) => {
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const rect = scrubber.getBoundingClientRect();
+    let p = (clientX - rect.left) / rect.width;
+    p = Math.max(0, Math.min(1, p));
+    eclipseProgress = p;
+    isPlaying = false;
+    document.getElementById('control-btn').textContent = "Resume Sequence";
+  };
+  scrubber.addEventListener('mousedown', (e) => { isScrubbing = true; handleScrub(e); });
+  window.addEventListener('mousemove', (e) => { if(isScrubbing) handleScrub(e); });
+  window.addEventListener('mouseup', () => { isScrubbing = false; });
+  scrubber.addEventListener('touchstart', (e) => { isScrubbing = true; handleScrub(e); });
+  window.addEventListener('touchmove', (e) => { if(isScrubbing) handleScrub(e); });
+  window.addEventListener('touchend', () => { isScrubbing = false; });
+
+  document.querySelectorAll('[data-speed]').forEach(btn => {
+    if(btn.id === 'reset-btn') return;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-speed]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      speedMultiplier = parseFloat(btn.dataset.speed);
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); initAudio(); toggleSequence(); }
+    if (e.code === 'KeyR') resetSequence();
+  });
+
+  setTimeout(() => {
+    document.getElementById('loader').style.opacity = '0';
+    setTimeout(() => document.getElementById('loader').style.display = 'none', 1500);
+    document.getElementById('hint').classList.add('show');
+    setTimeout(() => document.getElementById('hint').classList.remove('show'), 6000);
+  }, 2000);
+}
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+
+    droneOsc = audioCtx.createOscillator();
+    droneOsc.type = 'sine';
+    droneOsc.frequency.value = 40;
+    const droneGain = audioCtx.createGain();
+    droneGain.gain.value = 0.4;
+    droneOsc.connect(droneGain).connect(masterGain);
+    droneOsc.start();
+
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+    noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    noiseSource.loop = true;
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.value = 200;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = 0.15;
+    noiseSource.connect(noiseFilter).connect(noiseGain).connect(masterGain);
+    noiseSource.start();
+
+    audioEnabled = true;
+    masterGain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1);
+  } catch(e) { console.error("Audio init failed", e); }
+}
+
+function toggleAudio() {
+  if (!audioCtx) return initAudio();
+  audioEnabled = !audioEnabled;
+  if (audioEnabled) {
+    masterGain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.5);
+  } else {
+    masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+  }
+}
+
+function switchView(view) {
+  if (view === 'lunar') {
+    camera.position.set(-10, 2, 65);
+    controls.target.set(moonMesh.position.x, 0, MOON_Z);
+    controls.minDistance = 5;
+    controls.maxDistance = 100;
+  } else {
+    camera.position.set(0, 15, 120);
+    controls.target.set(0, 0, 20);
+    controls.minDistance = 10;
+    controls.maxDistance = 300;
+  }
+}
+
+function createStarTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.2, 'rgba(255,255,255,0.8)');
+  g.addColorStop(0.4, 'rgba(255,255,255,0.3)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(64, 0); ctx.lineTo(64, 128);
+  ctx.moveTo(0, 64); ctx.lineTo(128, 64);
+  ctx.stroke();
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createStarfield() {
+  const layers = [
+    { count: 15000, size: 1.2, distance: 2000, opacity: 0.6 },
+    { count: 8000, size: 2.5, distance: 2500, opacity: 0.9 },
+    { count: 3000, size: 4.0, distance: 3000, opacity: 1.0 }
+  ];
+  starField = new THREE.Group();
+  const starTexture = createStarTexture();
+
+  layers.forEach((layer) => {
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(layer.count * 3);
+    const colors = new Float32Array(layer.count * 3);
+    const sizes = new Float32Array(layer.count);
+
+    for (let i = 0; i < layer.count; i++) {
+      const r = layer.distance + Math.random() * 400;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i*3+2] = r * Math.cos(phi);
+
+      const c = Math.random();
+      let R, G, B;
+      if (c < 0.6) { R=1; G=1; B=1; }
+      else if (c < 0.8) { R=0.7; G=0.8; B=1; }
+      else if (c < 0.92) { R=1; G=0.85; B=0.7; }
+      else { R=1; G=0.6; B=0.4; }
+
+      const brightness = 0.3 + Math.random() * 0.7;
+      colors[i*3] = R * brightness;
+      colors[i*3+1] = G * brightness;
+      colors[i*3+2] = B * brightness;
+      sizes[i] = layer.size * (0.5 + Math.random() * 1.5);
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uOpacity: { value: layer.opacity }, uTexture: { value: starTexture }, uVisibility: { value: 0.2 } },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        varying float vTwinkle;
+        uniform float uTime;
+        void main() {
+          vColor = color;
+          float seed = position.x * 0.1 + position.y * 0.13 + position.z * 0.07;
+          vTwinkle = 0.6 + 0.4 * sin(uTime * 2.0 + seed);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (300.0 / -mvPosition.z) * vTwinkle;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D uTexture;
+        uniform float uOpacity;
+        uniform float uVisibility;
+        varying vec3 vColor;
+        varying float vTwinkle;
+        void main() {
+          vec4 tex = texture2D(uTexture, gl_PointCoord);
+          gl_FragColor = vec4(vColor * vTwinkle, tex.a * uOpacity * uVisibility);
+        }
+      `,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+
+    const stars = new THREE.Points(geo, mat);
+    stars.userData.shader = mat;
+    starField.add(stars);
+  });
+  scene.add(starField);
+}
+
+function createSun() {
+  const sunGeometry = new THREE.SphereGeometry(SUN_RADIUS, 64, 64);
+  sunMaterial = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying vec3 vPos;
+      void main() {
+        vec3 color = vec3(1.0, 0.9, 0.8) * 3.0;
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `
+  });
+  sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+  sunMesh.position.set(0, 0, SUN_Z);
+  scene.add(sunMesh);
+}
+
+function createEarth() {
+  const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
+  const earthMap = texLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+  earthMap.colorSpace = THREE.SRGBColorSpace;
+  earthMap.anisotropy = 8;
+  const earthNormal = texLoader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
+  const earthSpec = texLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
+
+  earthMaterial = new THREE.MeshStandardMaterial({
+    map: earthMap, normalMap: earthNormal, roughnessMap: earthSpec,
+    roughness: 0.85, metalness: 0.05
+  });
+
+  earthMesh = new THREE.Mesh(earthGeo, earthMaterial);
+  earthMesh.position.set(0, 0, EARTH_Z);
+  earthMesh.rotation.z = 0.41;
+  scene.add(earthMesh);
+  sunLight.target.position.copy(earthMesh.position);
+
+  const cloudGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.015, 48, 48);
+  const cloudMat = new THREE.MeshStandardMaterial({
+    map: texLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png'),
+    transparent: true, opacity: 0.4, depthWrite: false, roughness: 1.0
+  });
+  earthClouds = new THREE.Mesh(cloudGeo, cloudMat);
+  earthClouds.position.copy(earthMesh.position);
+  earthClouds.rotation.z = 0.41;
+  scene.add(earthClouds);
+
+  const atmoGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.15, 48, 48);
+  const atmoMat = new THREE.ShaderMaterial({
+    uniforms: { uIntensity: { value: 1.0 }, uSunDir: { value: new THREE.Vector3(0, 0, 1) } },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position,1.0);
+        vViewDir = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform float uIntensity;
+      uniform vec3 uSunDir;
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      void main() {
+        float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 2.5);
+        vec3 color = vec3(0.3, 0.6, 1.0);
+        gl_FragColor = vec4(color, fresnel * uIntensity * 1.2);
+      }
+    `,
+    blending: THREE.AdditiveBlending, side: THREE.BackSide, transparent: true, depthWrite: false
+  });
+  atmosphere = new THREE.Mesh(atmoGeo, atmoMat);
+  atmosphere.position.copy(earthMesh.position);
+  scene.add(atmosphere);
+}
+
+function createMoon() {
+  const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 128, 128); 
+  const moonMap = texLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg');
+  moonMap.colorSpace = THREE.SRGBColorSpace;
+  moonMap.anisotropy = 8;
+
+  moonMaterial = new THREE.MeshStandardMaterial({
+    map: moonMap, bumpMap: moonMap, bumpScale: 0.5,
+    roughness: 1.0, metalness: 0.0
+  });
+
+  // Shader Injection for Lunar Eclipse
+  moonMaterial.onBeforeCompile = (shader) => {
+    shader.uniforms.uUmbraRadius = { value: 8.0 };
+    shader.uniforms.uPenumbraRadius = { value: 18.0 };
+    shader.uniforms.uBloodMoonIntensity = { value: 0.0 };
+
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      `#include <common>
+       varying vec3 vWorldPos;`
+    ).replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+       vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>',
+      `#include <common>
+       uniform float uUmbraRadius;
+       uniform float uPenumbraRadius;
+       uniform float uBloodMoonIntensity;
+       varying vec3 vWorldPos;`
+    ).replace(
+      '#include <dithering_fragment>',
+      `#include <dithering_fragment>
+       
+       // Calculate distance from Earth's shadow axis (Z-axis)
+       float distToAxis = length(vWorldPos.xy);
+       float shadow = 0.0;
+       
+       if (distToAxis < uUmbraRadius) {
+           shadow = 1.0; // Umbra
+       } else if (distToAxis < uPenumbraRadius) {
+           shadow = 1.0 - (distToAxis - uUmbraRadius) / (uPenumbraRadius - uUmbraRadius); // Penumbra
+       }
+       
+       // Darken the moon based on shadow
+       vec3 darkColor = vec3(0.02, 0.02, 0.05);
+       gl_FragColor.rgb = mix(gl_FragColor.rgb, darkColor, smoothstep(0.1, 0.9, shadow));
+       
+       // Add Blood Moon color (Rayleigh scattering)
+       vec3 bloodColor = vec3(1.0, 0.15, 0.05);
+       float bloodMix = smoothstep(0.8, 1.0, shadow) * uBloodMoonIntensity;
+       gl_FragColor.rgb += bloodColor * bloodMix * 0.6;
+       
+       // Add penumbral reddening
+       float penumbralRed = smoothstep(0.0, 0.8, shadow) * uBloodMoonIntensity * 0.1;
+       gl_FragColor.rgb += bloodColor * penumbralRed;`
+    );
+    moonMaterial.userData.shader = shader;
+  };
+
+  moonMesh = new THREE.Mesh(moonGeo, moonMaterial);
+  moonMesh.position.set(-30, 0, MOON_Z);
+  scene.add(moonMesh);
+}
+
+function createShadowCones() {
+  // Earth's Umbra
+  const umbraGeo = new THREE.CylinderGeometry(EARTH_RADIUS, EARTH_RADIUS * 1.2, 200, 32, 1, true);
+  const umbraMat = new THREE.ShaderMaterial({
+    uniforms: { uOpacity: { value: 0.0 } },
+    vertexShader: `varying vec3 vNormal; varying vec3 vViewDir; void main() { vNormal = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vViewDir = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform float uOpacity; varying vec3 vNormal; varying vec3 vViewDir; void main() { float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 2.0); gl_FragColor = vec4(0.0, 0.0, 0.0, fresnel * uOpacity * 0.6); }`,
+    transparent: true, blending: THREE.NormalBlending, side: THREE.DoubleSide, depthWrite: false
+  });
+  umbraCone = new THREE.Mesh(umbraGeo, umbraMat);
+  umbraCone.position.set(0, 0, EARTH_Z + 100);
+  scene.add(umbraCone);
+
+  // Earth's Penumbra
+  const penumbraGeo = new THREE.CylinderGeometry(EARTH_RADIUS * 1.5, EARTH_RADIUS * 2.5, 200, 32, 1, true);
+  const penumbraMat = new THREE.ShaderMaterial({
+    uniforms: { uOpacity: { value: 0.0 } },
+    vertexShader: `varying vec3 vNormal; varying vec3 vViewDir; void main() { vNormal = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vViewDir = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform float uOpacity; varying vec3 vNormal; varying vec3 vViewDir; void main() { float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 2.0); gl_FragColor = vec4(0.0, 0.0, 0.0, fresnel * uOpacity * 0.3); }`,
+    transparent: true, blending: THREE.NormalBlending, side: THREE.DoubleSide, depthWrite: false
+  });
+  penumbraCone = new THREE.Mesh(penumbraGeo, penumbraMat);
+  penumbraCone.position.set(0, 0, EARTH_Z + 100);
+  scene.add(penumbraCone);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function toggleSequence() {
+  const btn = document.getElementById('control-btn');
+  if (isFinished) {
+    eclipseProgress = 0;
+    isFinished = false;
+    isPlaying = true;
+    btn.textContent = "Pause Sequence";
+  } else if (isPlaying) {
+    isPlaying = false;
+    btn.textContent = "Resume Sequence";
+  } else {
+    isPlaying = true;
+    btn.textContent = "Pause Sequence";
+  }
+}
+
+function resetSequence() {
+  eclipseProgress = 0;
+  isPlaying = false;
+  isFinished = false;
+  document.getElementById('control-btn').textContent = "Start Sequence";
+}
+
+function getPhase(moonX) {
+  const moonR = MOON_RADIUS, umbraR = 8, penumbraR = 18;
+  if (moonX < -penumbraR - moonR) return 1;
+  if (moonX < -umbraR - moonR) return 2;
+  if (moonX < -umbraR + moonR) return 3;
+  if (moonX <= umbraR - moonR) return 4;
+  if (moonX <= umbraR + moonR) return 5;
+  return 6;
+}
+
+function updateEclipseSequence(dt) {
+  if (isPlaying) {
+    // Slower progression: ~83 seconds at 1x speed
+    eclipseProgress += dt * 0.012 * speedMultiplier;
+    if (eclipseProgress >= 1) {
+      eclipseProgress = 1;
+      isPlaying = false;
+      isFinished = true;
+      document.getElementById('control-btn').textContent = "Replay Sequence";
+    }
+  }
+
+  // Moon moves from X=-30 to X=30
+  const moonX = -30 + 60 * eclipseProgress;
+  moonMesh.position.x = moonX;
+  moonMesh.rotation.y = eclipseProgress * Math.PI * 0.2;
+
+  const phase = getPhase(moonX);
+
+  let targetExposure = 1.0;
+  let bloodMoonIntensity = 0.0;
+  let starVisibility = 0.2;
+  let shadowConeOpacity = 0.4;
+  let targetAudioFreq = 40;
+
+  if (phase === 1) {
+    targetExposure = 1.0;
+    shadowConeOpacity = 0.4;
+    bloodMoonIntensity = 0.0;
+  } else if (phase === 2) {
+    targetExposure = 1.0;
+    shadowConeOpacity = 0.6;
+    bloodMoonIntensity = (moonX + 23) / 10 * 0.3; // 0 to 0.3
+  } else if (phase === 3) {
+    targetExposure = 0.8 - ((moonX + 13) / 10) * 0.3; // 0.8 to 0.5
+    shadowConeOpacity = 0.8;
+    starVisibility = 0.2 + ((moonX + 13) / 10) * 0.8; // 0.2 to 1.0
+    bloodMoonIntensity = 0.3 + ((moonX + 13) / 10) * 0.7; // 0.3 to 1.0
+    targetAudioFreq = 50;
+  } else if (phase === 4) {
+    targetExposure = 0.5;
+    shadowConeOpacity = 1.0;
+    starVisibility = 1.0;
+    bloodMoonIntensity = 1.0;
+    targetAudioFreq = 55;
+  } else if (phase === 5) {
+    targetExposure = 0.5 + ((moonX - 3) / 10) * 0.3; // 0.5 to 0.8
+    shadowConeOpacity = 0.8;
+    starVisibility = 1.0 - ((moonX - 3) / 10) * 0.8;
+    bloodMoonIntensity = 1.0 - ((moonX - 3) / 10) * 0.7;
+    targetAudioFreq = 50;
+  } else if (phase === 6) {
+    if (moonX <= 23) {
+      targetExposure = 0.8 + ((moonX - 13) / 10) * 0.2;
+      shadowConeOpacity = 0.6;
+      bloodMoonIntensity = 0.3 - ((moonX - 13) / 10) * 0.3;
+    } else {
+      targetExposure = 1.0;
+      shadowConeOpacity = 0.4 - ((moonX - 23) / 7) * 0.4;
+      bloodMoonIntensity = 0.0;
+    }
+  }
+
+  // Smooth Lerp Transitions
+  renderer.toneMappingExposure += (targetExposure - renderer.toneMappingExposure) * 0.05;
+  if (audioCtx && droneOsc) droneOsc.frequency.linearRampToValueAtTime(targetAudioFreq, audioCtx.currentTime + 0.1);
+
+  if (moonMaterial.userData.shader) {
+    moonMaterial.userData.shader.uniforms.uBloodMoonIntensity.value += (bloodMoonIntensity - moonMaterial.userData.shader.uniforms.uBloodMoonIntensity.value) * 0.05;
+  }
+
+  // Update star visibility based on lunar glare
+  starField.children.forEach(stars => {
+    if (stars.userData.shader) stars.userData.shader.uniforms.uVisibility.value += (starVisibility - stars.userData.shader.uniforms.uVisibility.value) * 0.05;
+  });
+
+  if (umbraCone) umbraCone.material.uniforms.uOpacity.value = shadowConeOpacity;
+  if (penumbraCone) penumbraCone.material.uniforms.uOpacity.value = shadowConeOpacity * 0.7;
+
+  // Auto Camera Focus on Moon
+  if (currentView === 'orbital') {
+    controls.target.x += (moonMesh.position.x - controls.target.x) * 0.02;
+    controls.target.y += (0 - controls.target.y) * 0.02;
+    controls.target.z += (MOON_Z - controls.target.z) * 0.02;
+  } else {
+    controls.target.x += (moonMesh.position.x - controls.target.x) * 0.05;
+  }
+
+  // Calculate Umbral Magnitude
+  const distToAxis = Math.abs(moonX);
+  const umbralMagnitude = Math.max(0, (8 + MOON_RADIUS - distToAxis) / (MOON_RADIUS * 2));
+
+  updateUI(phase, umbralMagnitude);
+}
+
+function updateUI(phase, umbralMagnitude) {
+  document.getElementById('scrubber-fill').style.width = (eclipseProgress * 100) + '%';
+
+  const now = new Date();
+  document.getElementById('t-utc').textContent = now.toISOString().substr(11, 8) + 'Z';
+  document.getElementById('t-phase').textContent = PHASES[phase].name.toUpperCase();
+  document.getElementById('t-obs').textContent = umbralMagnitude.toFixed(3);
+  
+  // Danjon Scale Calculation
+  let danjon = '—';
+  if (phase === 4) danjon = '2.0'; 
+  else if (phase === 3 || phase === 5) danjon = '2.5';
+  else if (phase === 2 || phase === 6) danjon = '—';
+  document.getElementById('t-mag').textContent = 'L=' + danjon;
+  document.getElementById('danjon-val').textContent = 'L=' + danjon;
+
+  const lum = 100 - (umbralMagnitude * 40);
+  document.getElementById('t-lum').textContent = Math.max(5, lum).toFixed(1) + '%';
+  document.getElementById('t-vel').textContent = (1.02 + Math.sin(eclipseProgress * Math.PI) * 0.02).toFixed(3) + ' km/s';
+  document.getElementById('t-umbra').textContent = (9000 + Math.sin(eclipseProgress * Math.PI) * 500).toFixed(1) + ' km';
+  document.getElementById('t-corona').textContent = (phase === 4 ? '170' : '250') + ' K';
+  document.getElementById('t-photo').textContent = (1.5 - (umbralMagnitude * 0.5)).toFixed(2) + '°';
+  document.getElementById('t-delta').textContent = '1.016 AU';
+  document.getElementById('t-beads').textContent = phase === 4 ? 'ACTIVE' : 'INACTIVE';
+  document.getElementById('t-chromo').textContent = phase >= 3 && phase <= 5 ? 'ACTIVE' : 'INACTIVE';
+
+  // Update Educational Text
+  document.getElementById('data-phase-title').textContent = PHASES[phase].name;
+  document.getElementById('data-phase-num').textContent = String(phase).padStart(2, '0') + ' / 06';
+  document.getElementById('data-description').textContent = PHASES[phase].desc;
+  document.getElementById('focus-text').textContent = PHASES[phase].focus;
+  document.getElementById('science-text').textContent = PHASES[phase].science;
+
+  document.querySelectorAll('.phase-item').forEach(el => {
+    const p = parseInt(el.dataset.phase);
+    el.classList.remove('active', 'passed');
+    if (p === phase) el.classList.add('active');
+    else if (p < phase) el.classList.add('passed');
+  });
+
+  // Metrics Calculation
+  const shadowDepth = Math.min(100, umbralMagnitude * 50).toFixed(1);
+  const surfaceLumen = (0.25 * (lum / 100)).toFixed(2);
+  const refraction = (1.5 - (umbralMagnitude * 0.5)).toFixed(3);
+  const colorIndex = (1.0 + umbralMagnitude * 0.8).toFixed(2);
+  const tempDelta = (-umbralMagnitude * 25).toFixed(1);
+
+  document.getElementById('m-irr').innerHTML = shadowDepth + '<span class="unit">%</span>';
+  document.getElementById('m-vel').innerHTML = surfaceLumen + '<span class="unit">lux</span>';
+  document.getElementById('m-x').innerHTML = refraction + '<span class="unit">°</span>';
+  document.getElementById('m-y').textContent = colorIndex;
+  document.getElementById('m-shadow').textContent = umbralMagnitude.toFixed(3);
+  document.getElementById('m-temp').innerHTML = tempDelta + '<span class="unit">°C</span>';
+  
+  // Update SVG Graph
+  const graphY = 15 - (lum / 100) * 12;
+  const fluxPath = document.getElementById('flux-path');
+  const fluxArea = document.getElementById('flux-area');
+  const x = eclipseProgress * 100;
+  fluxPath.setAttribute('d', `M0,15 L${x},${graphY}`);
+  fluxArea.setAttribute('d', `M0,15 L${x},${graphY} L${x},30 L0,30 Z`);
+
+  const statObs = document.getElementById('stat-obs');
+  if (phase === 4) statObs.classList.add('totality');
+  else statObs.classList.remove('totality');
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const elapsed = clock.elapsedTime;
+
+  sunMaterial.uniforms.uTime.value = elapsed;
+
+  starField.children.forEach(stars => {
+    if (stars.userData.shader) stars.userData.shader.uniforms.uTime.value = elapsed;
+  });
+
+  earthMesh.rotation.y += 0.0006;
+  earthClouds.rotation.y += 0.0008;
+  moonMesh.rotation.y += 0.0002;
+
+  updateEclipseSequence(dt);
+
+  controls.update();
+  composer.render();
+}
+</script>
+</body>
+</html>

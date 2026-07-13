@@ -50,11 +50,12 @@ canvas{display:block;position:fixed;top:0;left:0;z-index:0}
 .logoText{font-family:'Orbitron',sans-serif;font-size:.8rem;letter-spacing:9px;color:var(--accent);font-weight:700;text-shadow:0 0 50px rgba(232,148,58,0.25);display:flex;align-items:center;gap:10px}
 .logoText::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
 .topRightControls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.modeButton{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:1.6px;padding:9px 14px;background:var(--panel);border:1px solid var(--border-soft);color:var(--text-soft);border-radius:5px;cursor:pointer;transition:all .35s ease;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);text-transform:uppercase;white-space:nowrap;outline:none;font-weight:500;text-decoration:none;display:inline-block}
+.modeButton{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:1.6px;padding:9px 14px;background:var(--panel);border:1px solid var(--border-soft);color:var(--text-soft);border-radius:5px;cursor:pointer;transition:all .35s ease;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);text-transform:uppercase;white-space:nowrap;outline:none;font-weight:500}
 .modeButton:hover{border-color:var(--border);color:var(--text);background:rgba(20,28,46,0.95);transform:translateY(-1px)}
 .modeButton.radiationActive{border-color:rgba(255,80,30,0.6);color:#ff7040;box-shadow:0 0 20px rgba(255,80,30,0.18),inset 0 0 18px rgba(255,80,30,0.05);background:rgba(60,20,10,0.4)}
 .modeButton.fieldActive{border-color:rgba(80,255,140,0.5);color:var(--success);box-shadow:0 0 18px rgba(80,255,140,0.15);background:rgba(20,60,30,0.3)}
 .modeButton.gasActive{border-color:rgba(184,119,255,0.55);color:#c088ff;box-shadow:0 0 18px rgba(184,119,255,0.15);background:rgba(50,30,80,0.3)}
+.modeButton.wormholeActive{border-color:rgba(32,255,221,0.55);color:var(--wormhole);box-shadow:0 0 18px rgba(32,255,221,0.15);background:rgba(10,60,55,0.3)}
 
 /* Exit Button */
 .exitButton{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:1.6px;padding:9px 16px;background:rgba(60,12,22,0.85);border:1px solid rgba(255,64,96,0.4);color:#ff8090;border-radius:5px;cursor:pointer;transition:all .3s ease;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);text-transform:uppercase;white-space:nowrap;outline:none;font-weight:600;display:flex;align-items:center;gap:6px;text-decoration:none}
@@ -142,6 +143,18 @@ canvas{display:block;position:fixed;top:0;left:0;z-index:0}
 .cmeAlertOverlay h2{font-family:'Orbitron',sans-serif;font-size:.8rem;letter-spacing:4px;color:#ff3010;margin-bottom:8px;font-weight:700;text-shadow:0 0 20px rgba(255,50,10,0.5)}
 .cmeAlertOverlay p{font-size:.68rem;color:rgba(255,120,80,0.8);line-height:1.5}
 
+/* ===== WORMHOLE OVERLAY ===== */
+.wormholeOverlay{position:fixed;inset:0;z-index:150;pointer-events:none;opacity:0;transition:opacity .3s ease}
+.wormholeOverlay.active{opacity:1}
+.wormholeOverlay canvas{width:100%;height:100%}
+
+/* ===== CROSSHAIR ===== */
+.crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;opacity:0;transition:opacity .3s ease}
+.crosshair.visible{opacity:1}
+.crosshair::before,.crosshair::after{content:'';position:absolute;background:rgba(232,148,58,0.4)}
+.crosshair::before{width:16px;height:1px;left:-8px;top:0}
+.crosshair::after{width:1px;height:16px;left:0;top:-8px}
+
 @media(max-width:768px){
 .infoPanel,.weatherPanel{width:200px;padding:12px;font-size:.85em}
 .logoText{font-size:.6rem;letter-spacing:4px}
@@ -183,8 +196,8 @@ canvas{display:block;position:fixed;top:0;left:0;z-index:0}
             <button class="modeButton" id="btnRadiation">RADIATION</button>
             <button class="modeButton" id="btnFieldLines">FIELDS</button>
             <button class="modeButton" id="btnGasSystems">GAS</button>
-            <a href="black.html" class="modeButton">BLACK HOLES</a>
-            <a href="stars.html" class="modeButton">CONSTELLAR</a>
+            <a href="black.html"><button class="modeButton">BLACK HOLES</button></a>
+            <a href="stars.html"><button class="modeButton">CONSTELLAR</button></a>
             <a href="index.html" class="exitButton"><i class="fas fa-right-from-bracket"></i> EXIT</a>
         </div>
     </div>
@@ -248,8 +261,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 
 // ===================== CONFIGURATION =====================
 const C = {
-    sunR:8, bloomStr:1.8, bloomRad:0.6, bloomThresh:0.1, // Increased bloom for HDR galaxies
-    stars:22000, galaxyPts:200000, // 200k points for Milky Way
+    sunR:8, bloomStr:1.5, bloomRad:0.5, bloomThresh:0.55,
+    stars:22000, galaxyPts:65000,
     scales:[
         {name:'SOLAR SYSTEM',min:0,max:700,color:'#e8943a'},
         {name:'OORT CLOUD',min:700,max:3500,color:'#6a8faf'},
@@ -378,35 +391,6 @@ function texVenus(){return genTex(256,128,(u,v)=>{let n=fbm(u*8+2,v*7+1,5),s=fbm
 function texUranus(){return genTex(256,128,(u,v)=>{let n=fbm(u*7,v*10,4),b=Math.sin(v*Math.PI*8)*.07;return[98+n*36+b*25,172+n*25,188+n*22]})}
 function texNeptune(){return genTex(256,128,(u,v)=>{let n=fbm(u*7+5,v*10+3,5),b=Math.sin(v*Math.PI*10)*.1;return[28+n*25+b*22,48+n*36+b*25,148+n*50]})}
 function texGeneric(r,g,b,vr,cr){return genTex(256,128,(u,v)=>{let n=fbm(u*10,v*8,5),v2=(n-.5)*vr;return[r+v2*255,g+v2*255,b+v2*255]})}
-
-// Realistic Nebula Texture Generator using fBm
-function genNebulaTexture(c1, c2) {
-    let cv = document.createElement('canvas'); cv.width = 512; cv.height = 512;
-    let cx = cv.getContext('2d');
-    let imgData = cx.createImageData(512, 512);
-    for (let y = 0; y < 512; y++) {
-        for (let x = 0; x < 512; x++) {
-            let i = (y * 512 + x) * 4;
-            // Distort coordinates for gas filaments
-            let nx = x / 512.0, ny = y / 512.0;
-            let dx = nx - 0.5, dy = ny - 0.5;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            
-            let n = fbm(nx * 4.0 + 10.5, ny * 4.0 + 5.2, 5);
-            n += fbm(nx * 12.0, ny * 12.0, 3) * 0.3;
-            
-            let alpha = Math.max(0, n - 0.45) * 2.5;
-            alpha *= Math.max(0, 1.0 - dist * 1.8); // Radial falloff
-            
-            imgData.data[i]   = (c1[0] * 255 * n + c2[0] * 255 * (1-n)) * alpha;
-            imgData.data[i+1] = (c1[1] * 255 * n + c2[1] * 255 * (1-n)) * alpha;
-            imgData.data[i+2] = (c1[2] * 255 * n + c2[2] * 255 * (1-n)) * alpha;
-            imgData.data[i+3] = Math.min(255, alpha * 255);
-        }
-    }
-    cx.putImageData(imgData, 0, 0);
-    return new THREE.CanvasTexture(cv);
-}
 
 // ===================== SHADERS =====================
 const sunVS=`varying vec3 vPos;varying vec3 vNorm;void main(){vPos=position;vNorm=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
@@ -580,203 +564,90 @@ function createStarfield(){
     }
 }
 
-// ===================== MILKY WAY (100x REALISTIC) =====================
+// ===================== MILKY WAY =====================
 function createMilkyWay(){
     let n=C.galaxyPts,geo=new THREE.BufferGeometry();
     let pos=new Float32Array(n*3),sz=new Float32Array(n),col=new Float32Array(n*3);
-    let arms=4,R=25000; // Increased radius for massive scale
+    let arms=4,spread=.5,R=18000;
     for(let i=0;i<n;i++){
-        let isBulge = Math.random() < 0.15;
-        let d, angle, h;
-        
-        if (isBulge) {
-            // Central bulge stars (spherical distribution)
-            d = Math.pow(Math.random(), 2.0) * R * 0.15;
-            angle = Math.random() * Math.PI * 2;
-            h = (Math.random() - 0.5) * R * 0.1 * Math.exp(-d / (R * 0.05));
-        } else {
-            // Spiral arm stars
-            d = Math.pow(Math.random(), 0.5) * R;
-            let arm = Math.floor(Math.random() * arms);
-            let armOffset = (arm / arms) * Math.PI * 2;
-            // Logarithmic spiral
-            angle = armOffset + (d / R) * 4.5;
-            
-            // Wobble for arm width and realistic structure
-            let width = (Math.random() - 0.5) * 0.6 * (1.0 - d / R * 0.5);
-            angle += width;
-            
-            // Dust lane simulation (skip rendering some stars to create dark gaps)
-            let dustAngle = angle - (d / R) * 4.5;
-            if (!isBulge && Math.sin(dustAngle * 2.0) > 0.8 && Math.random() < 0.7) {
-                i--; continue; 
-            }
-            
-            h = (Math.random() - 0.5) * R * 0.04 * Math.exp(-d / (R * 0.2));
-        }
-
+        let arm=i%arms,off=(arm/arms)*Math.PI*2,d=Math.pow(Math.random(),.42)*R;
+        let spiral=d/R*3.5,angle=off+spiral+(Math.random()-.5)*spread*(1+d/R);
+        let h=(Math.random()-.5)*420*Math.exp(-d/(R*.25));
         pos[i*3]=Math.cos(angle)*d;pos[i*3+1]=h;pos[i*3+2]=Math.sin(angle)*d;
-        
-        // Size variation
-        sz[i]=(Math.random()*2.5+.3)*(isBulge?1.5:1.0);
-        
-        // Star color based on radial distance (inner = old/red/yellow, outer = young/blue)
-        let t=d/R;
-        let r,g,b;
-        if(isBulge){
-            r=1.0; g=0.8 + Math.random()*0.2; b=0.5 + Math.random()*0.3;
-        } else if(t < 0.4){
-            r=0.9+Math.random()*0.1; g=0.9+Math.random()*0.1; b=1.0;
-        } else {
-            r=0.6+Math.random()*0.3; g=0.7+Math.random()*0.3; b=1.0;
-        }
-        col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
+        sz[i]=(Math.random()*2.5+.3)*(1-d/R*.55);
+        let t=d/R,dm=(sNoise(angle*3+d*.001,d*.002)>.55&&d>R*.15&&d<R*.7)?.15:1;
+        if(t<.08){col[i*3]=1*dm;col[i*3+1]=.82*dm;col[i*3+2]=.45*dm}
+        else if(t<.25){col[i*3]=.92*dm;col[i*3+1]=.82*dm;col[i*3+2]=.62*dm}
+        else if(t<.55){col[i*3]=.68*dm;col[i*3+1]=.72*dm;col[i*3+2]=.84*dm}
+        else{let b=(.38+Math.random()*.25)*dm;col[i*3]=b*.6;col[i*3+1]=b*.7;col[i*3+2]=b}
     }
     geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
     geo.setAttribute('size',new THREE.BufferAttribute(sz,1));
     geo.setAttribute('aColor',new THREE.BufferAttribute(col,3));
-    
-    // HDR Galaxy Shader
     let mat=new THREE.ShaderMaterial({
-        vertexShader:`attribute float size;attribute vec3 aColor;varying vec3 vC;varying float vA;
-        void main(){
-            vC=aColor;
-            vec4 mv=modelViewMatrix*vec4(position,1.);
-            vA=smoothstep(120000.,2000.,length(mv.xyz));
-            gl_PointSize=size*(1500./max(1.,-mv.z));
-            gl_Position=projectionMatrix*mv;
-        }`,
-        fragmentShader:`varying vec3 vC;varying float vA;
-        void main(){
-            float d=length(gl_PointCoord-.5)*2.;
-            float a=1.-smoothstep(0.,1.,d);
-            a=a*a*.6*vA; // Sharper falloff
-            float core=smoothstep(0.4,0.,d)*2.0; // Bright core for bloom
-            gl_FragColor=vec4(vC*(1.+core)*1.5, a); // HDR output
-        }`,
+        vertexShader:`attribute float size;attribute vec3 aColor;varying vec3 vC;varying float vA;void main(){vC=aColor;vec4 mv=modelViewMatrix*vec4(position,1.);vA=smoothstep(80000.,2000.,length(mv.xyz));gl_PointSize=size*(1500./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+        fragmentShader:`varying vec3 vC;varying float vA;void main(){float d=length(gl_PointCoord-.5)*2.;float a=(1.-smoothstep(0.,1.,d));a=a*a*.42*vA;gl_FragColor=vec4(vC,a);}`,
         transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
     });
     let mw=new THREE.Points(geo,mat);
     mw.position.set(-5200,280,9800);mw.rotation.x=.1;mw.rotation.z=-.04;
     mw.userData.scaleMin=2;mw.userData.scaleMax=6;
     scene.add(mw);
-    
-    // Massive Galactic Core Glow
-    let gc=document.createElement('canvas');gc.width=512;gc.height=512;let gx=gc.getContext('2d');
-    let gg=gx.createRadialGradient(256,256,0,256,256,256);
-    gg.addColorStop(0,'rgba(255,240,200,0.9)'); // Intense white/yellow core
-    gg.addColorStop(.05,'rgba(255,220,140,0.8)');
-    gg.addColorStop(.15,'rgba(255,180,90,0.4)');
-    gg.addColorStop(.4,'rgba(220,140,70,0.1)');
-    gg.addColorStop(1,'rgba(0,0,0,0)');
-    gx.fillStyle=gg;gx.fillRect(0,0,512,512);
-    let cs=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(gc),blending:THREE.AdditiveBlending,transparent:true,opacity:1.0,depthWrite:false}));
-    cs.scale.set(12000,12000,1);cs.position.copy(mw.position);cs.userData.scaleMin=2;cs.userData.scaleMax=6;
+    let gc=document.createElement('canvas');gc.width=256;gc.height=256;let gx=gc.getContext('2d');
+    let gg=gx.createRadialGradient(128,128,0,128,128,128);
+    gg.addColorStop(0,'rgba(255,225,155,0.45)');gg.addColorStop(.04,'rgba(255,200,120,0.35)');gg.addColorStop(.12,'rgba(255,175,95,0.18)');gg.addColorStop(.3,'rgba(210,155,95,0.06)');gg.addColorStop(.6,'rgba(150,120,90,0.02)');gg.addColorStop(1,'rgba(0,0,0,0)');
+    gx.fillStyle=gg;gx.fillRect(0,0,256,256);
+    let cs=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(gc),blending:THREE.AdditiveBlending,transparent:true,opacity:.8,depthWrite:false}));
+    cs.scale.set(6000,6000,1);cs.position.copy(mw.position);cs.userData.scaleMin=2;cs.userData.scaleMax=6;
     scene.add(cs);
-    
-    // Outer galactic halo
     let oc=document.createElement('canvas');oc.width=256;oc.height=256;let ox=oc.getContext('2d');
     let og=ox.createRadialGradient(128,128,0,128,128,128);
-    og.addColorStop(0,'rgba(180,200,255,0.15)');og.addColorStop(.3,'rgba(120,140,220,0.05)');og.addColorStop(1,'rgba(0,0,0,0)');
+    og.addColorStop(0,'rgba(255,218,145,0.22)');og.addColorStop(.15,'rgba(255,178,95,0.08)');og.addColorStop(.45,'rgba(198,148,95,0.02)');og.addColorStop(1,'rgba(0,0,0,0)');
     ox.fillStyle=og;ox.fillRect(0,0,256,256);
     let os=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(oc),blending:THREE.AdditiveBlending,transparent:true,opacity:.6,depthWrite:false}));
-    os.scale.set(35000,35000,1);os.position.copy(mw.position);os.userData.scaleMin=2;os.userData.scaleMax=6;
+    os.scale.set(14000,14000,1);os.position.copy(mw.position);os.userData.scaleMin=2;os.userData.scaleMax=6;
     scene.add(os);
 }
 
-// ===================== PROCEDURAL 3D GALAXIES (FOR COSMIC WEB) =====================
-function createGalaxyInstance(scale) {
-    let n = 8000, geo = new THREE.BufferGeometry();
-    let pos = new Float32Array(n * 3), sz = new Float32Array(n), col = new Float32Array(n * 3);
-    let arms = Math.floor(Math.random() * 3) + 2; // 2 to 4 arms
-    let twist = Math.random() * 3.0 + 2.0; // 2.0 to 5.0 twist factor
-    let isElliptical = Math.random() < 0.3;
-
-    for (let i = 0; i < n; i++) {
-        let isBulge = Math.random() < 0.2;
-        let d = isBulge ? Math.pow(Math.random(), 2.0) * scale * 0.2 : Math.pow(Math.random(), 0.6) * scale;
-        let angle = Math.random() * Math.PI * 2;
-        
-        if (!isElliptical) {
-            let arm = Math.floor(Math.random() * arms);
-            angle = (arm / arms) * Math.PI * 2 + (d / scale) * twist;
-            angle += (Math.random() - 0.5) * 0.5 * (1.0 - d / scale * 0.5); // Arm width
-        }
-
-        pos[i * 3] = Math.cos(angle) * d;
-        pos[i * 3 + 1] = isBulge ? (Math.random() - 0.5) * scale * 0.2 : (Math.random() - 0.5) * scale * 0.02;
-        pos[i * 3 + 2] = Math.sin(angle) * d;
-
-        sz[i] = 1.0 + Math.random() * 2.5;
-        if (isBulge) {
-            col[i * 3] = 1.0; col[i * 3 + 1] = 0.7 + Math.random() * 0.3; col[i * 3 + 2] = 0.4;
-        } else {
-            col[i * 3] = 0.5 + Math.random() * 0.4; col[i * 3 + 1] = 0.7 + Math.random() * 0.3; col[i * 3 + 2] = 1.0;
-        }
-    }
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
-    geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
-    
-    // Reusing the HDR shader logic
-    let mat = new THREE.ShaderMaterial({
-        vertexShader:`attribute float aSize;attribute vec3 aColor;varying vec3 vC;varying float vA;
-        void main(){
-            vC=aColor;
-            vec4 mv=modelViewMatrix*vec4(position,1.);
-            vA=smoothstep(900000.,5000.,length(mv.xyz));
-            gl_PointSize=aSize*(800./max(1.,-mv.z));
-            gl_Position=projectionMatrix*mv;
-        }`,
-        fragmentShader:`varying vec3 vC;varying float vA;
-        void main(){
-            float d=length(gl_PointCoord-.5)*2.;
-            float a=1.-smoothstep(0.,1.,d);
-            a=a*a*.8*vA;
-            float core=smoothstep(0.4,0.,d)*2.0;
-            gl_FragColor=vec4(vC*(1.+core)*1.2, a);
-        }`,
-        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
-    });
-    return new THREE.Points(geo, mat);
-}
-
-// ===================== NEBULAE (VOLUMETRIC & REALISTIC) =====================
+// ===================== NEBULAE =====================
 function createNebulae(){
     const defs=[
-        {pos:[12000,3500,-18000],s:4500,c1:[.9,.15,.08],c2:[1,.45,.12],pts:15000},
-        {pos:[-15000,-2000,22000],s:5500,c1:[.05,.65,.55],c2:[.1,.85,.7],pts:18000},
-        {pos:[28000,5000,8000],s:3800,c1:[.6,.08,.55],c2:[.85,.2,.65],pts:12000},
-        {pos:[-8000,8000,-25000],s:6000,c1:[.85,.55,.08],c2:[1,.78,.25],pts:16000},
-        {pos:[18000,-5000,30000],s:4200,c1:[.15,.3,.7],c2:[.25,.55,.9],pts:14000},
-        {pos:[-25000,3000,-10000],s:5000,c1:[.7,.08,.35],c2:[.95,.25,.45],pts:15000}
+        {pos:[12000,3500,-18000],s:4500,c1:[.9,.15,.08],c2:[1,.45,.12],pts:3000},
+        {pos:[-15000,-2000,22000],s:5500,c1:[.05,.65,.55],c2:[.1,.85,.7],pts:3500},
+        {pos:[28000,5000,8000],s:3800,c1:[.6,.08,.55],c2:[.85,.2,.65],pts:2800},
+        {pos:[-8000,8000,-25000],s:6000,c1:[.85,.55,.08],c2:[1,.78,.25],pts:3200},
+        {pos:[18000,-5000,30000],s:4200,c1:[.15,.3,.7],c2:[.25,.55,.9],pts:2600},
+        {pos:[-25000,3000,-10000],s:5000,c1:[.7,.08,.35],c2:[.95,.25,.45],pts:3000}
     ];
     defs.forEach((d,ni)=>{
         let g=new THREE.Group();g.position.set(...d.pos);
-        
-        // Generate high-detail fBm noise sprite for volumetric look
-        let tex = genNebulaTexture(d.c1, d.c2);
-        let sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:0.8}));
-        sp.scale.set(d.s*2.5,d.s*2.5,1);g.add(sp);
-        
-        // Particle filaments
+        let cv=document.createElement('canvas');cv.width=256;cv.height=256;let cx=cv.getContext('2d');
+        let gd=cx.createRadialGradient(128,128,0,128,128,128);
+        let c1=d.c1,c2=d.c2;
+        gd.addColorStop(0,`rgba(${c2[0]*255|0},${c2[1]*255|0},${c2[2]*255|0},0.28)`);
+        gd.addColorStop(.15,`rgba(${c1[0]*255|0},${c1[1]*255|0},${c1[2]*255|0},0.14)`);
+        gd.addColorStop(.4,`rgba(${c1[0]*200|0},${c1[1]*200|0},${c1[2]*200|0},0.04)`);
+        gd.addColorStop(1,'rgba(0,0,0,0)');
+        cx.fillStyle=gd;cx.fillRect(0,0,256,256);
+        let sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
+        sp.scale.set(d.s*2.2,d.s*2.2,1);g.add(sp);
         let pc=d.pts,pg=new THREE.BufferGeometry();
         let pp=new Float32Array(pc*3),ps=new Float32Array(pc),pcol=new Float32Array(pc*3),pph=new Float32Array(pc);
         for(let i=0;i<pc;i++){
-            let r=d.s*(Math.random()+Math.random()+Math.random())/3*.9; // Clustered distribution
+            let r=d.s*(Math.random()+Math.random()+Math.random())/3*.8;
             let th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
             pp[i*3]=r*Math.sin(ph)*Math.cos(th);pp[i*3+1]=r*Math.sin(ph)*Math.sin(th)*(.4+Math.random()*.6);pp[i*3+2]=r*Math.cos(ph);
-            ps[i]=3+Math.random()*12;pph[i]=Math.random()*Math.PI*2;
-            let t=Math.random();pcol[i*3]=d.c1[0]+(d.c2[0]-d.c1[0])*t;pcol[i*3+1]=d.c1[1]+(d.c2[1]-d.c1[1])*t;pcol[i*3+2]=d.c1[2]+(d.c2[2]-d.c1[2])*t;
-            if(Math.random()<.02){pcol[i*3]=1;pcol[i*3+1]=1;pcol[i*3+2]=.9;ps[i]*=3} // Bright young stars
+            ps[i]=3+Math.random()*10;pph[i]=Math.random()*Math.PI*2;
+            let t=Math.random();pcol[i*3]=c1[0]+(c2[0]-c1[0])*t;pcol[i*3+1]=c1[1]+(c2[1]-c1[1])*t;pcol[i*3+2]=c1[2]+(c2[2]-c1[2])*t;
+            if(Math.random()<.02){pcol[i*3]=1;pcol[i*3+1]=1;pcol[i*3+2]=.9;ps[i]*=2.5}
         }
         pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
         pg.setAttribute('aSize',new THREE.BufferAttribute(ps,1));
         pg.setAttribute('aColor',new THREE.BufferAttribute(pcol,3));
         pg.setAttribute('aPhase',new THREE.BufferAttribute(pph,1));
         let pm=new THREE.ShaderMaterial({
-            vertexShader:`attribute float aSize;attribute vec3 aColor;attribute float aPhase;uniform float uTime;varying vec3 vC;void main(){vC=aColor;float a=.5+.5*sin(uTime*.3+aPhase);vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(1000./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
-            fragmentShader:`varying vec3 vC;void main(){float d=length(gl_PointCoord-.5)*2.;float a=1.-smoothstep(0.,1.,d);a=a*a*a*.1;gl_FragColor=vec4(vC*1.5,a);}`,
+            vertexShader:`attribute float aSize;attribute vec3 aColor;attribute float aPhase;uniform float uTime;varying vec3 vC;void main(){vC=aColor;float a=.5+.5*sin(uTime*.3+aPhase);vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(800./max(1.,-mv.z));gl_Position=projectionMatrix*mv;}`,
+            fragmentShader:`varying vec3 vC;void main(){float d=length(gl_PointCoord-.5)*2.;float a=1.-smoothstep(0.,1.,d);a=a*a*a*.08;gl_FragColor=vec4(vC*1.5,a);}`,
             uniforms:{uTime:{value:0}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
         });
         let pts=new THREE.Points(pg,pm);g.add(pts);
@@ -1030,7 +901,7 @@ function createWormholes(){
     });
 }
 
-// ===================== COSMIC WEB (WITH REAL 3D GALAXIES) =====================
+// ===================== COSMIC WEB =====================
 function createCosmicWeb(){
     cosmicWebGroup=new THREE.Group();
     let nodes=[];
@@ -1086,21 +957,15 @@ function createCosmicWeb(){
     });
     let fPts=new THREE.Points(fGeo,fMat);fPts.userData.scaleMin=5;fPts.userData.scaleMax=7;
     cosmicWebGroup.add(fPts);
-    
-    // Replace flat node sprites with actual procedural 3D galaxies
-    nodes.forEach((nd, ni) => {
-        if (ni % 3 === 0) { // Spawn a galaxy for every third node to maintain performance
-            let galaxyScale = 4000 + Math.random() * 6000;
-            let galaxy = createGalaxyInstance(galaxyScale);
-            galaxy.position.set(...nd.pos);
-            galaxy.rotation.x = Math.random() * Math.PI;
-            galaxy.rotation.y = Math.random() * Math.PI;
-            galaxy.userData.scaleMin = 5;
-            galaxy.userData.scaleMax = 7;
-            cosmicWebGroup.add(galaxy);
-        }
+    nodes.forEach(nd=>{
+        let cv=document.createElement('canvas');cv.width=64;cv.height=64;let cx=cv.getContext('2d');
+        let gd=cx.createRadialGradient(32,32,0,32,32,32);
+        gd.addColorStop(0,'rgba(180,200,255,0.25)');gd.addColorStop(.3,'rgba(140,160,220,0.1)');gd.addColorStop(1,'rgba(0,0,0,0)');
+        cx.fillStyle=gd;cx.fillRect(0,0,64,64);
+        let sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),blending:THREE.AdditiveBlending,transparent:true,opacity:.6,depthWrite:false}));
+        sp.position.set(...nd.pos);sp.scale.set(8000,8000,1);sp.userData.scaleMin=5;sp.userData.scaleMax=7;
+        cosmicWebGroup.add(sp);
     });
-    
     cosmicWebGroup.userData.scaleMin=5;cosmicWebGroup.userData.scaleMax=7;
     scene.add(cosmicWebGroup);
 }
@@ -1516,6 +1381,11 @@ function toggleGas(on){
     document.getElementById('btnGasSystems').classList.toggle('gasActive',on);
     showToast(on?'GAS SYSTEMS VISIBLE':'GAS SYSTEMS HIDDEN');
 }
+function toggleWormhole(on){
+    wormholeMode=on;
+    document.getElementById('btnWormhole').classList.toggle('wormholeActive',on);
+    showToast(on?'WORMHOLE MODE ON':'WORMHOLE MODE OFF');
+}
 
 // ===================== CME VISUALIZATION =====================
 function spawnCME(speed){
@@ -1754,7 +1624,7 @@ function updateWormholeTransition(dt) {
             let len = outerR * (0.8 + Math.sin(angle * 3 + p * 5) * 0.3);
             cx.beginPath();
             cx.moveTo(cx2, cy2);
-            cx.lineTo(cx2 + Math.cos(angle) * len, cx2 + Math.sin(angle) * len);
+            cx.lineTo(cx2 + Math.cos(angle) * len, cy2 + Math.sin(angle) * len);
             let hue = (angle / Math.PI) * 180 + p * 60;
             cx.strokeStyle = `hsla(${hue}, 70%, 50%, ${0.08 * (1 - p)})`;
             cx.lineWidth = 1 + Math.random();
@@ -1877,6 +1747,7 @@ function setupEvents(){
     document.getElementById('btnRadiation').onclick=()=>toggleRadiation(!radMode);
     document.getElementById('btnFieldLines').onclick=()=>toggleFields(!fieldMode);
     document.getElementById('btnGasSystems').onclick=()=>toggleGas(!gasMode);
+    document.getElementById('btnWormhole').onclick=()=>toggleWormhole(!wormholeMode);
     document.getElementById('closeInfoPanel').onclick=()=>deselect();
     document.getElementById('closeWeatherPanel').onclick=()=>document.getElementById('weatherPanel').classList.remove('visible');
     document.querySelectorAll('.scaleMark').forEach(m=>{m.addEventListener('click',()=>{
@@ -1890,6 +1761,7 @@ function setupEvents(){
         if(e.key==='r'||e.key==='R')toggleRadiation(!radMode);
         if(e.key==='f'||e.key==='F')toggleFields(!fieldMode);
         if(e.key==='g'||e.key==='G')toggleGas(!gasMode);
+        if(e.key==='w'||e.key==='W')toggleWormhole(!wormholeMode);
         if(e.key===' '){e.preventDefault();document.getElementById('btnPause').click()}
         if(e.key==='Escape')deselect();
         if(e.key>='1'&&e.key<='8')travelToPlanet(parseInt(e.key)-1);
