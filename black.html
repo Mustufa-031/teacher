@@ -59,6 +59,14 @@ body.cinematic #letterbox-top, body.cinematic #letterbox-bottom { height: 60px; 
 .pulse-ring,.warp-pulse{animation:none}
 *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+.left-group{display:flex;align-items:center;gap:24px}
+.logo h1{font-weight:800;font-size:18px;letter-spacing:6px;color:gold;text-transform:uppercase;display:inline;text-shadow:0 0 10px var(--glow)}
+.logo span{font-weight:300;font-size:10px;color:var(--muted);letter-spacing:2px;margin-left:12px}
+
+.nav-menu{display:flex;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:4px;backdrop-filter:blur(12px);gap:4px;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.nav-menu a{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:gold;text-decoration:none;padding:7px 16px;border-radius:20px;display:flex;align-items:center;gap:8px;transition:all .3s}
+.nav-menu a:hover{color:var(--teal);background:rgba(45,212,191,0.1);box-shadow:0 0 10px rgba(45,212,191,0.2)}
+.nav-menu a i{font-size:11px}
 </style>
 </head>
 <body>
@@ -71,6 +79,12 @@ body.cinematic #letterbox-top, body.cinematic #letterbox-bottom { height: 60px; 
 <div class="relative w-2 h-2"><div class="absolute inset-0 rounded-full bg-amber-400"></div><div class="absolute inset-0 rounded-full border border-amber-400/60 pulse-ring"></div></div>
 <span class="text-xs font-light tracking-[.35em] uppercase text-white/50 hidden sm:inline">ASTROPHILE</span>
 </div>
+<div class="left-group">
+    <nav class="nav-menu">
+      <a href="index.html"><i class="fas fa-house-user"></i><span>Home</span></a>
+      <a href="solarsystem.html"><i class="fas fa-sun"></i><span>Solar System</span></a>
+    </nav>
+  </div>
 <div class="flex gap-0.5 bg-white/[.04] backdrop-blur-xl rounded-full p-1 border border-white/[.04]" role="tablist" id="tab-bar">
 <button class="nav-tab active" data-index="0" role="tab" aria-selected="true">Cygnus X-1</button>
 <button class="nav-tab" data-index="1" role="tab" aria-selected="false">Sagittarius A*</button>

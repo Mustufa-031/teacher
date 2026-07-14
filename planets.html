@@ -150,6 +150,76 @@ body.cinematic .letterbox{height:60px}
 .h-progress-track{width:100%;height:2px;background:var(--border);position:relative}
 .h-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--gold));box-shadow:0 0 10px var(--gold);transition:width .1s linear}
 
+/* ============ USER GUIDE SECTION ============ */
+.guide-section {
+  margin-top: 140px;
+  padding: 60px 0;
+  position: relative;
+  z-index: 10;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.guide-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+  transition: all .4s var(--ease);
+  backdrop-filter: blur(16px);
+  height: 100%;
+}
+.guide-card:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(0,0,0,.6);
+  background: var(--card-hover);
+}
+.guide-card .ic {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(212,165,116,.08);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 1.4rem;
+  margin-bottom: 24px;
+}
+.guide-step {
+  font-family: var(--mono);
+  font-size: .7rem;
+  color: var(--gold);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+  display: block;
+  text-transform: uppercase;
+}
+.guide-card h3 {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  color: var(--text);
+  margin-bottom: 14px;
+  font-weight: 700;
+  letter-spacing: -.5px;
+}
+.guide-card p {
+  font-size: .9rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.guide-card p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .footer{border-top:1px solid var(--border);padding:60px 6vw 30px;margin-top:120px;position:relative;z-index:10;background:rgba(0,0,0,0.5);backdrop-filter:blur(10px)}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;max-width:1600px;margin-left:auto;margin-right:auto}
 .footer-brand .footer-logo{font-family:var(--display);font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:14px;text-shadow:var(--glow)}
@@ -547,6 +617,50 @@ body.cinematic .letterbox{height:60px}
       </div>
     </div>
   </div>
+
+  <!-- USER GUIDE SECTION -->
+  <div class="guide-section" id="guide">
+    <div class="page-header">
+      <div class="ic"><i class="fas fa-compass"></i></div>
+      <div>
+        <div class="num">PROTOCOL // 001</div>
+        <h2>Mission <em>Guide</em></h2>
+      </div>
+      <div class="line"></div>
+      <div class="meta">HOW TO EXPLORE</div>
+    </div>
+
+    <div class="guide-grid">
+      <div class="guide-card">
+        <div class="ic"><i class="fas fa-arrows-left-right"></i></div>
+        <span class="guide-step">STEP 01</span>
+        <h3>Navigate the System</h3>
+        <p>Scroll horizontally through the planetary database above. As you move, the interactive 3D cards will respond to your viewport, allowing you to seamlessly browse the solar system's celestial bodies.</p>
+      </div>
+      
+      <div class="guide-card">
+        <div class="ic"><i class="fas fa-hand-pointer"></i></div>
+        <span class="guide-step">STEP 02</span>
+        <h3>Initiate Exploration</h3>
+        <p>When you find a planet you wish to study, click the <strong>"Initiate Exploration"</strong> button. This will launch the full interactive 3D model of that specific planet on its dedicated page.</p>
+      </div>
+      
+      <div class="guide-card">
+        <div class="ic"><i class="fas fa-circle-dot"></i></div>
+        <span class="guide-step">STEP 03</span>
+        <h3>Press the Dots</h3>
+        <p>On the interactive planet page, you will notice glowing pulsing dots placed at key locations. <strong>Click these dots</strong> to trigger a detailed deep-scan of that specific feature or region on the planet.</p>
+      </div>
+      
+      <div class="guide-card">
+        <div class="ic"><i class="fas fa-database"></i></div>
+        <span class="guide-step">STEP 04</span>
+        <h3>Retrieve Information</h3>
+        <p>After clicking a dot, our system reveals hidden details. Information such as astrophysical readouts, historical facts, and environmental data is fetched directly from our database and displayed in a mission panel for your research.</p>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <footer class="footer">
@@ -573,7 +687,7 @@ body.cinematic .letterbox{height:60px}
       <h4>Connect</h4>
       <a href="index.html#contact">Contact</a>
       <a href="#">Documentation</a>
-      <a href="#">API Access</a>
+      <a href="planets.html#guide">Guide</a>
       <a href="#">Press Kit</a>
     </div>
   </div>
@@ -683,7 +797,7 @@ window.addEventListener('mousemove', (e) => {
   ringEl.style.left = e.clientX + 'px';
   ringEl.style.top = e.clientY + 'px';
 });
-document.querySelectorAll('a, button, .h-scroll-item').forEach(el => {
+document.querySelectorAll('a, button, .h-scroll-item, .guide-card').forEach(el => {
   el.addEventListener('mouseenter', () => ringEl.classList.add('hover'));
   el.addEventListener('mouseleave', () => ringEl.classList.remove('hover'));
 });

@@ -48,18 +48,32 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 #liveTag{color:var(--ok);font-weight:700;letter-spacing:2px;font-size:.55rem;animation:lp 2s infinite;flex-shrink:0;padding:2px 6px;border:1px solid var(--ok);border-radius:3px}
 @keyframes lp{0%,100%{text-shadow:0 0 3px var(--ok);box-shadow:0 0 5px var(--ok)}50%{text-shadow:0 0 10px var(--ok);box-shadow:0 0 15px var(--ok)}}
 
-/* Panels */
-#lpan{position:fixed;left:10px;top:75px;bottom:60px;width:190px;z-index:150;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-#lpan::-webkit-scrollbar{width:3px}
-#lpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.ps{margin-bottom:12px}
-.ps h3{font-size:.6rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.li2{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:4px;cursor:pointer;transition:all .2s;font-size:.65rem;margin-bottom:2px}
-.li2:hover{background:rgba(255,122,51,.1)}
-.li2.on{background:rgba(255,122,51,.2);color:var(--accent)}
-.cd{width:7px;height:7px;border-radius:50%;flex-shrink:0;box-shadow:0 0 4px currentColor}
-.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* Panels - Left Sidebar (New Toggle Style) */
+#lpan{position:fixed;left:10px;top:75px;bottom:80px;width:245px;z-index:150;overflow-y:auto;padding:0;scrollbar-width:thin;scrollbar-color:rgba(255,122,51,.3) transparent;background:rgba(20,8,4,.92);border:1px solid rgba(210,105,30,.18);border-radius:8px;backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,122,51,.1)}
+#lpan::-webkit-scrollbar{width:4px}
+#lpan::-webkit-scrollbar-thumb{background:rgba(255,122,51,.3);border-radius:2px}
+#lpan::-webkit-scrollbar-track{background:transparent}
 
+.sidebar-title{font-size:1.05rem;font-weight:700;letter-spacing:4px;color:var(--accent);text-align:center;padding:14px 8px 12px;margin:0;border-bottom:1px solid rgba(210,105,30,.2);text-transform:uppercase;text-shadow:var(--glow);background:linear-gradient(180deg,rgba(255,122,51,.06),transparent)}
+.sidebar-title i{margin-right:8px;font-size:.9em}
+
+.sb-section{margin-bottom:6px;padding:0 8px}
+.sb-section-header{font-size:.68rem;font-weight:700;letter-spacing:2.5px;color:var(--dust);text-transform:uppercase;padding:10px 6px 6px;margin-bottom:4px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(210,105,30,.12)}
+.sb-section-header::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;box-shadow:0 0 6px rgba(255,122,51,.6)}
+.sb-section-header i{color:var(--accent);font-size:.85em}
+
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:5px;cursor:pointer;transition:all .2s;font-size:.76rem;margin-bottom:2px;border:1px solid transparent}
+.sb-item:hover{background:rgba(255,122,51,.08);border-color:rgba(255,122,51,.12)}
+.sb-item.on{background:rgba(255,122,51,.1);border-color:rgba(255,122,51,.18)}
+.sb-item-label{flex:1;color:var(--text);font-weight:500;font-size:.78rem;letter-spacing:.3px}
+.sb-item.on .sb-item-label{color:var(--accent)}
+
+.sb-toggle{width:32px;height:16px;background:rgba(255,255,255,.08);border-radius:9px;position:relative;transition:all .25s ease;flex-shrink:0;border:1px solid rgba(255,255,255,.06)}
+.sb-toggle::after{content:'';position:absolute;width:10px;height:10px;background:#5A6B7B;border-radius:50%;top:2px;left:3px;transition:all .25s ease}
+.sb-item.on .sb-toggle{background:rgba(255,122,51,.3);border-color:rgba(255,122,51,.4)}
+.sb-item.on .sb-toggle::after{background:var(--accent);left:18px;box-shadow:0 0 8px rgba(255,122,51,.8)}
+
+/* Detail Panel (Right) */
 #dpan{position:fixed;right:10px;top:75px;width:290px;max-height:calc(100vh - 120px);z-index:150;overflow-y:auto;padding:15px;transform:translateX(320px);transition:transform .5s cubic-bezier(.22,1,.36,1);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 #dpan::-webkit-scrollbar{width:3px}
 #dpan::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -183,7 +197,7 @@ canvas{display:block;position:fixed;inset:0;z-index:0}
 <div class="li"><div class="ld" id="dSW" style="background:var(--muted);color:var(--muted)"></div><span class="ll">SW</span><span class="lv" id="vSW">--</span></div>
 </div>
 
-<aside id="lpan" class="glass"></aside>
+<aside id="lpan"></aside>
 <button id="mobBtn" class="glass"><i class="fas fa-layer-group"></i></button>
 <aside id="dpan" class="glass">
 <button class="cb" onclick="document.getElementById('dpan').classList.remove('vis')"><i class="fas fa-times"></i></button>
@@ -874,8 +888,35 @@ function updateTicker() {
 function toast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = ''; if (type) t.classList.add(type); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); }
 
 function buildLayerPanel() {
-  const pan = document.getElementById('lpan'); pan.innerHTML = '';
-  LAYERS.forEach(sec => { const d = document.createElement('div'); d.className = 'ps'; d.innerHTML = `<h3>${sec.sec}</h3>`; sec.items.forEach(it => { const el = document.createElement('div'); el.className = 'li2' + (it.on ? ' on' : ''); el.innerHTML = `<div class="cd" style="background:${it.c};color:${it.c}"></div><span class="nm">${it.n}</span>`; el.onclick = () => { it.on = !it.on; el.classList.toggle('on'); toggleLayer(it.id, it.on); }; d.appendChild(el); }); pan.appendChild(d); });
+  const pan = document.getElementById('lpan');
+  pan.innerHTML = '';
+  
+  // Title bar
+  const title = document.createElement('div');
+  title.className = 'sidebar-title';
+  title.innerHTML = '<i class="fas fa-mars"></i>Mars System';
+  pan.appendChild(title);
+  
+  const sectionIcons = {
+    'Mars Surface': 'mountain',
+    'Atmosphere': 'wind',
+    'Moons': 'moon',
+    'Orbiters': 'satellite'
+  };
+  
+  LAYERS.forEach(sec => {
+    const sd = document.createElement('div'); sd.className = 'sb-section';
+    const sh = document.createElement('div'); sh.className = 'sb-section-header';
+    sh.innerHTML = `<i class="fas fa-${sectionIcons[sec.sec] || 'layer-group'}"></i>${sec.sec}`;
+    sd.appendChild(sh);
+    sec.items.forEach(it => {
+      const el = document.createElement('div'); el.className = 'sb-item' + (it.on ? ' on' : '');
+      el.innerHTML = `<span class="sb-item-label">${it.n}</span><div class="sb-toggle"></div>`;
+      el.onclick = () => { it.on = !it.on; el.classList.toggle('on'); toggleLayer(it.id, it.on); };
+      sd.appendChild(el);
+    });
+    pan.appendChild(sd);
+  });
 }
 function toggleLayer(id, on) { S.layers[id] = on; switch (id) { case 'dust': if (dustMesh) dustMesh.visible = on; break; case 'atmo': if (atmoMesh) atmoMesh.visible = on; break; case 'ice': if (iceMeshN) iceMeshN.visible = on; break; case 'rovers': roverMeshes.forEach(m => m.visible = on); break; case 'volcanoes': case 'craters': case 'canyons': geoMeshes.forEach(m => m.visible = on); break; case 'trails': Object.values(trailMeshes).forEach(m => m.visible = on); break; default: if (satMeshes[id]) satMeshes[id].visible = on; if (trailMeshes[id] && S.layers.trails) trailMeshes[id].visible = on; break; } }
 
